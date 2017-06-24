@@ -1,8 +1,8 @@
-package source
+package sources
 
 import (
 	"fmt"
-	. "go-archaius"
+	. "github.com/servicecomb/go-archaius/core"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
@@ -36,6 +36,14 @@ func NewYamlConfigurationSource(yamlFile string) (*YamlConfigurationSource, erro
 	return source, err
 }
 
+func (this *YamlConfigurationSource) GetPriority() int {
+	return 12
+}
+
+func (this *YamlConfigurationSource) GetSourceName() string {
+	return "YamlFile"
+}
+
 func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{} {
 	fmt.Printf("prefix = %s\n", prefix)
 
@@ -60,4 +68,8 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 	}
 
 	return result
+}
+
+func (this *YamlConfigurationSource) AddDynamicConfigHandler(callback *ChangesCallback) {
+	return
 }

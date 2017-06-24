@@ -1,8 +1,14 @@
-package goarchaius
+package core
 
 import (
 	"regexp"
 	"unsafe"
+)
+
+const (
+	UPDATE = "UPDATE"
+	DELETE = "DELETE"
+	CREATE = "CREATE"
 )
 
 type Dispatcher struct {
@@ -18,12 +24,14 @@ func createEventChain() *EventChain {
 }
 
 type Event struct {
-	eventName string
-	Params    map[string]interface{}
+	EventSource string
+	EventName   string //This is the configuration key when event happened
+	EventType   string
+	Value       interface{}
 }
 
-func CreateEvent(eventName string, params map[string]interface{}) *Event {
-	return &Event{eventName: eventName, Params: params}
+func CreateEvent(eventSource string, eventName string, eventType string, params interface{}) *Event {
+	return &Event{EventSource: eventSource, EventName: eventName, EventType: eventType, Value: params}
 }
 
 type EventCallback func(*Event)
@@ -100,7 +108,7 @@ func (this *Dispatcher) RemoveEventListener(eventName string, callback *EventCal
 
 func (this *Dispatcher) DispatchEvent(event *Event) {
 	for key, item := range this.listeners {
-		matched, _ := regexp.MatchString(key, event.eventName)
+		matched, _ := regexp.MatchString(key, event.EventName)
 		if matched {
 			for _, callback := range item.callbacks {
 				go (*callback)(event)

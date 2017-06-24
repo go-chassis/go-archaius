@@ -1,12 +1,13 @@
-package goarchaius
+package core
 
 import (
 	"testing"
 )
 
 type TestingSource struct {
-	configuration *map[string]interface{}
-	d             *Dispatcher
+	configuration  *map[string]interface{}
+	changeCallback *ChangesCallback
+	d              *Dispatcher
 }
 
 func (this *TestingSource) GetConfiguration() map[string]interface{} {
@@ -17,14 +18,26 @@ func (this *TestingSource) AddDispatcher(dispatcher *Dispatcher) {
 	this.d = dispatcher
 }
 
+func (this *TestingSource) GetPriority() int {
+	return 0
+}
+
+func (this *TestingSource) GetSourceName() string {
+	return "TestingSource"
+}
+
+func (this *TestingSource) AddDynamicConfigHandler(callback *ChangesCallback) {
+	this.changeCallback = callback
+}
+
 func Test_AddSource(t *testing.T) {
 	testConfig := &map[string]interface{}{"aaa": "111", "bbb": "222"}
 	testSource := &TestingSource{configuration: testConfig}
 
-	cm := NewConfigurationManager()
+	cm := NewConfigurationManager(NewDispatcher())
 	cm.AddSource(testSource)
 
-	configInfo := cm.Configuration
+	configInfo := cm.GetConfigurations()
 	v := configInfo["aaa"]
 	if v != "111" {
 		t.Error("Error when pushing configuration from source to configurationmanager")
@@ -33,20 +46,16 @@ func Test_AddSource(t *testing.T) {
 	if v != "222" {
 		t.Error("Error when pushing configuration from source to configurationmanager")
 	}
-	ts := cm.Sources[0]
-	if ts != testSource {
-		t.Error("Error to recording source in ConfigManager")
-	}
 }
 
 func Test_Refresh(t *testing.T) {
 	testConfig := &map[string]interface{}{"aaa": "111", "bbb": "222"}
 	testSource := &TestingSource{configuration: testConfig}
 
-	cm := NewConfigurationManager()
+	cm := NewConfigurationManager(NewDispatcher())
 	cm.AddSource(testSource)
 
-	configInfo := cm.Configuration
+	configInfo := cm.GetConfigurations()
 	if len(configInfo) != 2 {
 		t.Error("Config items error before refresh")
 	}
@@ -56,7 +65,7 @@ func Test_Refresh(t *testing.T) {
 		t.Error("Config items error before refresh after update source")
 	}
 	cm.Refresh()
-	configInfo = cm.Configuration
+	configInfo = cm.GetConfigurations()
 	if len(configInfo) != 3 {
 		t.Error("Config items error after refresh")
 	}

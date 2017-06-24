@@ -1,7 +1,7 @@
-package source
+package sources
 
 import (
-	. "go-archaius"
+	. "github.com/servicecomb/go-archaius/core"
 	"os"
 	"strings"
 )
@@ -29,10 +29,18 @@ func NewEnvConfigurationSource() *EnvConfigurationSource {
 	return &EnvConfigurationSource{configuration: configMap}
 }
 
+func (this *EnvConfigurationSource) GetPriority() int {
+	return 11
+}
+
+func (this *EnvConfigurationSource) GetSourceName() string {
+	return "EnvironmentVariable"
+}
+
 func (this *EnvConfigurationSource) GetConfiguration() map[string]interface{} {
 	return this.configuration
 }
 
-func (this *EnvConfigurationSource) AddDispatcher(dispatcher *Dispatcher) {
+func (this *EnvConfigurationSource) AddDynamicConfigHandler(callback *ChangesCallback) {
 	return
 }
