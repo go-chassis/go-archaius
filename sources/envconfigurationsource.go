@@ -41,6 +41,6 @@ func (this *EnvConfigurationSource) GetConfiguration() map[string]interface{} {
 	return this.configuration
 }
 
-func (this *EnvConfigurationSource) AddDynamicConfigHandler(callback *ChangesCallback) {
-	return
+func (this *EnvConfigurationSource) AddDynamicConfigHandler(callback *ChangesCallback) error {
+	return nil
 }
