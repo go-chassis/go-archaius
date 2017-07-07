@@ -23,7 +23,7 @@ func NewConfigurationFactory() *ConfigurationFactory {
 }
 
 func (this *ConfigurationFactory) Init() error {
-
+	this.configMgr.Refresh()
 	this.initSuccess = true
 	return nil
 }

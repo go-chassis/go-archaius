@@ -36,7 +36,10 @@ func (this *ConfigurationManager) AddSource(s ConfigurationSource) error {
 	}
 	this.Lock()
 	var updateCallback ChangesCallback = this.updateHandler
-	s.AddDynamicConfigHandler(&updateCallback)
+	err := s.AddDynamicConfigHandler(&updateCallback)
+	if err != nil {
+		return err
+	}
 	this.sources = append(this.sources, s)
 	sort.Sort(this.sources)
 	this.Unlock()
@@ -81,13 +84,17 @@ func (this *ConfigurationManager) updateHandler(event *Event) error {
 	}
 
 	this.Lock()
-
-	if event.EventType == DELETE {
+	switch event.EventType {
+	case DELETE:
 		delete(this.configuration, event.EventName)
-	} else {
+	case UPDATE:
 		this.configuration[event.EventName] = event.Value
+	case CREATE:
+		this.configuration[event.EventName] = event.Value
+	default:
+		this.Unlock()
+		return fmt.Errorf("the event type: %s do not support.", event.EventType)
 	}
-
 	this.Unlock()
 
 	this.dispatcher.DispatchEvent(event)

@@ -9,7 +9,7 @@ import (
 
 func init() {
 	core.DefaultSources = append(core.DefaultSources, NewEnvConfigurationSource())
-	yamlSource, _ := NewYamlConfigurationSource(getCurrentDirectory() + "/config.yaml")
+	yamlSource, _ := NewYamlConfigurationSource("Default", getCurrentDirectory()+"/config.yaml")
 	core.DefaultSources = append(core.DefaultSources, yamlSource)
 }
 

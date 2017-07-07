@@ -7,7 +7,7 @@ type ConfigurationSource interface {
 	GetPriority() int
 	GetSourceName() string
 	GetConfiguration() map[string]interface{}
-	AddDynamicConfigHandler(callback *ChangesCallback)
+	AddDynamicConfigHandler(callback *ChangesCallback) error
 }
 
 type ConfigSources []ConfigurationSource
