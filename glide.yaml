@@ -1,6 +1,0 @@
-package: github.com/servicecomb/go-archaius
-import:
-- package: gopkg.in/yaml.v2
-- package: golang.org/x/sys
-  repo: https://github.com/golang/sys.git
-- package: github.com/go-fsnotify/fsnotify
