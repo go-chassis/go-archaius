@@ -21,6 +21,7 @@ package filesource
 
 import (
 	"github.com/ServiceComb/go-archaius/core"
+	"github.com/ServiceComb/go-chassis/core/config/model"
 	"github.com/ServiceComb/go-chassis/core/lager"
 	"github.com/ServiceComb/go-chassis/util/fileutil"
 	"github.com/stretchr/testify/assert"
@@ -66,6 +67,7 @@ func TestNewYamlConfigurationSource1(t *testing.T) {
 	confdir := filepath.Join(root, "conf")
 	file1 := filepath.Join(root, "conf", "test1.yaml")
 	file2 := filepath.Join(root, "conf", "test2.yaml")
+	file3 := filepath.Join(root, "conf", "circuit_breaker.yaml")
 
 	f1content := []byte(`
 testfilekey1: filekey1
@@ -76,8 +78,58 @@ testfilekey3:
 `)
 	f2content := "NAME21: test21\n \nNAME22: test22"
 
+	file := []byte(`
+cse:
+  isolation:
+    Consumer:
+      timeout:
+        enabled: true
+      timeoutInMilliseconds: 10
+      maxConcurrentRequests: 100
+      Server:
+        timeoutInMilliseconds: 1000
+        maxConcurrentRequests: 100
+    Provider:
+      Server:
+        timeoutInMilliseconds: 10
+        maxConcurrentRequests: 100
+  loadbalance:
+    serverListFilters: zoneaware
+  circuitBreaker:
+    Consumer:
+      enabled: true
+      forceOpen: false
+      forceClose: true
+      sleepWindowInMilliseconds: 10000
+      requestVolumeThreshold: 20
+      errorThresholdPercentage: 50
+      Server:
+        enabled: true
+        forceOpen: false
+        forceClose: true
+        sleepWindowInMilliseconds: 10000
+        requestVolumeThreshold: 20
+        errorThresholdPercentage: 50
+    Provider:
+      Server:
+        enabled: true
+        forceOpen: false
+        forceClose: true
+        sleepWindowInMilliseconds: 10000
+        requestVolumeThreshold: 20
+        errorThresholdPercentage: 50
+  fallback:
+    Consumer:
+      enabled: false
+      maxConcurrentRequests: 20
+  fallbackpolicy:
+    Consumer:
+      policy: throwexception
+`)
+
 	os.Remove(file1)
 	os.Remove(file2)
+	os.Remove(file3)
 	os.Remove(confdir)
 	err := os.Mkdir(confdir, 0777)
 	check(err)
@@ -87,44 +139,63 @@ testfilekey3:
 	check(err)
 	f2, err := os.Create(file2)
 	check(err)
+	f3, err := os.Create(file3)
+	check(err)
 	defer f1.Close()
 	defer f2.Close()
+	defer f3.Close()
 	defer os.Remove(file1)
 	defer os.Remove(file2)
+	defer os.Remove(file3)
 
 	_, err = io.WriteString(f1, string(f1content))
 	check(err)
 	_, err = io.WriteString(f2, f2content)
 	check(err)
+	_, err = io.WriteString(f3, string(file))
+	check(err)
 
 	fSource := NewYamlConfigurationSource()
 
+	var HystricConfig *model.HystrixConfigWrapper
+
+	hystricData, err := fSource.AddFileSource(HystricConfig, file3, 0)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.NotNil(t, hystricData)
+	data := hystricData.(map[interface{}]interface{})
+	data1 := data["cse"].(map[interface{}]interface{})
+	data2 := data1["loadbalance"].(map[interface{}]interface{})
+	assert.NotNil(t, hystricData)
+	assert.Equal(t, "zoneaware", data2["serverListFilters"])
+	assert.NotEqual(t, "zoneaware11", data2["serverListFilters"])
 	//Configuration file1 is adding to the filesource
-	err = fSource.AddFileSource(file1, 0)
+	_, err = fSource.AddFileSource(nil, file1, 0)
 	if err != nil {
 		t.Error(err)
 	}
 
 	//Duplicate file(file1) is adding to the filesource
-	err = fSource.AddFileSource(file1, 0)
+	_, err = fSource.AddFileSource(nil, file1, 0)
 	if err != nil {
 		t.Error(err)
 	}
 
 	//Not existing path file adding to the filesource
-	err = fSource.AddFileSource(confdir+"/notexistingdir/notexisting.yaml", 0)
+	_, err = fSource.AddFileSource(nil, confdir+"/notexistingdir/notexisting.yaml", 0)
 	if err == nil {
 		t.Error("filesource working on not existing path")
 	}
 
 	//Not existing file adding to the filesource
-	err = fSource.AddFileSource(confdir+"/notexisting.yaml", 0)
+	_, err = fSource.AddFileSource(nil, confdir+"/notexisting.yaml", 0)
 	if err == nil {
 		t.Error("filesource working on not existing file")
 	}
 
 	//Adding directory to the filesource
-	err = fSource.AddFileSource(confdir, 0)
+	_, err = fSource.AddFileSource(nil, confdir, 0)
 	if err != nil {
 		t.Error("Failed to add directory to the filesource")
 	}
@@ -227,9 +298,9 @@ func TestDynamicConfigurations(t *testing.T) {
 	check(err)
 
 	fSource := NewYamlConfigurationSource()
-	fSource.AddFileSource(filename1, 0)
-	fSource.AddFileSource(filename2, 1)
-	fSource.AddFileSource(filename3, 2)
+	fSource.AddFileSource(nil, filename1, 0)
+	fSource.AddFileSource(nil, filename2, 1)
+	fSource.AddFileSource(nil, filename3, 2)
 
 	dynHandler := new(TestDynamicConfigHandler)
 	fSource.DynamicConfigHandler(dynHandler)
@@ -284,8 +355,8 @@ func TestDynamicConfigurations(t *testing.T) {
 	}
 
 	t.Log("adding new files after dynhandler is inited")
-	fSource.AddFileSource(filename4, 3)
-	fSource.AddFileSource(filename5, 4)
+	fSource.AddFileSource(nil, filename4, 3)
+	fSource.AddFileSource(nil, filename5, 4)
 	time.Sleep(10 * time.Millisecond)
 
 	t.Log("verifying the configurations of newely added files")
@@ -349,7 +420,7 @@ func TestNewYamlConfigurationSource2(t *testing.T) {
 	fSource := NewYamlConfigurationSource()
 
 	t.Log("improper configuration file adding to the filesource")
-	err = fSource.AddFileSource(file1, 0)
+	_, err = fSource.AddFileSource(nil, file1, 0)
 	if err == nil {
 		t.Error(err)
 	}

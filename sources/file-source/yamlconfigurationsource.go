@@ -94,7 +94,7 @@ var fileConfigSource *yamlConfigurationSource
 //FileSource is a interface
 type FileSource interface {
 	core.ConfigSource
-	AddFileSource(filePath string, priority uint32) error
+	AddFileSource(anyConfig interface{}, filePath string, priority uint32) (interface{}, error)
 }
 
 //NewYamlConfigurationSource creates new yaml configuration
@@ -107,51 +107,53 @@ func NewYamlConfigurationSource() FileSource {
 	return fileConfigSource
 }
 
-func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32) error {
+func (fSource *yamlConfigurationSource) AddFileSource(anyConfig interface{}, p string, priority uint32) (interface{}, error) {
+	var anyConfigNew interface{}
 	path, err := filepath.Abs(p)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// check existence of file
 	fs, err := os.Open(path)
 	if os.IsNotExist(err) {
 		lager.Logger.Warnf(nil, "[%s] file not exist", path)
-		return fmt.Errorf("[%s] file not exist", path)
+		return nil, fmt.Errorf("[%s] file not exist", path)
 	}
 	defer fs.Close()
 
 	// prevent duplicate file source
 	if fSource.isFileSrcExist(path) {
-		return nil
+		return nil, nil
 	}
 
 	fileType := fileType(fs)
 	switch fileType {
 	case Directory:
 		// handle Directory input. Include all yaml files as file source.
-		err := fSource.handleDirectory(fs, priority)
+		err := fSource.handleDirectory(&anyConfig, fs, priority)
 		if err != nil {
 			lager.Logger.Errorf(err, "Failed to handle directory [%s]", path)
-			return err
+			return nil, err
 		}
 	case RegularFile:
 		// handle file and include as file source.
-		err := fSource.handleFile(fs, priority)
+		err := fSource.handleFile(&anyConfig, fs, priority)
+		anyConfigNew = anyConfig
 		if err != nil {
 			lager.Logger.Errorf(err, "Failed to handle file [%s]", path)
-			return err
+			return nil, err
 		}
 	case InvalidFileType:
 		lager.Logger.Errorf(nil, "File type of [%s] not supported", path)
-		return fmt.Errorf("file type of [%s] not supported", path)
+		return nil, fmt.Errorf("file type of [%s] not supported", path)
 	}
 
 	if fSource.watchPool != nil {
 		fSource.watchPool.AddWatchFile(path)
 	}
 
-	return nil
+	return anyConfigNew, nil
 }
 
 func (fSource *yamlConfigurationSource) isFileSrcExist(filePath string) bool {
@@ -182,7 +184,7 @@ func fileType(fs *os.File) FileSourceTypes {
 	return InvalidFileType
 }
 
-func (fSource *yamlConfigurationSource) handleDirectory(dir *os.File, priority uint32) error {
+func (fSource *yamlConfigurationSource) handleDirectory(anyConfig *interface{}, dir *os.File, priority uint32) error {
 
 	filesInfo, err := dir.Readdir(-1)
 	if err != nil {
@@ -198,7 +200,7 @@ func (fSource *yamlConfigurationSource) handleDirectory(dir *os.File, priority u
 			continue
 		}
 
-		err = fSource.handleFile(fs, priority)
+		err = fSource.handleFile(anyConfig, fs, priority)
 		if err != nil {
 			lager.Logger.Errorf(err, "error processing %s file source handler with error : %s ", fs.Name(),
 				err.Error())
@@ -210,8 +212,8 @@ func (fSource *yamlConfigurationSource) handleDirectory(dir *os.File, priority u
 	return nil
 }
 
-func (fSource *yamlConfigurationSource) handleFile(file *os.File, priority uint32) error {
-	config, err := fileConfigSource.pullYamlFileConfig(file.Name())
+func (fSource *yamlConfigurationSource) handleFile(anyConfig *interface{}, file *os.File, priority uint32) error {
+	config, err := fileConfigSource.pullYamlFileConfig(anyConfig, file.Name())
 	if err != nil {
 		return fmt.Errorf("failed to pull configurations from [%s] file, %s", file.Name(), err)
 	}
@@ -260,7 +262,7 @@ func (fSource *yamlConfigurationSource) handlePriority(filePath string, priority
 	return nil
 }
 
-func (fSource *yamlConfigurationSource) pullYamlFileConfig(fileName string) (map[string]interface{}, error) {
+func (fSource *yamlConfigurationSource) pullYamlFileConfig(anyConfig *interface{}, fileName string) (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
 	yamlContent, err := ioutil.ReadFile(fileName)
 	if err != nil {
@@ -272,6 +274,12 @@ func (fSource *yamlConfigurationSource) pullYamlFileConfig(fileName string) (map
 	if err != nil {
 		return nil, fmt.Errorf("yaml unmarshal [%s] failed, %s", fileName, err)
 	}
+
+	err = yaml.Unmarshal(yamlContent, &anyConfig)
+	if err != nil {
+		return nil, fmt.Errorf("yaml unmarshal [%s] failed, %s", fileName, err)
+	}
+
 	configMap = retrieveItems("", ss)
 
 	return configMap, nil
