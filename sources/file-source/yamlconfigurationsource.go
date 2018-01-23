@@ -116,7 +116,6 @@ func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32)
 	// check existence of file
 	fs, err := os.Open(path)
 	if os.IsNotExist(err) {
-		lager.Logger.Warnf(nil, "[%s] file not exist", path)
 		return fmt.Errorf("[%s] file not exist", path)
 	}
 	defer fs.Close()
