@@ -214,7 +214,15 @@ func (arc *ConfigFactory) UnRegisterListener(listenerObj core.EventListener, key
 	return arc.dispatcher.UnRegisterListener(listenerObj, keys...)
 }
 
-// Unmarshal deserialize config into structure
+// Unmarshal function is used in the case when user want his yaml file to be unmarshalled to structure pointer
+// Unmarshal function accepts a pointer and in called function anyone can able to get the data in passed object
+// Unmarshal only accepts a pointer values
+// Unmarshal returns error if obj values are 0. nil and value type.
+// Procedure:
+//      1. Unmarshal first checks the passed object type using reflection.
+//      2. Based on type Unmarshal function will check and set the values
+//      ex: If type is basic types like int, string, float then it will assigb directly values,
+//          If type is map, ptr and struct then it will again send for unmarshal untill it find the basic type and set the values
 func (arc *ConfigFactory) Unmarshal(obj interface{}) error {
 	if arc.initSuccess == false {
 		return nil
