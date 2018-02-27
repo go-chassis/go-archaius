@@ -63,7 +63,7 @@ func (cMgr *ConfigurationManager) unmarshal(rValue reflect.Value, tagName string
 			return err
 		}
 	case reflect.Map:
-		err := cMgr.handleMap(rValue, getTagKey(tagName, doNotConsiderTag))
+		err := cMgr.handleMap(reflect.Value{}, rValue, getTagKey(tagName, doNotConsiderTag))
 		if err != nil {
 			return err
 		}
@@ -159,7 +159,7 @@ func (cMgr *ConfigurationManager) handleStruct(rValue reflect.Value, tagName str
 				return err
 			}
 		case reflect.Map:
-			err := cMgr.handleMap(fieldValue, getTagKey(tagName, keyName))
+			err := cMgr.handleMap(rValue, fieldValue, getTagKey(tagName, keyName))
 			if err != nil {
 				return err
 			}
@@ -173,7 +173,7 @@ func (cMgr *ConfigurationManager) handleStruct(rValue reflect.Value, tagName str
 }
 
 // handle map
-func (cMgr *ConfigurationManager) handleMap(rValue reflect.Value, tagName string) error {
+func (cMgr *ConfigurationManager) handleMap(rValueForInline, rValue reflect.Value, tagName string) error {
 	if tagName == doNotConsiderTag {
 		if rValue.CanSet() {
 			configValue := cMgr.GetConfigurations()
@@ -193,7 +193,7 @@ func (cMgr *ConfigurationManager) handleMap(rValue reflect.Value, tagName string
 		return errors.New("map key should be string")
 	}
 
-	mapValue, err := cMgr.populateMap(tagName, mapType)
+	mapValue, err := cMgr.populateMap(tagName, mapType, rValueForInline)
 	if err != nil {
 		return err
 	}
@@ -211,24 +211,60 @@ func (cMgr *ConfigurationManager) handleMap(rValue reflect.Value, tagName string
 	return nil
 }
 
-// generate map from config map
-func (cMgr *ConfigurationManager) populateMap(prefix string, mapType reflect.Type) (reflect.Value, error) {
-	rValuePtr := reflect.New(mapType)
-	rValue := rValuePtr.Elem()
-	rValue.Set(reflect.MakeMap(mapType))
-	//rValue := reflect.MakeMap(mapType)
-	var mapKeys []string
-	mapValueType := rValue.Type().Elem()
+func (cMgr *ConfigurationManager) getTagList(prefix string, rValues reflect.Value) []string {
+	var tagList []string
 
-	configValue := cMgr.GetConfigurations()
+	if strings.Contains(prefix, "inline") {
+		for i := 0; i < rValues.Type().NumField(); i++ {
+			structField := rValues.Type().Field(i)
+			if structField.Tag != `yaml:",inline"` {
+				keyName := cMgr.getKeyName(structField.Name, structField.Tag)
+				tagList = append(tagList, keyName)
+			}
+		}
+	}
+
+	return tagList
+}
+
+func (cMgr *ConfigurationManager) getMapKeys(configValue map[string]interface{}, prefix string, tagList []string) (string,
+	string, []string) {
+	var (
+		mapKeys   []string
+		inlineVal string
+	)
+
 	for key := range configValue {
-		isPrifix, index := checkPrefix(key, prefix)
+		isPrifix, index, pfx, iVal := checkPrefix(key, prefix, tagList)
 		if !isPrifix {
 			continue
 		}
 
+		prefix = pfx
+		if iVal != "" {
+			inlineVal = iVal
+		}
+
 		mapKeys = append(mapKeys, key[index:])
 	}
+
+	return prefix, inlineVal, mapKeys
+
+}
+
+// generate map from config map
+func (cMgr *ConfigurationManager) populateMap(prefix string, mapType reflect.Type, rValues reflect.Value) (reflect.Value, error) {
+	tagList := cMgr.getTagList(prefix, rValues)
+
+	rValuePtr := reflect.New(mapType)
+	rValue := rValuePtr.Elem()
+	rValue.Set(reflect.MakeMap(mapType))
+	//rValue := reflect.MakeMap(mapType)
+	mapValueType := rValue.Type().Elem()
+
+	configValue := cMgr.GetConfigurations()
+
+	prefix, inlineVal, mapKeys := cMgr.getMapKeys(configValue, prefix, tagList)
 
 	for _, key := range mapKeys {
 		// if key itself has map value stored
@@ -236,7 +272,18 @@ func (cMgr *ConfigurationManager) populateMap(prefix string, mapType reflect.Typ
 			val := cMgr.GetConfigurationsByKey(prefix)
 			setVal := reflect.ValueOf(val)
 			if mapType != setVal.Type() {
-				return rValue, fmt.Errorf("invalid value for map %s", mapType.String())
+				var count bool
+				count = false
+				switch setVal.Type().Kind() {
+				case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+					reflect.Float32, reflect.Float64, reflect.Uint, reflect.Uint8, reflect.Uint16,
+					reflect.Uint32, reflect.Uint64, reflect.Bool, reflect.Interface, reflect.Array, reflect.Slice:
+					count = true
+					continue
+				}
+				if !count {
+					return rValue, fmt.Errorf("invalid value for map %s", mapType.String())
+				}
 			}
 			if rValue.CanSet() {
 				rValue.Set(setVal)
@@ -269,7 +316,13 @@ func (cMgr *ConfigurationManager) populateMap(prefix string, mapType reflect.Typ
 			splitKey := strings.Split(key, `.`)
 			mapKey := splitKey[1]
 			mapValue := reflect.New(mapValueType)
-			err := cMgr.unmarshal(mapValue, getTagKey(prefix, mapKey))
+			var err error
+			if inlineVal != "" {
+				mapKey = inlineVal
+				err = cMgr.unmarshal(mapValue, getTagKey(prefix, doNotConsiderTag))
+			} else {
+				err = cMgr.unmarshal(mapValue, getTagKey(prefix, mapKey))
+			}
 			if err != nil {
 				return rValue, err
 			}
@@ -283,9 +336,109 @@ func (cMgr *ConfigurationManager) populateMap(prefix string, mapType reflect.Typ
 	return rValue, nil
 }
 
-func checkPrefix(heap, prefix string) (bool, int) {
+func isSliceContainString(str string, list []string) bool {
+	for _, value := range list {
+		if value == str {
+			return true
+		}
+	}
+	return false
+}
+
+func checkAndReplaceInline(prefix, heap string, tagList []string) (string, string) {
+	var (
+		exist, inlineExist                           bool
+		updatedTagList                               []string
+		indexPrefix                                  int
+		inlineVal, heapData, nextValue, newHeapValue string
+	)
+
+	firstValue := strings.Split(prefix, ".inline")
+	// updatedTagList slice contains all the tags of the structure which has inline tag
+	for _, value := range tagList {
+		updatedTagList = append(updatedTagList, firstValue[0]+"."+value)
+	}
+
+	// This condition is to get the index of inline tag so that it can be replace with the proper value
+	splittedPrefix := strings.Split(prefix, ".")
+	if len(splittedPrefix) != 0 {
+		for i, j := range splittedPrefix {
+			if j == "inline" {
+				indexPrefix = i
+			}
+		}
+	}
+
+	if len(prefix) != len(heap) {
+		splittedHeap := strings.Split(heap, ".")
+		// checks all the word before inline tag should be equal
+		// ex: if prefix is "cse.loadbalance.inline" and the heap is "cse.loadbalance.stratergy" then only we should consider
+		for i := 0; i < indexPrefix; i++ {
+			if splittedHeap[i] == splittedPrefix[i] {
+				inlineExist = true
+			} else {
+				inlineExist = false
+				break
+			}
+		}
+
+		if inlineExist {
+			for index, heapValue := range splittedHeap {
+				/* This condition is to hanlde some special scenario like
+				If prefix is "cse.loadbalance.inline"
+				And in any source we have given "stratergy" as a key for inline tag then
+				we may get keys like
+				"cse.loadbalance.stratergy.name" and "cse.loadbalance.stratergy.stratergy.name"
+				So out of these we should consider "cse.loadbalance.stratergy.stratergy.name"
+				*/
+				if index > indexPrefix {
+					nextValue = splittedHeap[indexPrefix]
+					break
+				}
+
+				heapData = heapData + "." + heapValue
+				newHeapValue = heapValue
+				heapData = strings.TrimPrefix(heapData, ".")
+			}
+
+			if !isSliceContainString(heapData, updatedTagList) {
+				exist = false
+				splittedPrefix[indexPrefix] = splittedHeap[indexPrefix]
+				inlineVal = splittedPrefix[indexPrefix]
+				exist = true
+			}
+
+			if !exist {
+				if nextValue == newHeapValue {
+					splittedPrefix[indexPrefix] = newHeapValue
+					inlineVal = splittedPrefix[indexPrefix]
+					exist = true
+				}
+			}
+		}
+	}
+
+	prefix = ""
+	for _, pfx := range splittedPrefix {
+		if prefix == "" {
+			prefix = pfx
+		} else {
+			prefix = prefix + "." + pfx
+		}
+	}
+
+	return prefix, inlineVal
+}
+
+func checkPrefix(heap, prefix string, tagList []string) (bool, int, string, string) {
+	var inlineVal string
+
 	if len(heap) < len(prefix) {
-		return false, 0
+		return false, 0, "", ""
+	}
+
+	if strings.Contains(prefix, "inline") {
+		prefix, inlineVal = checkAndReplaceInline(prefix, heap, tagList)
 	}
 
 	var index int
@@ -297,10 +450,10 @@ func checkPrefix(heap, prefix string) (bool, int) {
 	}
 
 	if len(prefix) != index {
-		return false, 0
+		return false, 0, prefix, inlineVal
 	}
 
-	return true, index
+	return true, index, prefix, inlineVal
 }
 
 // set values in object
@@ -336,6 +489,10 @@ func (*ConfigurationManager) getKeyName(fieldName string, fieldTagName reflect.S
 		return ignoreField
 	} else if tagName == "" {
 		return toSnake(fieldName)
+	} else if tagName == ",inline" {
+		tag := strings.Split(tagName, ",")
+		tagName = tag[1]
+		return tagName
 	}
 
 	return tagName
