@@ -1,7 +1,8 @@
-package configmanager
+package configmanager_test
 
 import (
 	"github.com/ServiceComb/go-archaius/core"
+	"github.com/ServiceComb/go-archaius/core/config-manager"
 	"github.com/ServiceComb/go-archaius/core/event-system"
 	"github.com/ServiceComb/go-archaius/sources/commandline-source"
 	"github.com/ServiceComb/go-archaius/sources/external-source"
@@ -37,13 +38,13 @@ func TestConfigurationManager(t *testing.T) {
 	testSource := testsource.NewTestSource(testConfig)
 
 	dispatcher := eventsystem.NewDispatcher()
-	confmanager := NewConfigurationManager(dispatcher)
+	confmanager := configmanager.NewConfigurationManager(dispatcher)
 	t.Log("Test configurationmanager.go")
 
 	//supplying nil source
 	var ab core.ConfigSource
 	lager.Initialize("", "INFO", "", "size", true, 1, 10, 7)
-	err := confmanager.AddSource(ab, DefaultPriority)
+	err := confmanager.AddSource(ab, configmanager.DefaultPriority)
 	if err == nil {
 		t.Error("Failed to identify invalid or nil source")
 	}
@@ -136,7 +137,7 @@ func TestConfigurationManager(t *testing.T) {
 	}
 
 	//Supplying nil event
-	ConfManager2 := &ConfigurationManager{}
+	ConfManager2 := &configmanager.ConfigurationManager{}
 	var event *core.Event = nil
 	ConfManager2.OnEvent(event)
 
@@ -212,15 +213,6 @@ region:
 APPLICATION_ID: CSE
 register_type: servicecenter
 cse:
-  loadbalance:
-    strategyName: RoundRobin
-    retryEnabled: false
-    retryOnNext: 2
-    retryOnSame: 3
-    backoff:
-      kind: constant
-      minMs: 200
-      maxMs: 400
   service:
     registry:
       type: servicecenter
@@ -256,14 +248,44 @@ ssl:
 commonkey3 : filesource
 `)
 
+	loadbalanceConf := []byte(`
+--- 
+cse: 
+  loadbalance: 
+    ShoppingCart: 
+      backoff: 
+        maxMs: 400
+        minMs: 200
+        kind: constant
+      retryEnabled: true
+      retryOnNext: 2
+      retryOnSame: 3
+      serverListFilters: zoneaware
+      strategy: 
+        name: WeightedResponseForTargetService
+    backoff: 
+      MaxMs: 400
+      MinMs: 200
+      kind: constant
+    retryEnabled: false
+    retryOnNext: 2
+    retryOnSame: 3
+    serverListFilters: zoneaware
+    strategy: 
+      name: WeightedResponse
+
+`)
+
 	root, _ := fileutil.GetWorkDir()
 	os.Setenv("CHASSIS_HOME", root)
 	t.Log(os.Getenv("CHASSIS_HOME"))
 
 	tmpdir := filepath.Join(root, "tmp")
 	file1 := filepath.Join(root, "tmp", "chassis.yaml")
+	lbFileName := filepath.Join(root, "tmp", "load_balancing.yaml")
 
 	os.Remove(file1)
+	os.Remove(lbFileName)
 	os.Remove(tmpdir)
 	err := os.Mkdir(tmpdir, 0777)
 	check(err)
@@ -274,9 +296,14 @@ commonkey3 : filesource
 	defer f1.Close()
 	defer os.Remove(file1)
 	_, err = io.WriteString(f1, string(file))
+	f2, err := os.Create(lbFileName)
+	check(err)
+	defer f2.Close()
+	defer os.Remove(lbFileName)
+	_, err = io.WriteString(f2, string(loadbalanceConf))
 
 	dispatcher := eventsystem.NewDispatcher()
-	confmanager := NewConfigurationManager(dispatcher)
+	confmanager := configmanager.NewConfigurationManager(dispatcher)
 
 	fsource := filesource.NewYamlConfigurationSource()
 	fsource.AddFileSource(file1, 0)
@@ -292,9 +319,28 @@ commonkey3 : filesource
 	}
 
 	assert.Equal(t, "CSE", globalDef.AppID)
-	assert.Equal(t, 2, globalDef.Cse.Loadbalance.RetryOnNext)
 	assert.Equal(t, "default", globalDef.Ssl["cipherPlugin"])
 	assert.Equal(t, "us-east", globalDef.DataCenter.Name)
+
+	confmanager = configmanager.NewConfigurationManager(dispatcher)
+
+	fsource.AddFileSource(lbFileName, 0)
+
+	confmanager.AddSource(fsource, fsource.GetPriority())
+	time.Sleep(2 * time.Second)
+
+	lbConfig := model.LBWrapper{}
+	err = confmanager.Unmarshal(&lbConfig)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(lbConfig.Prefix.LBConfig)
+
+	t.Log(lbConfig.Prefix.LBConfig.AnyService)
+	assert.Equal(t, "WeightedResponseForTargetService", lbConfig.Prefix.LBConfig.AnyService["ShoppingCart"].Strategy["name"])
+	assert.Equal(t, true, lbConfig.Prefix.LBConfig.AnyService["ShoppingCart"].RetryEnabled)
+	assert.Equal(t, false, lbConfig.Prefix.LBConfig.RetryEnabled)
+	assert.NotEqual(t, "WeightedResponseForTargetService", lbConfig.Prefix.LBConfig.AnyService["TargetService"].Strategy["name"])
 
 	err = confmanager.Unmarshal("invalidobject")
 	if err == nil {
