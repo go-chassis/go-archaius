@@ -364,6 +364,15 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 	}
 
 	cfgSrcHandler.Lock()
+	cfgSrcHandler.updatedimensionsInfoConfigurations(dimensionInfo, configByDI, config)
+	cfgSrcHandler.Unlock()
+
+	return nil
+}
+
+func (cfgSrcHandler *ConfigCenterSourceHandler) updatedimensionsInfoConfigurations(dimensionInfo string,
+	configByDI map[string]map[string]interface{}, config map[string]interface{}) {
+
 	if dimensionInfo == "" {
 		cfgSrcHandler.Configurations = config
 
@@ -396,10 +405,6 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 		}
 
 	}
-
-	cfgSrcHandler.Unlock()
-
-	return nil
 }
 
 //GetConfigurationByKey gets required configuration for a particular key
