@@ -38,7 +38,7 @@ const (
 	FileConfigSourceConst = "FileSource"
 	fileSourcePriority    = 3
 	//DefaultFilePriority is a variable of type string
-	DefaultFilePriority   = 0
+	DefaultFilePriority = 0
 )
 
 //FileSourceTypes is a string
