@@ -262,10 +262,21 @@ cse:
       retryOnSame: 3
       serverListFilters: zoneaware
       strategy: 
-        name: WeightedResponseForTargetService
+        name: WeightedResponse
+    shoppingCart: 
+      backoff: 
+        maxMs: 300
+        minMs: 200
+        kind: constant
+      retryEnabled: true
+      retryOnNext: 2
+      retryOnSame: 3
+      serverListFilters: zoneaware
+      strategy: 
+        name: WeightedResponse
     backoff: 
-      MaxMs: 400
-      MinMs: 200
+      maxMs: 400
+      minMs: 200
       kind: constant
     retryEnabled: false
     retryOnNext: 2
@@ -337,10 +348,13 @@ cse:
 	t.Log(lbConfig.Prefix.LBConfig)
 
 	t.Log(lbConfig.Prefix.LBConfig.AnyService)
-	assert.Equal(t, "WeightedResponseForTargetService", lbConfig.Prefix.LBConfig.AnyService["ShoppingCart"].Strategy["name"])
+	assert.Equal(t, "WeightedResponse", lbConfig.Prefix.LBConfig.AnyService["ShoppingCart"].Strategy["name"])
 	assert.Equal(t, true, lbConfig.Prefix.LBConfig.AnyService["ShoppingCart"].RetryEnabled)
 	assert.Equal(t, false, lbConfig.Prefix.LBConfig.RetryEnabled)
-	assert.NotEqual(t, "WeightedResponseForTargetService", lbConfig.Prefix.LBConfig.AnyService["TargetService"].Strategy["name"])
+	assert.NotEqual(t, "WeightedResponse", lbConfig.Prefix.LBConfig.AnyService["TargetService"].Strategy["name"])
+	assert.Equal(t, 300, int(lbConfig.Prefix.LBConfig.AnyService["shoppingCart"].Backoff.MaxMs))
+	assert.Equal(t, 400, int(lbConfig.Prefix.LBConfig.AnyService["ShoppingCart"].Backoff.MaxMs))
+	assert.Equal(t, 400, int(lbConfig.Prefix.LBConfig.Backoff.MaxMs))
 
 	err = confmanager.Unmarshal("invalidobject")
 	if err == nil {

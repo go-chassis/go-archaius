@@ -227,29 +227,57 @@ func (cMgr *ConfigurationManager) getTagList(prefix string, rValues reflect.Valu
 	return tagList
 }
 
-func (cMgr *ConfigurationManager) getMapKeys(configValue map[string]interface{}, prefix string, tagList []string) (string,
-	string, []string) {
+func (cMgr *ConfigurationManager) getMapKeys(configValue map[string]interface{}, prefix string, tagList []string) ([]string,
+	[]string, []string) {
 	var (
-		mapKeys   []string
-		inlineVal string
+		mapKeys, prefixForInline, inlineVal []string
 	)
 
-	for key := range configValue {
-		isPrifix, index, pfx, iVal := checkPrefix(key, prefix, tagList)
-		if !isPrifix {
-			continue
-		}
+	if strings.Contains(prefix, "inline") {
+		pfx, iVal := checkPrefixForInline(prefix, tagList, configValue)
 
-		prefix = pfx
-		if iVal != "" {
+		if len(iVal) != 0 {
 			inlineVal = iVal
 		}
 
-		mapKeys = append(mapKeys, key[index:])
+		if len(pfx) != 0 {
+			prefixForInline = pfx
+		}
+	} else {
+		for key := range configValue {
+			isPrifix, index := checkPrefix(key, prefix)
+			if !isPrifix {
+				continue
+			}
+
+			mapKeys = append(mapKeys, key[index:])
+		}
 	}
 
-	return prefix, inlineVal, mapKeys
+	return prefixForInline, inlineVal, mapKeys
 
+}
+
+func (cMgr *ConfigurationManager) setValuesForInline(mapValueType reflect.Type, inlineVal, prefixForInline []string, rValue reflect.Value) (reflect.Value, error) {
+	mapValue := reflect.New(mapValueType)
+	if len(inlineVal) != 0 {
+		for _, iValues := range inlineVal {
+			mapKey := iValues
+			for _, pfx := range prefixForInline {
+				if isSliceContainString(mapKey, strings.Split(pfx, ".")) {
+					err := cMgr.unmarshal(mapValue, getTagKey(pfx, doNotConsiderTag))
+					if err != nil {
+						return rValue, err
+					}
+					if rValue.CanSet() {
+						rValue.SetMapIndex(reflect.ValueOf(mapKey), mapValue.Elem())
+					}
+				}
+			}
+		}
+	}
+
+	return rValue, nil
 }
 
 // generate map from config map
@@ -264,26 +292,19 @@ func (cMgr *ConfigurationManager) populateMap(prefix string, mapType reflect.Typ
 
 	configValue := cMgr.GetConfigurations()
 
-	prefix, inlineVal, mapKeys := cMgr.getMapKeys(configValue, prefix, tagList)
+	prefixForInline, inlineVal, mapKeys := cMgr.getMapKeys(configValue, prefix, tagList)
 
+	if strings.Contains(prefix, "inline") {
+		return cMgr.setValuesForInline(mapValueType, inlineVal, prefixForInline, rValue)
+	}
 	for _, key := range mapKeys {
 		// if key itself has map value stored
 		if key == "" {
 			val := cMgr.GetConfigurationsByKey(prefix)
 			setVal := reflect.ValueOf(val)
 			if mapType != setVal.Type() {
-				var count bool
-				count = false
-				switch setVal.Type().Kind() {
-				case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-					reflect.Float32, reflect.Float64, reflect.Uint, reflect.Uint8, reflect.Uint16,
-					reflect.Uint32, reflect.Uint64, reflect.Bool, reflect.Interface, reflect.Array, reflect.Slice:
-					count = true
-					continue
-				}
-				if !count {
-					return rValue, fmt.Errorf("invalid value for map %s", mapType.String())
-				}
+				return rValue, fmt.Errorf("invalid value for map %s", mapType.String())
+
 			}
 			if rValue.CanSet() {
 				rValue.Set(setVal)
@@ -316,13 +337,7 @@ func (cMgr *ConfigurationManager) populateMap(prefix string, mapType reflect.Typ
 			splitKey := strings.Split(key, `.`)
 			mapKey := splitKey[1]
 			mapValue := reflect.New(mapValueType)
-			var err error
-			if inlineVal != "" {
-				mapKey = inlineVal
-				err = cMgr.unmarshal(mapValue, getTagKey(prefix, doNotConsiderTag))
-			} else {
-				err = cMgr.unmarshal(mapValue, getTagKey(prefix, mapKey))
-			}
+			err := cMgr.unmarshal(mapValue, getTagKey(prefix, mapKey))
 			if err != nil {
 				return rValue, err
 			}
@@ -345,12 +360,25 @@ func isSliceContainString(str string, list []string) bool {
 	return false
 }
 
-func checkAndReplaceInline(prefix, heap string, tagList []string) (string, string) {
+func getUniqueKeys(strSlice []string) []string {
+	keys := make(map[string]bool)
+	list := []string{}
+	for _, val := range strSlice {
+		if _, value := keys[val]; !value {
+			keys[val] = true
+			list = append(list, val)
+		}
+	}
+
+	return list
+}
+
+func checkAndReplaceInline(prefix string, tagList []string, configValue map[string]interface{}) ([]string, []string) {
 	var (
-		inlineExist         bool
-		updatedTagList      []string
-		indexPrefix         int
-		inlineVal, heapData string
+		inlineExist                                     bool
+		updatedTagList, inlineVal, uniqueVal, inlinePfx []string
+		indexPrefix                                     int
+		heapData                                        string
 	)
 
 	firstValue := strings.Split(prefix, ".inline")
@@ -359,67 +387,75 @@ func checkAndReplaceInline(prefix, heap string, tagList []string) (string, strin
 		updatedTagList = append(updatedTagList, firstValue[0]+"."+value)
 	}
 
-	// This condition is to get the index of inline tag so that it can be replace with the proper value
-	splittedPrefix := strings.Split(prefix, ".")
-	if len(splittedPrefix) != 0 {
-		for i, j := range splittedPrefix {
-			if j == "inline" {
-				indexPrefix = i
-			}
-		}
-	}
-
-	splittedHeap := strings.Split(heap, ".")
-	if len(splittedPrefix) != len(splittedHeap) {
-		// checks all the word before inline tag should be equal
-		// ex: if prefix is "cse.loadbalance.inline" and the heap is "cse.loadbalance.stratergy" then only we should consider
-		for i := 0; i < indexPrefix; i++ {
-			if splittedHeap[i] == splittedPrefix[i] {
-				inlineExist = true
-			} else {
-				inlineExist = false
-				break
+	for heap := range configValue {
+		// This condition is to get the index of inline tag so that it can be replace with the proper value
+		splittedPrefix := strings.Split(prefix, ".")
+		if len(splittedPrefix) != 0 {
+			for i, j := range splittedPrefix {
+				if j == "inline" {
+					indexPrefix = i
+				}
 			}
 		}
 
-		if inlineExist {
-			for index, heapValue := range splittedHeap {
-				if index > indexPrefix {
+		splittedHeap := strings.Split(heap, ".")
+		if len(splittedPrefix) != len(splittedHeap) {
+			// checks all the word before inline tag should be equal
+			// ex: if prefix is "cse.loadbalance.inline" and the heap is "cse.loadbalance.stratergy" then only we should consider
+			for i := 0; i < indexPrefix; i++ {
+				if splittedHeap[i] == splittedPrefix[i] {
+					inlineExist = true
+				} else {
+					inlineExist = false
 					break
 				}
-
-				heapData = heapData + "." + heapValue
-				heapData = strings.TrimPrefix(heapData, ".")
 			}
 
-			if !isSliceContainString(heapData, updatedTagList) {
-				splittedPrefix[indexPrefix] = splittedHeap[indexPrefix]
-				inlineVal = splittedPrefix[indexPrefix]
+			if inlineExist {
+				for index, heapValue := range splittedHeap {
+					if index > indexPrefix {
+						break
+					}
+
+					heapData = heapData + "." + heapValue
+					heapData = strings.TrimPrefix(heapData, ".")
+				}
+
+				if !isSliceContainString(heapData, updatedTagList) {
+					inlineVal = append(inlineVal, splittedHeap[indexPrefix])
+				}
 			}
 		}
 	}
 
-	prefix = ""
-	for _, pfx := range splittedPrefix {
-		if prefix == "" {
-			prefix = pfx
-		} else {
-			prefix = prefix + "." + pfx
+	inlineVal = getUniqueKeys(inlineVal)
+	for _, v := range inlineVal {
+		if !isSliceContainString(v, tagList) {
+			uniqueVal = append(uniqueVal, v)
 		}
 	}
 
-	return prefix, inlineVal
+	for _, v := range uniqueVal {
+		inlinePfx = append(inlinePfx, firstValue[0]+"."+v)
+	}
+
+	return inlinePfx, uniqueVal
 }
 
-func checkPrefix(heap, prefix string, tagList []string) (bool, int, string, string) {
-	var inlineVal string
-
-	if len(heap) < len(prefix) {
-		return false, 0, "", ""
-	}
+func checkPrefixForInline(prefix string, tagList []string, configValue map[string]interface{}) ([]string, []string) {
+	var inlineVal, pfxInline []string
 
 	if strings.Contains(prefix, "inline") {
-		prefix, inlineVal = checkAndReplaceInline(prefix, heap, tagList)
+		pfxInline, inlineVal = checkAndReplaceInline(prefix, tagList, configValue)
+	}
+
+	return pfxInline, inlineVal
+}
+
+func checkPrefix(heap, prefix string) (bool, int) {
+
+	if len(heap) < len(prefix) {
+		return false, 0
 	}
 
 	var index int
@@ -431,10 +467,10 @@ func checkPrefix(heap, prefix string, tagList []string) (bool, int, string, stri
 	}
 
 	if len(prefix) != index {
-		return false, 0, prefix, inlineVal
+		return false, 0
 	}
 
-	return true, index, prefix, inlineVal
+	return true, index
 }
 
 // set values in object
