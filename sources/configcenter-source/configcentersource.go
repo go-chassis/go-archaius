@@ -311,7 +311,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) GetConfigurationsByDI(dimensionI
 func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurationsPeriodically(dimensionInfo string) {
 	ticker := time.Tick(cfgSrcHandler.RefreshInterval)
 	isConnectionFailed := false
-	for _ = range ticker {
+	for range ticker {
 		err := cfgSrcHandler.refreshConfigurations(dimensionInfo)
 		if err == nil {
 			if isConnectionFailed {

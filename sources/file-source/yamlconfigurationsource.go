@@ -37,6 +37,7 @@ const (
 	//FileConfigSourceConst is a variable of type string
 	FileConfigSourceConst = "FileSource"
 	fileSourcePriority    = 3
+	//DefaultFilePriority is a variable of type string
 	DefaultFilePriority   = 0
 )
 
@@ -91,6 +92,7 @@ var fileConfigSource *yamlConfigurationSource
 
   	TODO: Currently file sources priority not considered. if key conflicts then latest key will get considered
 */
+
 //FileSource is a interface
 type FileSource interface {
 	core.ConfigSource
@@ -608,14 +610,14 @@ func (fSource *yamlConfigurationSource) Cleanup() error {
 	return nil
 }
 
-func (f *yamlConfigurationSource) GetConfigurationByKeyAndDimensionInfo(key, di string) (interface{}, error) {
+func (fSource *yamlConfigurationSource) GetConfigurationByKeyAndDimensionInfo(key, di string) (interface{}, error) {
 	return nil, nil
 }
 
-func (f *yamlConfigurationSource) AddDimensionInfo(dimensionInfo string) (map[string]string, error) {
+func (fSource *yamlConfigurationSource) AddDimensionInfo(dimensionInfo string) (map[string]string, error) {
 	return nil, nil
 }
 
-func (f *yamlConfigurationSource) GetConfigurationsByDI(dimensionInfo string) (map[string]interface{}, error) {
+func (fSource *yamlConfigurationSource) GetConfigurationsByDI(dimensionInfo string) (map[string]interface{}, error) {
 	return nil, nil
 }
