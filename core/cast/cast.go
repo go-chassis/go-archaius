@@ -254,14 +254,19 @@ func (val *configValue) ToFloat64() (float64, error) {
 	case nil:
 		return 0, nil
 	case string:
-		parseValue, parseError := strconv.ParseFloat(dataType, 64)
-		if parseError == nil {
-			return parseValue, nil
-		}
-		return 0, fmt.Errorf("unable to cast %#v of type %T to float64", value, value)
+		floatData, err := parsingString(dataType, value)
+		return floatData, err
 	default:
 		return 0, fmt.Errorf("unable to cast %#v of type %T to float64", value, value)
 	}
+}
+
+func parsingString(dataType string, value interface{}) (float64, error) {
+	parseValue, parseError := strconv.ParseFloat(dataType, 64)
+	if parseError == nil {
+		return parseValue, nil
+	}
+	return 0, fmt.Errorf("unable to cast %#v of type %T to float64", value, value)
 }
 
 func indirect(val interface{}) interface{} {

@@ -347,10 +347,10 @@ func isSliceContainString(str string, list []string) bool {
 
 func checkAndReplaceInline(prefix, heap string, tagList []string) (string, string) {
 	var (
-		exist, inlineExist                           bool
-		updatedTagList                               []string
-		indexPrefix                                  int
-		inlineVal, heapData, nextValue, newHeapValue string
+		inlineExist         bool
+		updatedTagList      []string
+		indexPrefix         int
+		inlineVal, heapData string
 	)
 
 	firstValue := strings.Split(prefix, ".inline")
@@ -369,8 +369,8 @@ func checkAndReplaceInline(prefix, heap string, tagList []string) (string, strin
 		}
 	}
 
-	if len(prefix) != len(heap) {
-		splittedHeap := strings.Split(heap, ".")
+	splittedHeap := strings.Split(heap, ".")
+	if len(splittedPrefix) != len(splittedHeap) {
 		// checks all the word before inline tag should be equal
 		// ex: if prefix is "cse.loadbalance.inline" and the heap is "cse.loadbalance.stratergy" then only we should consider
 		for i := 0; i < indexPrefix; i++ {
@@ -384,36 +384,17 @@ func checkAndReplaceInline(prefix, heap string, tagList []string) (string, strin
 
 		if inlineExist {
 			for index, heapValue := range splittedHeap {
-				/* This condition is to hanlde some special scenario like
-				If prefix is "cse.loadbalance.inline"
-				And in any source we have given "stratergy" as a key for inline tag then
-				we may get keys like
-				"cse.loadbalance.stratergy.name" and "cse.loadbalance.stratergy.stratergy.name"
-				So out of these we should consider "cse.loadbalance.stratergy.stratergy.name"
-				*/
 				if index > indexPrefix {
-					nextValue = splittedHeap[indexPrefix]
 					break
 				}
 
 				heapData = heapData + "." + heapValue
-				newHeapValue = heapValue
 				heapData = strings.TrimPrefix(heapData, ".")
 			}
 
 			if !isSliceContainString(heapData, updatedTagList) {
-				exist = false
 				splittedPrefix[indexPrefix] = splittedHeap[indexPrefix]
 				inlineVal = splittedPrefix[indexPrefix]
-				exist = true
-			}
-
-			if !exist {
-				if nextValue == newHeapValue {
-					splittedPrefix[indexPrefix] = newHeapValue
-					inlineVal = splittedPrefix[indexPrefix]
-					exist = true
-				}
 			}
 		}
 	}
