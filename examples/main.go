@@ -40,11 +40,6 @@ type EventListener struct {
 	Name string
 }
 
-//ConfigStruct
-type ConfigStruct struct {
-	Cse2 string `yaml:"cse.rest.address"`
-}
-
 //ConfigFactory
 var ConfigFactory goarchaius.ConfigurationFactory
 
