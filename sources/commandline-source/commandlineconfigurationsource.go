@@ -34,7 +34,7 @@ const (
 
 var _ core.ConfigSource = &CommandLineConfigurationSource{}
 
-//CommandLineConfigurationsource is source for all configuration
+//CommandLineConfigurationSource is source for all configuration
 type CommandLineConfigurationSource struct {
 	Configurations map[string]interface{}
 	sync.RWMutex
