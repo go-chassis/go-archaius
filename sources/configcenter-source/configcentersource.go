@@ -203,7 +203,8 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) pullConfigurations() (map[string
 		}
 		error := serializers.Decode(defaultContentType, body, &configAPIRes)
 		if error != nil {
-			lager.Logger.Error("config source item request failed with error", errors.New("error in decoding the request"))
+			lager.Logger.Error("config source item request failed with error", errors.New("error in decoding the request:"+error.Error()))
+			lager.Logger.Debugf("config source item request failed with error", error, "with body", body)
 			continue
 		}
 		for _, v := range configAPIRes {
@@ -260,7 +261,8 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) pullConfigurationsByDI(dimension
 		}
 		error := serializers.Decode(defaultContentType, body, &configAPIRes)
 		if error != nil {
-			lager.Logger.Error("config source item request failed with error", errors.New("error in decoding the request"))
+			lager.Logger.Error("config source item request failed with error", errors.New("error in decoding the request:"+error.Error()))
+			lager.Logger.Debugf("config source item request failed with error", error, "with body", body)
 			continue
 		}
 	}
