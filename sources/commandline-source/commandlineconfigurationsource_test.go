@@ -66,7 +66,7 @@ func TestCommandLineConfigurationSource(t *testing.T) {
 
 	t.Log("Verifying the cmdlinesource priority")
 	cmdpriority := cmdsource.GetPriority()
-	if cmdpriority != 1 {
+	if cmdpriority != 2 {
 		t.Error("commandlinesource priority is mismatched")
 	}
 

@@ -67,7 +67,7 @@ func TestEnvConfigurationSource(t *testing.T) {
 
 	t.Log("Verifying the envsource priority")
 	envsorcepriority := envsource.GetPriority()
-	if envsorcepriority != 2 {
+	if envsorcepriority != 3 {
 		t.Error("envsource priority is mismatched")
 	}
 

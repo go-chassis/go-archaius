@@ -36,7 +36,7 @@ import (
 const (
 	//FileConfigSourceConst is a variable of type string
 	FileConfigSourceConst = "FileSource"
-	fileSourcePriority    = 3
+	fileSourcePriority    = 4
 	//DefaultFilePriority is a variable of type string
 	DefaultFilePriority = 0
 )

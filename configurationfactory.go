@@ -32,7 +32,7 @@ import (
 	"github.com/ServiceComb/go-archaius/core/event-system"
 	"github.com/ServiceComb/go-archaius/sources/commandline-source"
 	"github.com/ServiceComb/go-archaius/sources/enviromentvariable-source"
-	"github.com/ServiceComb/go-archaius/sources/external-source"
+	"github.com/ServiceComb/go-archaius/sources/memory-source"
 	"github.com/ServiceComb/go-chassis/core/lager"
 )
 
@@ -103,8 +103,8 @@ func NewConfigFactory() (ConfigurationFactory, error) {
 		envSource := envconfigsource.NewEnvConfigurationSource()
 		arc.configMgr.AddSource(envSource, envSource.GetPriority())
 		// External variable source
-		externalSource := externalconfigsource.NewExternalConfigurationSource()
-		arc.configMgr.AddSource(externalSource, externalSource.GetPriority())
+		memorySource := memoryconfigsource.NewMemoryConfigurationSource()
+		arc.configMgr.AddSource(memorySource, memorySource.GetPriority())
 	}
 	return arc, nil
 }

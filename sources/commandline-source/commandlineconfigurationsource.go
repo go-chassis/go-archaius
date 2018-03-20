@@ -29,7 +29,7 @@ import (
 
 const (
 	commandLineConfigSourceConst = "CommandlineSource"
-	commandlinePriority          = 1
+	commandlinePriority          = 2
 )
 
 var _ core.ConfigSource = &CommandLineConfigurationSource{}

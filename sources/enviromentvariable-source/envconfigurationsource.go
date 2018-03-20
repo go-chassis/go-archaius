@@ -29,7 +29,7 @@ import (
 
 const (
 	envSourceConst            = "EnvironmentSource"
-	envVariableSourcePriority = 2
+	envVariableSourcePriority = 3
 )
 
 //EnvConfigurationSource is a struct
