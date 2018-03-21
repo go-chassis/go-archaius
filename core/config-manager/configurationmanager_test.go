@@ -5,8 +5,8 @@ import (
 	"github.com/ServiceComb/go-archaius/core/config-manager"
 	"github.com/ServiceComb/go-archaius/core/event-system"
 	"github.com/ServiceComb/go-archaius/sources/commandline-source"
-	"github.com/ServiceComb/go-archaius/sources/external-source"
 	"github.com/ServiceComb/go-archaius/sources/file-source"
+	"github.com/ServiceComb/go-archaius/sources/memory-source"
 	"github.com/ServiceComb/go-archaius/sources/test-source"
 	"github.com/ServiceComb/go-chassis/core/config/model"
 	"github.com/ServiceComb/go-chassis/core/lager"
@@ -51,10 +51,10 @@ func TestConfigurationManager(t *testing.T) {
 
 	//note: lowest value has highest priority
 	//testSource priority 	=	0
-	//commandlinePriority 	= 	1
-	//envSourcePriority 	= 	2
-	//fileSourcePriority    = 	3
-	//extSourcePriority 	= 	4
+	//memorySourcePriority 	= 	1
+	//commandlinePriority 	= 	2
+	//envSourcePriority 	= 	3
+	//fileSourcePriority    = 	4
 
 	t.Log("Adding testSource to the configuration manager")
 	err = confmanager.AddSource(testSource, testSource.GetPriority())
@@ -141,8 +141,8 @@ func TestConfigurationManager(t *testing.T) {
 	var event *core.Event = nil
 	ConfManager2.OnEvent(event)
 
-	t.Log("Adding external source to generate the events based on priority of the key")
-	extsource := externalconfigsource.NewExternalConfigurationSource()
+	t.Log("Adding MEMORY source to generate the events based on priority of the key")
+	extsource := memoryconfigsource.NewMemoryConfigurationSource()
 	confmanager.AddSource(extsource, extsource.GetPriority())
 
 	t.Log("Create event through extsource")
@@ -370,7 +370,7 @@ cse:
 	t.Log("verifying the commonkey across the sources ")
 	assert.Equal(t, "filesource", confmanager.GetConfigurationsByKey("commonkey3"))
 
-	extsource := externalconfigsource.NewExternalConfigurationSource()
+	extsource := memoryconfigsource.NewMemoryConfigurationSource()
 	confmanager.AddSource(extsource, extsource.GetPriority())
 
 	//update the event through extsource

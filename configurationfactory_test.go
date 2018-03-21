@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/ServiceComb/go-archaius/core"
-	"github.com/ServiceComb/go-archaius/sources/external-source"
 	"github.com/ServiceComb/go-archaius/sources/file-source"
+	"github.com/ServiceComb/go-archaius/sources/memory-source"
 	"github.com/ServiceComb/go-archaius/sources/test-source"
 	"github.com/ServiceComb/go-chassis/core/lager"
 	"github.com/ServiceComb/go-chassis/util/fileutil"
@@ -81,10 +81,10 @@ func TestConfigFactory(t *testing.T) {
 
 	//note: lowest value has highest priority
 	//testSource priority 	=	0
-	//commandlinePriority 	= 	1
-	//envSourcePriority 	= 	2
-	//fileSourcePriority    = 	3
-	//extSourcePriority 	= 	4
+	//memSourcePriority 	= 	1
+	//commandlinePriority 	= 	2
+	//envSourcePriority 	= 	3
+	//fileSourcePriority    = 	4
 
 	time.Sleep(10 * time.Millisecond)
 	eventHandler := EventListener{}
@@ -107,14 +107,14 @@ func TestConfigFactory(t *testing.T) {
 	fsource.AddFileSource(filename1, 0)
 	factory.AddSource(fsource)
 
-	t.Log("Generating event through testsource(priority 4)")
-	extsource := externalconfigsource.NewExternalConfigurationSource()
-	extsource.AddKeyValue("commonkey", "extsource1")
+	t.Log("Generating event through testsource(priority 1)")
+	memsource := memoryconfigsource.NewMemoryConfigurationSource()
+	memsource.AddKeyValue("commonkey", "memsource1")
 
 	t.Log("verifying the key of lower priority source")
 	time.Sleep(10 * time.Millisecond)
 	configvalue = factory.GetConfigurationByKey("commonkey")
-	if configvalue == "extsource1" {
+	if configvalue != "memsource1" {
 		t.Error("Failed to get the existing keyvalue pair")
 	}
 
@@ -147,15 +147,15 @@ func TestConfigFactory(t *testing.T) {
 		t.Error("Failed to get the exist status of the keys")
 	}
 
-	t.Log("verifying extsource configurations and accessing in different data type formats")
-	extsource.AddKeyValue("stringkey", "true")
+	t.Log("verifying memsource configurations and accessing in different data type formats")
+	memsource.AddKeyValue("stringkey", "true")
 	time.Sleep(10 * time.Millisecond)
 	configvalue2, err := factory.GetValue("stringkey").ToBool()
 	if err != nil || configvalue2 != true {
 		t.Error("failed to get the value in bool")
 	}
 
-	extsource.AddKeyValue("boolkey", "hello")
+	memsource.AddKeyValue("boolkey", "hello")
 	time.Sleep(10 * time.Millisecond)
 	configvalue3, err := factory.GetValue("boolkey").ToBool()
 	if err != nil || configvalue3 != false {

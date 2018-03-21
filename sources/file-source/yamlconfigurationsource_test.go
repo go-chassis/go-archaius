@@ -148,7 +148,7 @@ testfilekey3:
 
 	t.Log("Verifying the filesource priority")
 	extsorcepriority := fSource.GetPriority()
-	if extsorcepriority != 3 {
+	if extsorcepriority != 4 {
 		t.Error("filesource priority is mismatched")
 	}
 
