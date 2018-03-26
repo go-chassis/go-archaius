@@ -110,7 +110,7 @@ func (configMgr *ConfigurationManager) AddSource(source core.ConfigSource, prior
 	err := configMgr.pullSourceConfigs(sourceName)
 	if err != nil {
 		lager.Logger.Errorf(err, "fail to load configuration of %s source", sourceName)
-		errorMsg := "fail to load configuration of" + sourceName + "source"
+		errorMsg := "fail to load configuration of " + sourceName + " source"
 		return errors.New(errorMsg)
 	}
 

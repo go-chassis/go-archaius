@@ -36,6 +36,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -526,7 +527,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) populateEvents(updatedConfig map
 		currentValue, ok := currentConfig[key]
 		if !ok { // if new configuration introduced
 			events = append(events, cfgSrcHandler.constructEvent(core.Create, key, value))
-		} else if currentValue != value {
+		} else if !reflect.DeepEqual(currentValue, value) {
 			events = append(events, cfgSrcHandler.constructEvent(core.Update, key, value))
 		}
 	}
