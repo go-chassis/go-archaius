@@ -251,7 +251,7 @@ commonkey3 : filesource
 	loadbalanceConf := []byte(`
 --- 
 cse: 
-  loadbalance: 
+  loadbalancer: 
     ShoppingCart: 
       backoff: 
         maxMs: 400
