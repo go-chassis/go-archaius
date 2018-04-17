@@ -420,13 +420,13 @@ func (wth *watch) watchFile() {
 		select {
 		case event, ok := <-wth.watcher.Events:
 			if !ok {
-				lager.Logger.Warnf(nil, "file watcher stop")
+				lager.Logger.Warnf("file watcher stop")
 				return
 			}
 			lager.Logger.Debugf("the file %s is change for %s. reload it.", event.Name, event.Op.String())
 
 			if event.Op == fsnotify.Remove {
-				lager.Logger.Warnf(nil, "the file change mode: %s. So stop watching file",
+				lager.Logger.Warnf("the file change mode: %s. So stop watching file",
 					event.String())
 				continue
 			}
@@ -436,7 +436,7 @@ func (wth *watch) watchFile() {
 				// check existence of file
 				_, err := os.Open(event.Name)
 				if os.IsNotExist(err) {
-					lager.Logger.Warnf(err, "[%s] file does not exist so not able to watch further", event.Name)
+					lager.Logger.Warnf("[%s] file does not exist so not able to watch further", event.Name, err)
 				} else {
 					wth.AddWatchFile(event.Name)
 				}
@@ -452,7 +452,7 @@ func (wth *watch) watchFile() {
 			ss := yaml.MapSlice{}
 			err = yaml.Unmarshal([]byte(yamlContent), &ss)
 			if err != nil {
-				lager.Logger.Warnf(err, "unmarshaling failed may be due to invalid file data format")
+				lager.Logger.Warnf("unmarshaling failed may be due to invalid file data format", err)
 				continue
 			}
 

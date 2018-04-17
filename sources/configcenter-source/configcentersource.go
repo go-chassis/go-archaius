@@ -338,7 +338,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 	if dimensionInfo == "" {
 		config, err = cfgSrcHandler.pullConfigurations()
 		if err != nil {
-			lager.Logger.Warnf(err, "Failed to pull configurations from config center server") //Warn
+			lager.Logger.Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
 		}
 		//Populate the events based on the changed value between current config and newly received Config
@@ -346,7 +346,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 	} else {
 		configByDI, err = cfgSrcHandler.pullConfigurationsByDI(dimensionInfo)
 		if err != nil {
-			lager.Logger.Warnf(err, "Failed to pull configurations from config center server") //Warn
+			lager.Logger.Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
 		}
 		//Populate the events based on the changed value between current config and newly received Config based dimension info
@@ -354,7 +354,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 	}
 
 	if err != nil {
-		lager.Logger.Warnf(err, "error in generating event")
+		lager.Logger.Warnf("error in generating event", err)
 		return err
 	}
 

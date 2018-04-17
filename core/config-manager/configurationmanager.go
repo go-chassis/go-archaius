@@ -136,7 +136,7 @@ func (configMgr *ConfigurationManager) pullSourceConfigs(source string) error {
 			return err
 		}
 
-		lager.Logger.Warnf(nil, "empty configurtion from %s", source)
+		lager.Logger.Warnf("empty configurtion from %s", source)
 		return nil
 	}
 
@@ -162,7 +162,7 @@ func (configMgr *ConfigurationManager) pullSourceConfigsByDI(source, di string) 
 			return err
 		}
 
-		lager.Logger.Warnf(nil, "empty configurtion from %s", source)
+		lager.Logger.Warnf("empty configurtion from %s", source)
 		return nil
 	}
 
