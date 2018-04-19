@@ -21,7 +21,7 @@ package filesource
 
 import (
 	"github.com/ServiceComb/go-archaius/core"
-	"github.com/ServiceComb/go-chassis/core/lager"
+	"github.com/ServiceComb/go-archaius/lager"
 	"github.com/ServiceComb/go-chassis/util/fileutil"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -61,7 +61,7 @@ func TestNewYamlConfigurationSource1(t *testing.T) {
 
 	t.Log("Test yamlconfigurationsource.go")
 
-	lager.Initialize("", "INFO", "", "size", true, 1, 10, 7)
+	lager.InitLager(nil)
 
 	confdir := filepath.Join(root, "conf")
 	file1 := filepath.Join(root, "conf", "test1.yaml")

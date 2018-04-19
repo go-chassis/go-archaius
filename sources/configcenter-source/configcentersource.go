@@ -25,9 +25,9 @@ import (
 	"time"
 
 	"github.com/ServiceComb/go-archaius/core"
+	"github.com/ServiceComb/go-archaius/lager"
 	"github.com/ServiceComb/go-cc-client/member-discovery"
 	"github.com/ServiceComb/go-chassis/core/config"
-	"github.com/ServiceComb/go-chassis/core/lager"
 
 	"fmt"
 	"github.com/ServiceComb/go-cc-client/serializers"

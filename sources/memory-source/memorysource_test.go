@@ -21,7 +21,6 @@ package memoryconfigsource
 
 import (
 	"github.com/ServiceComb/go-archaius/core"
-	//"github.com/stretchr/testify/assert"
 
 	"testing"
 )

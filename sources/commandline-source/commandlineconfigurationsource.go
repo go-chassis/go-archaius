@@ -24,7 +24,7 @@ import (
 	"sync"
 
 	"github.com/ServiceComb/go-archaius/core"
-	"github.com/ServiceComb/go-chassis/core/lager"
+	"github.com/ServiceComb/go-archaius/lager"
 )
 
 const (

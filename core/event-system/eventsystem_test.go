@@ -4,9 +4,8 @@ import (
 	"github.com/ServiceComb/go-archaius/core"
 	"github.com/ServiceComb/go-archaius/core/config-manager"
 	"github.com/ServiceComb/go-archaius/core/event-system"
+	"github.com/ServiceComb/go-archaius/lager"
 	"github.com/ServiceComb/go-archaius/sources/test-source"
-
-	"github.com/ServiceComb/go-chassis/core/lager"
 	"testing"
 	"time"
 )
@@ -23,7 +22,7 @@ func (e *EListener) Event(event *core.Event) {
 func TestEventLoop1(t *testing.T) {
 	// test event
 	event := "ddd"
-	lager.Initialize("", "INFO", "", "size", true, 1, 10, 7)
+	lager.InitLager(nil)
 	testConfig := map[string]interface{}{"aaa": "111", "bbb": "222"}
 	testSource := testsource.NewTestSource(testConfig)
 
@@ -60,7 +59,7 @@ func TestEventLoop1(t *testing.T) {
 func TestDispatchEvent(t *testing.T) {
 
 	//dispatcher
-	lager.Initialize("", "INFO", "", "size", true, 1, 10, 7)
+	lager.InitLager(nil)
 
 	dispatcher := eventsystem.NewDispatcher()
 	var event *core.Event = nil

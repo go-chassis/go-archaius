@@ -4,12 +4,12 @@ import (
 	"github.com/ServiceComb/go-archaius/core"
 	"github.com/ServiceComb/go-archaius/core/config-manager"
 	"github.com/ServiceComb/go-archaius/core/event-system"
+	"github.com/ServiceComb/go-archaius/lager"
 	"github.com/ServiceComb/go-archaius/sources/commandline-source"
 	"github.com/ServiceComb/go-archaius/sources/file-source"
 	"github.com/ServiceComb/go-archaius/sources/memory-source"
 	"github.com/ServiceComb/go-archaius/sources/test-source"
 	"github.com/ServiceComb/go-chassis/core/config/model"
-	"github.com/ServiceComb/go-chassis/core/lager"
 	"github.com/ServiceComb/go-chassis/util/fileutil"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -43,7 +43,7 @@ func TestConfigurationManager(t *testing.T) {
 
 	//supplying nil source
 	var ab core.ConfigSource
-	lager.Initialize("", "INFO", "", "size", true, 1, 10, 7)
+	lager.InitLager(nil)
 	err := confmanager.AddSource(ab, configmanager.DefaultPriority)
 	if err == nil {
 		t.Error("Failed to identify invalid or nil source")
@@ -251,7 +251,7 @@ commonkey3 : filesource
 	loadbalanceConf := []byte(`
 --- 
 cse: 
-  loadbalancer: 
+  loadbalance: 
     ShoppingCart: 
       backoff: 
         maxMs: 400

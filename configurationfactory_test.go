@@ -4,11 +4,12 @@ import (
 	"testing"
 
 	"github.com/ServiceComb/go-archaius/core"
+	archlager "github.com/ServiceComb/go-archaius/lager"
 	"github.com/ServiceComb/go-archaius/sources/file-source"
 	"github.com/ServiceComb/go-archaius/sources/memory-source"
 	"github.com/ServiceComb/go-archaius/sources/test-source"
-	"github.com/ServiceComb/go-chassis/core/lager"
 	"github.com/ServiceComb/go-chassis/util/fileutil"
+	"github.com/ServiceComb/paas-lager/third_party/forked/cloudfoundry/lager"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
@@ -36,13 +37,14 @@ func populateCmdConfig() {
 
 func TestConfigFactory(t *testing.T) {
 
+	var lagger lager.Logger
 	root, _ := fileutil.GetWorkDir()
 	os.Setenv("CHASSIS_HOME", root)
 	t.Log(os.Getenv("CHASSIS_HOME"))
 	t.Log("Test configurationfactory.go")
 	f1content := "APPLICATION_ID: CSE\n  \ncse:\n  service:\n    registry:\n      type: servicecenter\n  protocols:\n       highway:\n         listenAddress: 127.0.0.1:8080\n  \nssl:\n  test.consumer.certFile: test.cer\n  test.consumer.keyFile: test.key\n"
 
-	lager.Initialize("", "INFO", "", "size", true, 1, 10, 7)
+	archlager.InitLager(nil)
 	confdir := filepath.Join(root, "conf")
 	filename1 := filepath.Join(root, "conf", "chassis.yaml")
 
@@ -59,10 +61,10 @@ func TestConfigFactory(t *testing.T) {
 	_, err1 = io.WriteString(f1, f1content)
 	populateCmdConfig()
 
-	_, err = NewConfigFactory()
+	_, err = NewConfigFactory(lagger)
 	assert.Equal(t, nil, err)
 
-	factory, err := NewConfigFactory()
+	factory, err := NewConfigFactory(lagger)
 	assert.Equal(t, nil, err)
 
 	t.Log("verifying methods before config factory initialization")
@@ -197,5 +199,5 @@ func TestConfigFactory(t *testing.T) {
 }
 
 func (e EventListener) Event(event *core.Event) {
-	lager.Logger.Infof("config value after change ", event.Key, " | ", event.Value)
+	archlager.Logger.Infof("config value after change ", event.Key, " | ", event.Value)
 }
