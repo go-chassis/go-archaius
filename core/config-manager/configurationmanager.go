@@ -27,8 +27,8 @@ import (
 	"sync"
 
 	"github.com/ServiceComb/go-archaius/core"
+	"github.com/ServiceComb/go-archaius/lager"
 	"github.com/ServiceComb/go-archaius/sources/file-source"
-	"github.com/ServiceComb/go-chassis/core/lager"
 )
 
 const (
@@ -136,7 +136,7 @@ func (configMgr *ConfigurationManager) pullSourceConfigs(source string) error {
 			return err
 		}
 
-		lager.Logger.Warnf(nil, "empty configurtion from %s", source)
+		lager.Logger.Warnf("empty configurtion from %s", source)
 		return nil
 	}
 
@@ -162,7 +162,7 @@ func (configMgr *ConfigurationManager) pullSourceConfigsByDI(source, di string) 
 			return err
 		}
 
-		lager.Logger.Warnf(nil, "empty configurtion from %s", source)
+		lager.Logger.Warnf("empty configurtion from %s", source)
 		return nil
 	}
 

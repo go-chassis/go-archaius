@@ -25,10 +25,8 @@ import (
 	//log "github.com/Sirupsen/logrus"
 	"github.com/ServiceComb/go-archaius"
 	"github.com/ServiceComb/go-archaius/core"
+	"github.com/ServiceComb/go-archaius/lager"
 	"github.com/ServiceComb/go-archaius/sources/file-source"
-	//"github.com/ServiceComb/go-archaius/sources/configcenter-source"
-	//"github.com/ServiceComb/go-cc-client/member-discovery"
-	"github.com/ServiceComb/go-chassis/core/lager"
 	"os"
 	"os/signal"
 	"syscall"
@@ -50,7 +48,7 @@ func main() {
 	//logger.Level = log.InfoLevel
 
 	// create go-archaius object
-	configFactory, err := goarchaius.NewConfigFactory()
+	configFactory, err := goarchaius.NewConfigFactory(nil)
 	if err != nil {
 		lager.Logger.Error("Error:", err)
 	}

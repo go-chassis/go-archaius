@@ -30,10 +30,11 @@ import (
 	"github.com/ServiceComb/go-archaius/core/cast"
 	"github.com/ServiceComb/go-archaius/core/config-manager"
 	"github.com/ServiceComb/go-archaius/core/event-system"
+	archlager "github.com/ServiceComb/go-archaius/lager"
 	"github.com/ServiceComb/go-archaius/sources/commandline-source"
 	"github.com/ServiceComb/go-archaius/sources/enviromentvariable-source"
 	"github.com/ServiceComb/go-archaius/sources/memory-source"
-	"github.com/ServiceComb/go-chassis/core/lager"
+	"github.com/ServiceComb/paas-lager/third_party/forked/cloudfoundry/lager"
 )
 
 const (
@@ -85,7 +86,8 @@ type ConfigFactory struct {
 var arc *ConfigFactory
 
 // NewConfigFactory creates a new configuration object for Config center
-func NewConfigFactory() (ConfigurationFactory, error) {
+func NewConfigFactory(log lager.Logger) (ConfigurationFactory, error) {
+	archlager.InitLager(log)
 	if arc == nil {
 
 		arc = new(ConfigFactory)
@@ -106,6 +108,7 @@ func NewConfigFactory() (ConfigurationFactory, error) {
 		memorySource := memoryconfigsource.NewMemoryConfigurationSource()
 		arc.configMgr.AddSource(memorySource, memorySource.GetPriority())
 	}
+
 	return arc, nil
 }
 
@@ -136,7 +139,7 @@ func (arc *ConfigFactory) GetConfigurationsByDimensionInfo(dimensionInfo string)
 
 	config, err := arc.configMgr.GetConfigurationsByDimensionInfo(dimensionInfo)
 	if err != nil {
-		lager.Logger.Errorf(err, "Failed to get the configuration by dimension info")
+		archlager.Logger.Errorf(err, "Failed to get the configuration by dimension info")
 	}
 
 	return config
@@ -193,7 +196,7 @@ func (arc *ConfigFactory) RegisterListener(listenerObj core.EventListener, keys 
 	for _, key := range keys {
 		_, err := regexp.Compile(key)
 		if err != nil {
-			lager.Logger.Error(fmt.Sprintf("invalid key format for %s key. key registration ignored", key), err)
+			archlager.Logger.Error(fmt.Sprintf("invalid key format for %s key. key registration ignored", key), err)
 			return fmt.Errorf("invalid key format for %s key", key)
 		}
 	}
@@ -206,7 +209,7 @@ func (arc *ConfigFactory) UnRegisterListener(listenerObj core.EventListener, key
 	for _, key := range keys {
 		_, err := regexp.Compile(key)
 		if err != nil {
-			lager.Logger.Error(fmt.Sprintf("invalid key format for %s key. key registration ignored", key), err)
+			archlager.Logger.Error(fmt.Sprintf("invalid key format for %s key. key registration ignored", key), err)
 			return fmt.Errorf("invalid key format for %s key", key)
 		}
 	}
