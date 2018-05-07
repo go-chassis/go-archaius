@@ -20,24 +20,27 @@ package configcentersource
 import (
 	"crypto/tls"
 	"errors"
-	"net/http"
-	"sync"
-	"time"
-
+	"fmt"
+	"github.com/ServiceComb/go-archaius"
 	"github.com/ServiceComb/go-archaius/core"
 	"github.com/ServiceComb/go-archaius/lager"
-	"github.com/ServiceComb/go-cc-client/member-discovery"
-	"github.com/ServiceComb/go-chassis/core/config"
-
-	"fmt"
+	"github.com/ServiceComb/go-cc-client"
 	"github.com/ServiceComb/go-cc-client/serializers"
+	"github.com/ServiceComb/go-chassis/config-center"
+	"github.com/ServiceComb/go-chassis/core/archaius"
+	"github.com/ServiceComb/go-chassis/core/common"
+	"github.com/ServiceComb/go-chassis/core/config"
+	"github.com/ServiceComb/go-chassis/core/endpoint-discovery"
+	chassisTLS "github.com/ServiceComb/go-chassis/core/tls"
 	"github.com/ServiceComb/http-client"
 	"github.com/gorilla/websocket"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
+	"sync"
+	"time"
 )
 
 const (
@@ -47,20 +50,19 @@ const (
 	configCenterSourcePriority = 0
 	dimensionsInfo             = "dimensionsInfo"
 	dynamicConfigAPI           = `/configuration/refresh/items`
-	getConfigAPI               = `/configuration/items`
-	defaultContentType         = "application/json"
+	maxValue                   = 256
+	//Name is the name of configserver
+	Name = "configcenter"
 )
 
 var (
-	//ConfigPath is a variable of type string
-	ConfigPath = ""
 	//ConfigRefreshPath is a variable of type string
 	ConfigRefreshPath = ""
 )
 
 //ConfigCenterSourceHandler handles
 type ConfigCenterSourceHandler struct {
-	MemberDiscovery              memberdiscovery.MemberDiscovery
+	//MemberDiscovery              memberdiscovery.MemberDiscovery
 	dynamicConfigHandler         *DynamicConfigHandler
 	dimensionsInfo               string
 	dimensionInfoMap             map[string]string
@@ -79,12 +81,166 @@ type ConfigCenterSourceHandler struct {
 
 var configCenterConfig *ConfigCenterSourceHandler
 
+//Init will initialize the Config-Center Source
+func Init() {
+
+	configCenterURL, err := isConfigCenter()
+	if err != nil {
+		//return nil
+	}
+
+	var enableSSL bool
+	tlsConfig, tlsError := getTLSForClient(configCenterURL)
+	if tlsError != nil {
+		lager.Logger.Errorf(tlsError, "Get %s.%s TLS config failed, err:", Name, common.Consumer)
+		//return tlsError
+	}
+
+	/*This condition added because member discovery can have multiple ip's with IsHTTPS
+	having both true and false value.*/
+	if tlsConfig != nil {
+		enableSSL = true
+	}
+	refreshMode := archaius.GetInt("cse.config.client.refreshMode", common.DefaultRefreshMode)
+	if refreshMode != 0 && refreshMode != 1 {
+		err := errors.New(client.RefreshModeError)
+		lager.Logger.Error(client.RefreshModeError, err)
+		//return err
+	}
+
+	dimensionInfo := getUniqueIDForDimInfo()
+	configCenterSource := NewConfigCenterSource(
+		dimensionInfo, tlsConfig, config.GlobalDefinition.Cse.Config.Client.TenantName, refreshMode,
+		config.GlobalDefinition.Cse.Config.Client.RefreshInterval, enableSSL)
+
+	err = archaius.DefaultConf.ConfigFactory.AddSource(configCenterSource)
+	if err != nil {
+		lager.Logger.Error("failed to do add source operation!!", err)
+
+	}
+
+	eventHandler := EventListener{
+		Name:    "EventHandler",
+		Factory: archaius.DefaultConf.ConfigFactory,
+	}
+
+	//memberdiscovery.MemberDiscoveryService = memDiscovery
+	archaius.DefaultConf.ConfigFactory.RegisterListener(eventHandler, "a*")
+
+	if err := refreshGlobalConfig(); err != nil {
+		lager.Logger.Error("failed to refresh global config for lb and cb", err)
+		//return err
+	}
+
+	fmt.Println("Config-center Source Initialized")
+
+}
+
+//EventListener is a struct
+type EventListener struct {
+	Name    string
+	Factory goarchaius.ConfigurationFactory
+}
+
+//Event is a method
+func (e EventListener) Event(event *core.Event) {
+	value := e.Factory.GetConfigurationByKey(event.Key)
+	lager.Logger.Infof("config value %s | %s", event.Key, value)
+}
+func refreshGlobalConfig() error {
+	err := config.ReadHystrixFromArchaius()
+	if err != nil {
+		return err
+	}
+	return config.ReadLBFromArchaius()
+}
+
+func getTLSForClient(configCenterURL string) (*tls.Config, error) {
+	if !strings.Contains(configCenterURL, "://") {
+		return nil, nil
+	}
+	ccURL, err := url.Parse(configCenterURL)
+	if err != nil {
+		lager.Logger.Error("Error occurred while parsing config center Server Uri", err)
+		return nil, err
+	}
+	if ccURL.Scheme == common.HTTP {
+		return nil, nil
+	}
+
+	sslTag := Name + "." + common.Consumer
+	tlsConfig, sslConfig, err := chassisTLS.GetTLSConfigByService(Name, "", common.Consumer)
+	if err != nil {
+		if chassisTLS.IsSSLConfigNotExist(err) {
+			return nil, fmt.Errorf("%s TLS mode, but no ssl config", sslTag)
+		}
+		return nil, err
+	}
+	lager.Logger.Warnf("%s TLS mode, verify peer: %t, cipher plugin: %s.",
+		sslTag, sslConfig.VerifyPeer, sslConfig.CipherPlugin)
+
+	return tlsConfig, nil
+}
+
+func isConfigCenter() (string, error) {
+	configCenterURL := config.GlobalDefinition.Cse.Config.Client.ServerURI
+	if configCenterURL == "" {
+		ccURL, err := endpoint.GetEndpointFromServiceCenter("default", "CseConfigCenter", "latest")
+		if err != nil {
+			lager.Logger.Errorf(err, "empty config center endpoint, please provide the config center endpoint")
+			return "", err
+		}
+
+		configCenterURL = ccURL
+	}
+
+	return configCenterURL, nil
+}
+
+func getUniqueIDForDimInfo() string {
+	serviceName := config.MicroserviceDefinition.ServiceDescription.Name
+	version := config.MicroserviceDefinition.ServiceDescription.Version
+	appName := config.MicroserviceDefinition.AppID
+	if appName == "" {
+		appName = config.GlobalDefinition.AppID
+	}
+
+	if appName != "" {
+		serviceName = serviceName + "@" + appName
+	}
+
+	if version != "" {
+		serviceName = serviceName + "#" + version
+	}
+
+	if len(serviceName) > maxValue {
+		lager.Logger.Errorf(nil, "exceeded max value %d for dimensionInfo %s with length %d", maxValue, serviceName,
+			len(serviceName))
+		return ""
+	}
+
+	dimeExp := `\A([^\$\%\&\+\(/)\[\]\" "\"])*\z`
+	dimRegexVar, err := regexp.Compile(dimeExp)
+	if err != nil {
+		lager.Logger.Error("not a valid regular expression", err)
+		return ""
+	}
+
+	if !dimRegexVar.Match([]byte(serviceName)) {
+		lager.Logger.Errorf(nil, "invalid value for dimension info, doesnot setisfy the regular expression for dimInfo:%s",
+			serviceName)
+		return ""
+	}
+
+	return serviceName
+}
+
 //NewConfigCenterSource initializes all components of configuration center
-func NewConfigCenterSource(memberDiscovery memberdiscovery.MemberDiscovery, dimInfo string, tlsConfig *tls.Config, tenantName string, refreshMode, refreshInterval int, enableSSL bool) core.ConfigSource {
+func NewConfigCenterSource(dimInfo string, tlsConfig *tls.Config, tenantName string, refreshMode, refreshInterval int, enableSSL bool) core.ConfigSource {
 
 	if configCenterConfig == nil {
 		configCenterConfig = new(ConfigCenterSourceHandler)
-		configCenterConfig.MemberDiscovery = memberDiscovery
+		//configCenterConfig.MemberDiscovery = memberDiscovery
 		configCenterConfig.dimensionsInfo = dimInfo
 		configCenterConfig.initSuccess = true
 		configCenterConfig.TLSClientConfig = tlsConfig
@@ -120,17 +276,6 @@ func NewConfigCenterSource(memberDiscovery memberdiscovery.MemberDiscovery, dimI
 	return configCenterConfig
 }
 
-//HTTPDo uses http-client package for rest communication
-func (cfgSrcHandler *ConfigCenterSourceHandler) HTTPDo(method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
-	if len(headers) == 0 {
-		headers = make(http.Header)
-	}
-	for k, v := range memberdiscovery.GetDefaultHeaders(cfgSrcHandler.TenantName) {
-		headers[k] = v
-	}
-	return cfgSrcHandler.client.HttpDo(method, rawURL, headers, body)
-}
-
 //Update the Base PATH and HEADERS Based on the version of Configcenter used.
 func updateAPIPath(apiVersion string) {
 
@@ -142,13 +287,10 @@ func updateAPIPath(apiVersion string) {
 	}
 	switch apiVersion {
 	case "v3":
-		ConfigPath = "/v3/" + projectID + getConfigAPI
 		ConfigRefreshPath = "/v3/" + projectID + dynamicConfigAPI
 	case "v2":
-		ConfigPath = "/configuration/v2/items"
 		ConfigRefreshPath = "/configuration/v2/refresh/items"
 	default:
-		ConfigPath = "/v3/" + projectID + getConfigAPI
 		ConfigRefreshPath = "/v3/" + projectID + dynamicConfigAPI
 	}
 }
@@ -164,111 +306,6 @@ type CreateConfigAPI struct {
 
 // ensure to implement config source
 var _ core.ConfigSource = &ConfigCenterSourceHandler{}
-
-func (cfgSrcHandler *ConfigCenterSourceHandler) pullConfigurations() (map[string]interface{}, error) {
-	var (
-		count int
-	)
-
-	config := make(map[string]interface{})
-	configServerHost, err := cfgSrcHandler.MemberDiscovery.GetConfigServer()
-	if err != nil {
-		err := cfgSrcHandler.MemberDiscovery.RefreshMembers()
-		if err != nil {
-			lager.Logger.Error("error in refreshing config client members", err)
-			return nil, errors.New("error in refreshing config client members")
-		}
-		cfgSrcHandler.MemberDiscovery.Shuffle()
-		configServerHost, _ = cfgSrcHandler.MemberDiscovery.GetConfigServer()
-	}
-
-	confgCenterIP := len(configServerHost)
-	for _, server := range configServerHost {
-		configAPIRes := make(GetConfigAPI)
-		parsedDimensionInfo := strings.Replace(cfgSrcHandler.dimensionsInfo, "#", "%23", -1)
-		resp, err := cfgSrcHandler.HTTPDo("GET", server+ConfigPath+"?"+dimensionsInfo+"="+parsedDimensionInfo, nil, nil)
-		if err != nil {
-			count++
-			if confgCenterIP <= count {
-				return nil, err
-			}
-			lager.Logger.Error("config source item request failed with error", err)
-			continue
-		}
-		var body []byte
-		body, err = ioutil.ReadAll(resp.Body)
-		contentType := resp.Header.Get("Content-Type")
-		if len(contentType) > 0 && (len(defaultContentType) > 0 && !strings.Contains(contentType, defaultContentType)) {
-			lager.Logger.Error("config source item request failed with error", errors.New("content type mis match"))
-			continue
-		}
-		error := serializers.Decode(defaultContentType, body, &configAPIRes)
-		if error != nil {
-			lager.Logger.Error("config source item request failed with error", errors.New("error in decoding the request:"+error.Error()))
-			lager.Logger.Debugf("config source item request failed with error", error, "with body", body)
-			continue
-		}
-		for _, v := range configAPIRes {
-			for key, value := range v {
-				config[key] = value
-			}
-		}
-	}
-	return config, nil
-}
-
-func (cfgSrcHandler *ConfigCenterSourceHandler) pullConfigurationsByDI(dimensionInfo string) (map[string]map[string]interface{}, error) {
-	// update dimensionInfo value
-	var diInfo string
-	for _, value := range cfgSrcHandler.dimensionInfoMap {
-		if value == dimensionInfo {
-			diInfo = dimensionInfo
-		}
-	}
-
-	var (
-		count int
-	)
-	configAPIRes := make(GetConfigAPI)
-	configServerHost, err := cfgSrcHandler.MemberDiscovery.GetConfigServer()
-	if err != nil {
-		err := cfgSrcHandler.MemberDiscovery.RefreshMembers()
-		if err != nil {
-			lager.Logger.Error("error in refreshing config client members", err)
-			return nil, errors.New("error in refreshing config client members")
-		}
-		cfgSrcHandler.MemberDiscovery.Shuffle()
-		configServerHost, _ = cfgSrcHandler.MemberDiscovery.GetConfigServer()
-	}
-
-	confgCenterIP := len(configServerHost)
-	for _, server := range configServerHost {
-		parsedDimensionInfo := strings.Replace(diInfo, "#", "%23", -1)
-		resp, err := cfgSrcHandler.HTTPDo("GET", server+ConfigPath+"?"+dimensionsInfo+"="+parsedDimensionInfo, nil, nil)
-		if err != nil {
-			count++
-			if confgCenterIP <= count {
-				return nil, err
-			}
-			lager.Logger.Error("config source item request failed with error", err)
-			continue
-		}
-		var body []byte
-		body, err = ioutil.ReadAll(resp.Body)
-		contentType := resp.Header.Get("Content-Type")
-		if len(contentType) > 0 && (len(defaultContentType) > 0 && !strings.Contains(contentType, defaultContentType)) {
-			lager.Logger.Error("config source item request failed with error", errors.New("content type mis match"))
-			continue
-		}
-		error := serializers.Decode(defaultContentType, body, &configAPIRes)
-		if error != nil {
-			lager.Logger.Error("config source item request failed with error", errors.New("error in decoding the request:"+error.Error()))
-			lager.Logger.Debugf("config source item request failed with error", error, "with body", body)
-			continue
-		}
-	}
-	return configAPIRes, nil
-}
 
 //GetConfigurations gets a particular configuration
 func (cfgSrcHandler *ConfigCenterSourceHandler) GetConfigurations() (map[string]interface{}, error) {
@@ -336,7 +373,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 	)
 
 	if dimensionInfo == "" {
-		config, err = cfgSrcHandler.pullConfigurations()
+		config, err = configcenter.DefaultClient.PullConfigs(cfgSrcHandler.dimensionsInfo, "", "", "")
 		if err != nil {
 			lager.Logger.Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
@@ -344,7 +381,15 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 		//Populate the events based on the changed value between current config and newly received Config
 		events, err = cfgSrcHandler.populateEvents(config)
 	} else {
-		configByDI, err = cfgSrcHandler.pullConfigurationsByDI(dimensionInfo)
+		var diInfo string
+		for _, value := range cfgSrcHandler.dimensionInfoMap {
+			if value == dimensionInfo {
+				diInfo = dimensionInfo
+			}
+		}
+
+		//configByDI, err = cfgSrcHandler.pullConfigurationsByDI(dimensionInfo)
+		configByDI, err = configcenter.DefaultClient.PullConfigsByDI(dimensionInfo, diInfo)
 		if err != nil {
 			lager.Logger.Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
@@ -608,12 +653,12 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) constructEvent(eventType string,
 
 //DynamicConfigHandler is a struct
 type DynamicConfigHandler struct {
-	dimensionsInfo  string
-	EventHandler    *ConfigCenterEventHandler
-	dynamicLock     sync.Mutex
-	wsDialer        *websocket.Dialer
-	wsConnection    *websocket.Conn
-	memberDiscovery memberdiscovery.MemberDiscovery
+	dimensionsInfo string
+	EventHandler   *ConfigCenterEventHandler
+	dynamicLock    sync.Mutex
+	wsDialer       *websocket.Dialer
+	wsConnection   *websocket.Conn
+	//memberDiscovery memberdiscovery.MemberDiscovery
 }
 
 func newDynConfigHandlerSource(cfgSrc *ConfigCenterSourceHandler, callback core.DynamicConfigCallback) (*DynamicConfigHandler, error) {
@@ -625,7 +670,7 @@ func newDynConfigHandlerSource(cfgSrc *ConfigCenterSourceHandler, callback core.
 		TLSClientConfig:  cfgSrc.TLSClientConfig,
 		HandshakeTimeout: defaultTimeout,
 	}
-	dynCfgHandler.memberDiscovery = cfgSrc.MemberDiscovery
+	//dynCfgHandler.memberDiscovery = cfgSrc.MemberDiscovery
 	return dynCfgHandler, nil
 }
 
@@ -635,12 +680,12 @@ func (dynHandler *DynamicConfigHandler) getWebSocketURL() (*url.URL, error) {
 	var parsedEndPoint []string
 	var host string
 
-	configCenterEntryPointList, err := dynHandler.memberDiscovery.GetConfigServer()
+	configCenterEntryPointList, err := configcenter.DefaultClient.GetConfigServer()
 	if err != nil {
 		lager.Logger.Error("error in member discovery", err)
 		return nil, err
 	}
-	activeEndPointList, err := dynHandler.memberDiscovery.GetWorkingConfigCenterIP(configCenterEntryPointList)
+	activeEndPointList, err := configcenter.DefaultClient.GetWorkingConfigCenterIP(configCenterEntryPointList)
 	if err != nil {
 		lager.Logger.Error("failed to get ip list", err)
 	}
