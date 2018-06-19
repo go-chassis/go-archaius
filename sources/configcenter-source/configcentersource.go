@@ -820,7 +820,8 @@ func (eventHandler *ConfigCenterEventHandler) OnReceive(actionData []byte) {
 	return
 }
 
-func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bool, tlsConfig *tls.Config, refreshMode int, refreshInterval int, autoDiscovery bool, clientType string) (error, core.ConfigSource) {
+//InitConfigCenter is a function which initializes the memberDiscovery of go-cc-client
+func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bool, tlsConfig *tls.Config, refreshMode int, refreshInterval int, autoDiscovery bool, clientType string) (core.ConfigSource, error) {
 	memDiscovery := memberdiscovery.NewConfiCenterInit(tlsConfig, tenantName, enableSSL, config.GlobalDefinition.Cse.Config.Client.APIVersion.Version, autoDiscovery, config.MicroserviceDefinition.ServiceDescription.Environment)
 
 	configCenters := strings.Split(ccEndpoint, ",")
@@ -836,7 +837,7 @@ func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bo
 		refreshError := memDiscovery.RefreshMembers()
 		if refreshError != nil {
 			lager.Logger.Error(ConfigServerMemRefreshError, refreshError)
-			return errors.New(ConfigServerMemRefreshError), nil
+			return nil, errors.New(ConfigServerMemRefreshError)
 		}
 	}
 
@@ -846,7 +847,7 @@ func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bo
 
 	memberdiscovery.MemberDiscoveryService = memDiscovery
 	installPlugin(clientType)
-	return nil, configCenterSource
+	return configCenterSource, nil
 }
 
 func installPlugin(clientType string) {
