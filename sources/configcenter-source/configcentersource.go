@@ -30,6 +30,7 @@ import (
 	"github.com/ServiceComb/go-chassis/core/config"
 
 	"fmt"
+	"github.com/ServiceComb/go-cc-client"
 	"github.com/ServiceComb/go-cc-client/serializers"
 	"github.com/ServiceComb/http-client"
 	"github.com/gorilla/websocket"
@@ -49,6 +50,8 @@ const (
 	dynamicConfigAPI           = `/configuration/refresh/items`
 	getConfigAPI               = `/configuration/items`
 	defaultContentType         = "application/json"
+	//ConfigServerMemRefreshError is error message
+	ConfigServerMemRefreshError = "error in poulating config server member"
 )
 
 var (
@@ -815,4 +818,46 @@ func (eventHandler *ConfigCenterEventHandler) OnReceive(actionData []byte) {
 	}
 
 	return
+}
+
+func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bool, tlsConfig *tls.Config, refreshMode int, refreshInterval int, autoDiscovery bool, clientType string) (error, core.ConfigSource) {
+	memDiscovery := memberdiscovery.NewConfiCenterInit(tlsConfig, tenantName, enableSSL, config.GlobalDefinition.Cse.Config.Client.APIVersion.Version, autoDiscovery, config.MicroserviceDefinition.ServiceDescription.Environment)
+
+	configCenters := strings.Split(ccEndpoint, ",")
+	cCenters := make([]string, 0)
+	for _, value := range configCenters {
+		value = strings.Replace(value, " ", "", -1)
+		cCenters = append(cCenters, value)
+	}
+
+	memDiscovery.ConfigurationInit(cCenters)
+
+	if enbledAutoDiscovery(autoDiscovery) {
+		refreshError := memDiscovery.RefreshMembers()
+		if refreshError != nil {
+			lager.Logger.Error(ConfigServerMemRefreshError, refreshError)
+			return errors.New(ConfigServerMemRefreshError), nil
+		}
+	}
+
+	configCenterSource := NewConfigCenterSource(
+		memDiscovery, dimensionInfo, tlsConfig, tenantName, refreshMode,
+		refreshInterval, enableSSL)
+
+	memberdiscovery.MemberDiscoveryService = memDiscovery
+	installPlugin(clientType)
+	return nil, configCenterSource
+}
+
+func installPlugin(clientType string) {
+
+	client.Enable(clientType)
+
+}
+
+func enbledAutoDiscovery(autoDiscovery bool) bool {
+	if autoDiscovery {
+		return true
+	}
+	return false
 }
