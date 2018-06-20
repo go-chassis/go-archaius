@@ -30,6 +30,7 @@ import (
 	"github.com/ServiceComb/go-chassis/core/config"
 
 	"fmt"
+	"github.com/ServiceComb/go-cc-client"
 	"github.com/ServiceComb/go-cc-client/serializers"
 	"github.com/ServiceComb/http-client"
 	"github.com/gorilla/websocket"
@@ -49,6 +50,8 @@ const (
 	dynamicConfigAPI           = `/configuration/refresh/items`
 	getConfigAPI               = `/configuration/items`
 	defaultContentType         = "application/json"
+	//ConfigServerMemRefreshError is error message
+	ConfigServerMemRefreshError = "error in poulating config server member"
 )
 
 var (
@@ -815,4 +818,47 @@ func (eventHandler *ConfigCenterEventHandler) OnReceive(actionData []byte) {
 	}
 
 	return
+}
+
+//InitConfigCenter is a function which initializes the memberDiscovery of go-cc-client
+func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bool, tlsConfig *tls.Config, refreshMode int, refreshInterval int, autoDiscovery bool, clientType string) (core.ConfigSource, error) {
+	memDiscovery := memberdiscovery.NewConfiCenterInit(tlsConfig, tenantName, enableSSL, config.GlobalDefinition.Cse.Config.Client.APIVersion.Version, autoDiscovery, config.MicroserviceDefinition.ServiceDescription.Environment)
+
+	configCenters := strings.Split(ccEndpoint, ",")
+	cCenters := make([]string, 0)
+	for _, value := range configCenters {
+		value = strings.Replace(value, " ", "", -1)
+		cCenters = append(cCenters, value)
+	}
+
+	memDiscovery.ConfigurationInit(cCenters)
+
+	if enbledAutoDiscovery(autoDiscovery) {
+		refreshError := memDiscovery.RefreshMembers()
+		if refreshError != nil {
+			lager.Logger.Error(ConfigServerMemRefreshError, refreshError)
+			return nil, errors.New(ConfigServerMemRefreshError)
+		}
+	}
+
+	configCenterSource := NewConfigCenterSource(
+		memDiscovery, dimensionInfo, tlsConfig, tenantName, refreshMode,
+		refreshInterval, enableSSL)
+
+	memberdiscovery.MemberDiscoveryService = memDiscovery
+	installPlugin(clientType)
+	return configCenterSource, nil
+}
+
+func installPlugin(clientType string) {
+
+	client.Enable(clientType)
+
+}
+
+func enbledAutoDiscovery(autoDiscovery bool) bool {
+	if autoDiscovery {
+		return true
+	}
+	return false
 }
