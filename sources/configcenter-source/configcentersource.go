@@ -339,7 +339,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 	)
 
 	if dimensionInfo == "" {
-		config, err = cfgSrcHandler.pullConfigurations()
+		config, err = client.DefaultClient.PullConfigs(cfgSrcHandler.dimensionsInfo, "", "", "")
 		if err != nil {
 			lager.Logger.Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
@@ -347,7 +347,13 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 		//Populate the events based on the changed value between current config and newly received Config
 		events, err = cfgSrcHandler.populateEvents(config)
 	} else {
-		configByDI, err = cfgSrcHandler.pullConfigurationsByDI(dimensionInfo)
+		var diInfo string
+		for _, value := range cfgSrcHandler.dimensionInfoMap {
+			if value == dimensionInfo {
+				diInfo = dimensionInfo
+			}
+		}
+		configByDI, err = client.DefaultClient.PullConfigsByDI(dimensionInfo, diInfo)
 		if err != nil {
 			lager.Logger.Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
