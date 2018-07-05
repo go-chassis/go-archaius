@@ -1,7 +1,7 @@
 package configcentersource
 
 import (
-	"github.com/ServiceComb/go-cc-client/member-discovery"
+	"github.com/ServiceComb/go-cc-client/configcenter-client"
 
 	"github.com/ServiceComb/go-archaius/core"
 	"github.com/ServiceComb/go-chassis/core/archaius"
@@ -68,7 +68,7 @@ func TestGetConfigurationsForInvalidCCIP(t *testing.T) {
 
 	config.GlobalDefinition = &model.GlobalCfg{}
 	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
-	memDiscovery := memberdiscovery.NewConfiCenterInit(nil, "default", false)
+	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testSource.GetInvalidConfigServer())
 	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil, "default", 1, 1, false)
 
@@ -89,7 +89,7 @@ func TestGetConfigurationsWithCCIP(t *testing.T) {
 
 	config.GlobalDefinition = &model.GlobalCfg{}
 	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
-	memDiscovery := memberdiscovery.NewConfiCenterInit(nil, "default", false)
+	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testSource.GetConfigServer())
 	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil, "default", 1, 1, false)
 	config.GlobalDefinition = &model.GlobalCfg{}
@@ -146,7 +146,7 @@ func Test_DynamicConfigHandler(t *testing.T) {
 	config.Init()
 	config.GlobalDefinition = &model.GlobalCfg{}
 	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
-	memDiscovery := memberdiscovery.NewConfiCenterInit(nil, "default", false)
+	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testsource.GetConfigServer())
 	configcentersource := NewConfigCenterSource(memDiscovery, testsource.GetDimensionInfo(), nil, "default", 1, 1, false)
 
@@ -172,7 +172,7 @@ func Test_OnReceive(t *testing.T) {
 
 	config.GlobalDefinition = &model.GlobalCfg{}
 	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
-	memDiscovery := memberdiscovery.NewConfiCenterInit(nil, "default", false)
+	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testSource.GetInvalidConfigServer())
 	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil, "default", 0, 1, false)
 

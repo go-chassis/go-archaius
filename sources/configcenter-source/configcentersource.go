@@ -26,7 +26,7 @@ import (
 
 	"github.com/ServiceComb/go-archaius/core"
 	"github.com/ServiceComb/go-archaius/lager"
-	"github.com/ServiceComb/go-cc-client/member-discovery"
+	"github.com/ServiceComb/go-cc-client/configcenter-client"
 	"github.com/ServiceComb/go-chassis/core/config"
 
 	"fmt"
@@ -63,7 +63,7 @@ var (
 
 //ConfigCenterSourceHandler handles
 type ConfigCenterSourceHandler struct {
-	MemberDiscovery              memberdiscovery.MemberDiscovery
+	MemberDiscovery              configcenterclient.MemberDiscovery
 	dynamicConfigHandler         *DynamicConfigHandler
 	dimensionsInfo               string
 	dimensionInfoMap             map[string]string
@@ -83,7 +83,7 @@ type ConfigCenterSourceHandler struct {
 var configCenterConfig *ConfigCenterSourceHandler
 
 //NewConfigCenterSource initializes all components of configuration center
-func NewConfigCenterSource(memberDiscovery memberdiscovery.MemberDiscovery, dimInfo string, tlsConfig *tls.Config, tenantName string, refreshMode, refreshInterval int, enableSSL bool) core.ConfigSource {
+func NewConfigCenterSource(memberDiscovery configcenterclient.MemberDiscovery, dimInfo string, tlsConfig *tls.Config, tenantName string, refreshMode, refreshInterval int, enableSSL bool) core.ConfigSource {
 
 	if configCenterConfig == nil {
 		configCenterConfig = new(ConfigCenterSourceHandler)
@@ -128,7 +128,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) HTTPDo(method string, rawURL str
 	if len(headers) == 0 {
 		headers = make(http.Header)
 	}
-	for k, v := range memberdiscovery.GetDefaultHeaders(cfgSrcHandler.TenantName) {
+	for k, v := range configcenterclient.GetDefaultHeaders(cfgSrcHandler.TenantName) {
 		headers[k] = v
 	}
 	return cfgSrcHandler.client.HttpDo(method, rawURL, headers, body)
@@ -622,7 +622,7 @@ type DynamicConfigHandler struct {
 	dynamicLock     sync.Mutex
 	wsDialer        *websocket.Dialer
 	wsConnection    *websocket.Conn
-	memberDiscovery memberdiscovery.MemberDiscovery
+	memberDiscovery configcenterclient.MemberDiscovery
 }
 
 func newDynConfigHandlerSource(cfgSrc *ConfigCenterSourceHandler, callback core.DynamicConfigCallback) (*DynamicConfigHandler, error) {
@@ -828,7 +828,7 @@ func (eventHandler *ConfigCenterEventHandler) OnReceive(actionData []byte) {
 
 //InitConfigCenter is a function which initializes the memberDiscovery of go-cc-client
 func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bool, tlsConfig *tls.Config, refreshMode int, refreshInterval int, autoDiscovery bool, clientType string) (core.ConfigSource, error) {
-	memDiscovery := memberdiscovery.NewConfiCenterInit(tlsConfig, tenantName, enableSSL, config.GlobalDefinition.Cse.Config.Client.APIVersion.Version, autoDiscovery, config.MicroserviceDefinition.ServiceDescription.Environment)
+	memDiscovery := configcenterclient.NewConfiCenterInit(tlsConfig, tenantName, enableSSL, config.GlobalDefinition.Cse.Config.Client.APIVersion.Version, autoDiscovery, config.MicroserviceDefinition.ServiceDescription.Environment)
 
 	configCenters := strings.Split(ccEndpoint, ",")
 	cCenters := make([]string, 0)
@@ -851,7 +851,7 @@ func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bo
 		memDiscovery, dimensionInfo, tlsConfig, tenantName, refreshMode,
 		refreshInterval, enableSSL)
 
-	memberdiscovery.MemberDiscoveryService = memDiscovery
+	configcenterclient.MemberDiscoveryService = memDiscovery
 	installPlugin(clientType)
 	return configCenterSource, nil
 }
