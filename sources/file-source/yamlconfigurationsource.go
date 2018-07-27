@@ -27,9 +27,9 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-archaius/lager"
-	"github.com/fsnotify/fsnotify"
 	"gopkg.in/yaml.v2"
 )
 
