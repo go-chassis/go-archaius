@@ -8,10 +8,10 @@ mkdir -p $GOPATH/src/golang.org/x/
 mkdir -p $GOPATH/src/github.com/stretchr
 go get gopkg.in/yaml.v2
 
-cd $GOPATH/src/github.com/ServiceComb
-git clone https://github.com/ServiceComb/go-chassis.git
-git clone https://github.com/ServiceComb/paas-lager.git
-git clone https://github.com/ServiceComb/go-cc-client.git
+cd $GOPATH/src/github.com/go-chassis
+git clone https://github.com/go-chassis/go-chassis.git
+git clone https://github.com/go-chassis/paas-lager.git
+git clone https://github.com/go-chassis/go-cc-client.git
 
 cd $GOPATH/src/github.com/fsnotify
 git clone https://github.com/fsnotify/fsnotify.git
@@ -35,7 +35,7 @@ cd $GOPATH/src/github.com/stretchr
 git clone https://github.com/stretchr/testify.git
 
 
-cd $GOPATH/src/github.com/ServiceComb/go-archaius
+cd $GOPATH/src/github.com/go-chassis/go-archaius
 #Start unit test
 for d in $(go list ./... | grep -v configcenter-source); do
     echo $d

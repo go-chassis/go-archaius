@@ -26,15 +26,15 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/ServiceComb/go-archaius/core"
-	"github.com/ServiceComb/go-archaius/core/cast"
-	"github.com/ServiceComb/go-archaius/core/config-manager"
-	"github.com/ServiceComb/go-archaius/core/event-system"
-	archlager "github.com/ServiceComb/go-archaius/lager"
-	"github.com/ServiceComb/go-archaius/sources/commandline-source"
-	"github.com/ServiceComb/go-archaius/sources/enviromentvariable-source"
-	"github.com/ServiceComb/go-archaius/sources/memory-source"
-	"github.com/ServiceComb/paas-lager/third_party/forked/cloudfoundry/lager"
+	"github.com/go-chassis/go-archaius/core"
+	"github.com/go-chassis/go-archaius/core/cast"
+	"github.com/go-chassis/go-archaius/core/config-manager"
+	"github.com/go-chassis/go-archaius/core/event-system"
+	archlager "github.com/go-chassis/go-archaius/lager"
+	"github.com/go-chassis/go-archaius/sources/commandline-source"
+	"github.com/go-chassis/go-archaius/sources/enviromentvariable-source"
+	"github.com/go-chassis/go-archaius/sources/memory-source"
+	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
 )
 
 const (

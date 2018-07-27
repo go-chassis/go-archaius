@@ -28,7 +28,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/ServiceComb/go-archaius/core/cast"
+	"github.com/go-chassis/go-archaius/core/cast"
 )
 
 const (

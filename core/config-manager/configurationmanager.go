@@ -26,9 +26,9 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/ServiceComb/go-archaius/core"
-	"github.com/ServiceComb/go-archaius/lager"
-	"github.com/ServiceComb/go-archaius/sources/file-source"
+	"github.com/go-chassis/go-archaius/core"
+	"github.com/go-chassis/go-archaius/lager"
+	"github.com/go-chassis/go-archaius/sources/file-source"
 )
 
 const (

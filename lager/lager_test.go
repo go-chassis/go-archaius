@@ -1,8 +1,8 @@
 package lager_test
 
 import (
-	"github.com/ServiceComb/go-archaius/lager"
-	paaslager "github.com/ServiceComb/paas-lager"
+	"github.com/go-chassis/go-archaius/lager"
+	paaslager "github.com/go-chassis/paas-lager"
 
 	"testing"
 )
