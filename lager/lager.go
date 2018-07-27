@@ -4,8 +4,8 @@ import (
 	"log"
 	"strings"
 
-	paaslager "github.com/ServiceComb/paas-lager"
-	"github.com/ServiceComb/paas-lager/third_party/forked/cloudfoundry/lager"
+	paaslager "github.com/go-chassis/paas-lager"
+	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
 )
 
 // Logger is the global variable for the object of lager.Logger

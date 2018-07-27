@@ -20,7 +20,7 @@
 package commandlinesource
 
 import (
-	"github.com/ServiceComb/go-archaius/core"
+	"github.com/go-chassis/go-archaius/core"
 	"os"
 	"testing"
 )
