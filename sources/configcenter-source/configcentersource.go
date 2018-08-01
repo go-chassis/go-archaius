@@ -32,7 +32,7 @@ import (
 	"fmt"
 	"github.com/go-chassis/go-cc-client"
 	"github.com/go-chassis/go-cc-client/serializers"
-	"github.com/go-chassis/http-client"
+	"github.com/go-chassis/go-chassis/pkg/httpclient"
 	"github.com/gorilla/websocket"
 	"io/ioutil"
 	"net/url"
@@ -131,7 +131,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) HTTPDo(method string, rawURL str
 	for k, v := range configcenterclient.GetDefaultHeaders(cfgSrcHandler.TenantName) {
 		headers[k] = v
 	}
-	return cfgSrcHandler.client.HttpDo(method, rawURL, headers, body)
+	return cfgSrcHandler.client.HTTPDo(method, rawURL, headers, body)
 }
 
 //Update the Base PATH and HEADERS Based on the version of Configcenter used.

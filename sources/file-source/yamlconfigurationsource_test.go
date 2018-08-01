@@ -22,7 +22,7 @@ package filesource
 import (
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-archaius/lager"
-	"github.com/go-chassis/go-chassis/util/fileutil"
+	"github.com/go-chassis/go-chassis/pkg/util/fileutil"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
