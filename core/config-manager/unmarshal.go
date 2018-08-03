@@ -24,11 +24,11 @@ package configmanager
 import (
 	"errors"
 	"fmt"
+	"github.com/go-chassis/go-archaius/core/cast"
+	"github.com/go-chassis/go-chassis/core/lager"
 	"reflect"
 	"strings"
 	"unicode"
-
-	"github.com/go-chassis/go-archaius/core/cast"
 )
 
 const (
@@ -46,6 +46,8 @@ func (cMgr *ConfigurationManager) unmarshal(rValue reflect.Value, tagName string
 	// handle panic
 	defer func() {
 		if r := recover(); r != nil {
+			lager.Logger.Error("unmarshalling failed for key", errors.New(tagName))
+			lager.Logger.Errorf(err, "Panicked Because of : ", r)
 			err = errors.New("unmarshalling failed")
 		}
 	}()
