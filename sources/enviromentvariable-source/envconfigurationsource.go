@@ -24,7 +24,7 @@ import (
 	"sync"
 
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-archaius/lager"
+	"github.com/go-mesh/openlogging"
 )
 
 const (
@@ -48,7 +48,7 @@ func NewEnvConfigurationSource() core.ConfigSource {
 		envConfigSource = new(EnvConfigurationSource)
 		config, err := envConfigSource.pullConfigurations()
 		if err != nil {
-			lager.Logger.Error("failed to initialize environment configurations", err)
+			openlogging.GetLogger().Error("failed to initialize environment configurations: " + err.Error())
 			return envConfigSource
 		}
 		envConfigSource.Configurations = config

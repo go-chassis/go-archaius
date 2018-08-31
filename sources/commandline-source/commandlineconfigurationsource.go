@@ -24,7 +24,7 @@ import (
 	"sync"
 
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-archaius/lager"
+	"github.com/go-mesh/openlogging"
 )
 
 const (
@@ -48,7 +48,7 @@ func NewCommandlineConfigSource() core.ConfigSource {
 		cmdlineConfig = new(CommandLineConfigurationSource)
 		config, err := cmdlineConfig.pullCmdLineConfig()
 		if err != nil {
-			lager.Logger.Error("failed to initialize commandline configurations", err)
+			openlogging.GetLogger().Error("failed to initialize commandline configurations:" + err.Error())
 			return cmdlineConfig
 		}
 		cmdlineConfig.Configurations = config

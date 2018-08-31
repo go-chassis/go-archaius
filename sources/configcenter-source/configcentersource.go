@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-archaius/lager"
 	"github.com/go-chassis/go-cc-client/configcenter-client"
 	"github.com/go-chassis/go-chassis/core/config"
 
@@ -33,6 +32,7 @@ import (
 	"github.com/go-chassis/go-cc-client"
 	"github.com/go-chassis/go-cc-client/serializers"
 	"github.com/go-chassis/go-chassis/pkg/httpclient"
+	"github.com/go-mesh/openlogging"
 	"github.com/gorilla/websocket"
 	"io/ioutil"
 	"net/url"
@@ -178,7 +178,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) pullConfigurations() (map[string
 	if err != nil {
 		err := cfgSrcHandler.MemberDiscovery.RefreshMembers()
 		if err != nil {
-			lager.Logger.Error("error in refreshing config client members", err)
+			openlogging.GetLogger().Error("error in refreshing config client members:" + err.Error())
 			return nil, errors.New("error in refreshing config client members")
 		}
 		cfgSrcHandler.MemberDiscovery.Shuffle()
@@ -195,20 +195,20 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) pullConfigurations() (map[string
 			if confgCenterIP <= count {
 				return nil, err
 			}
-			lager.Logger.Error("config source item request failed with error", err)
+			openlogging.GetLogger().Error("config source item request failed with error:" + err.Error())
 			continue
 		}
 		var body []byte
 		body, err = ioutil.ReadAll(resp.Body)
 		contentType := resp.Header.Get("Content-Type")
 		if len(contentType) > 0 && (len(defaultContentType) > 0 && !strings.Contains(contentType, defaultContentType)) {
-			lager.Logger.Error("config source item request failed with error", errors.New("content type mis match"))
+			openlogging.GetLogger().Error("config source item request failed with error content type mis match")
 			continue
 		}
 		error := serializers.Decode(defaultContentType, body, &configAPIRes)
 		if error != nil {
-			lager.Logger.Error("config source item request failed with error", errors.New("error in decoding the request:"+error.Error()))
-			lager.Logger.Debugf("config source item request failed with error", error, "with body", body)
+			openlogging.GetLogger().Error("config source item request failed with error error in decoding the request:" + error.Error())
+			openlogging.GetLogger().Debugf("config source item request failed with error", error, "with body", body)
 			continue
 		}
 		for _, v := range configAPIRes {
@@ -237,7 +237,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) pullConfigurationsByDI(dimension
 	if err != nil {
 		err := cfgSrcHandler.MemberDiscovery.RefreshMembers()
 		if err != nil {
-			lager.Logger.Error("error in refreshing config client members", err)
+			openlogging.GetLogger().Error("error in refreshing config client members:" + err.Error())
 			return nil, errors.New("error in refreshing config client members")
 		}
 		cfgSrcHandler.MemberDiscovery.Shuffle()
@@ -253,20 +253,20 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) pullConfigurationsByDI(dimension
 			if confgCenterIP <= count {
 				return nil, err
 			}
-			lager.Logger.Error("config source item request failed with error", err)
+			openlogging.GetLogger().Error("config source item request failed with error:" + err.Error())
 			continue
 		}
 		var body []byte
 		body, err = ioutil.ReadAll(resp.Body)
 		contentType := resp.Header.Get("Content-Type")
 		if len(contentType) > 0 && (len(defaultContentType) > 0 && !strings.Contains(contentType, defaultContentType)) {
-			lager.Logger.Error("config source item request failed with error", errors.New("content type mis match"))
+			openlogging.GetLogger().Error("config source item request failed with error content type mis match")
 			continue
 		}
 		error := serializers.Decode(defaultContentType, body, &configAPIRes)
 		if error != nil {
-			lager.Logger.Error("config source item request failed with error", errors.New("error in decoding the request:"+error.Error()))
-			lager.Logger.Debugf("config source item request failed with error", error, "with body", body)
+			openlogging.GetLogger().Error("config source item request failed with error error in decoding the request:" + error.Error())
+			openlogging.GetLogger().Debugf("config source item request failed with error", error, "with body", body)
 			continue
 		}
 	}
@@ -321,7 +321,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurationsPeriodicall
 		err := cfgSrcHandler.refreshConfigurations(dimensionInfo)
 		if err == nil {
 			if isConnectionFailed {
-				lager.Logger.Infof("Recover configurations from config center server")
+				openlogging.GetLogger().Infof("Recover configurations from config center server")
 			}
 			isConnectionFailed = false
 		} else {
@@ -341,7 +341,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 	if dimensionInfo == "" {
 		config, err = client.DefaultClient.PullConfigs(cfgSrcHandler.dimensionsInfo, "", "", "")
 		if err != nil {
-			lager.Logger.Warnf("Failed to pull configurations from config center server", err) //Warn
+			openlogging.GetLogger().Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
 		}
 		//Populate the events based on the changed value between current config and newly received Config
@@ -355,7 +355,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 		}
 		configByDI, err = client.DefaultClient.PullConfigsByDI(dimensionInfo, diInfo)
 		if err != nil {
-			lager.Logger.Warnf("Failed to pull configurations from config center server", err) //Warn
+			openlogging.GetLogger().Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
 		}
 		//Populate the events based on the changed value between current config and newly received Config based dimension info
@@ -363,13 +363,13 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 	}
 
 	if err != nil {
-		lager.Logger.Warnf("error in generating event", err)
+		openlogging.GetLogger().Warnf("error in generating event", err)
 		return err
 	}
 
 	//Generate OnEvent Callback based on the events created
 	if cfgSrcHandler.dynamicConfigHandler != nil {
-		lager.Logger.Debugf("event On Receive %+v", events)
+		openlogging.GetLogger().Debugf("event On Receive %+v", events)
 		for _, event := range events {
 			cfgSrcHandler.dynamicConfigHandler.EventHandler.callback.OnEvent(event)
 		}
@@ -464,7 +464,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) AddDimensionInfo(dimensionInfo s
 
 	for i := range cfgSrcHandler.dimensionInfoMap {
 		if i == dimensionInfo {
-			lager.Logger.Errorf(nil, "dimension info allready exist")
+			openlogging.GetLogger().Errorf("dimension info already exist")
 			return cfgSrcHandler.dimensionInfoMap, errors.New("dimension info allready exist")
 		}
 	}
@@ -492,7 +492,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) DynamicConfigHandler(callback co
 
 	dynCfgHandler, err := newDynConfigHandlerSource(cfgSrcHandler, callback)
 	if err != nil {
-		lager.Logger.Error("failed to initialize dynamic config center ConfigCenterSourceHandler", err)
+		openlogging.GetLogger().Error("failed to initialize dynamic config center ConfigCenterSourceHandler:" + err.Error())
 		return errors.New("failed to initialize dynamic config center ConfigCenterSourceHandler")
 	}
 	cfgSrcHandler.dynamicConfigHandler = dynCfgHandler
@@ -646,12 +646,12 @@ func (dynHandler *DynamicConfigHandler) getWebSocketURL() (*url.URL, error) {
 
 	configCenterEntryPointList, err := dynHandler.memberDiscovery.GetConfigServer()
 	if err != nil {
-		lager.Logger.Error("error in member discovery", err)
+		openlogging.GetLogger().Error("error in member discovery:" + err.Error())
 		return nil, err
 	}
 	activeEndPointList, err := dynHandler.memberDiscovery.GetWorkingConfigCenterIP(configCenterEntryPointList)
 	if err != nil {
-		lager.Logger.Error("failed to get ip list", err)
+		openlogging.GetLogger().Error("failed to get ip list:" + err.Error())
 	}
 	for _, server := range activeEndPointList {
 		parsedEndPoint = strings.Split(server, `://`)
@@ -671,7 +671,7 @@ func (dynHandler *DynamicConfigHandler) getWebSocketURL() (*url.URL, error) {
 	}
 	if host == "" {
 		err := errors.New("host must be a URL or a host:port pair")
-		lager.Logger.Error("empty host for watch action", err)
+		openlogging.GetLogger().Error("empty host for watch action:" + err.Error())
 		return nil, err
 	}
 	hostURL, err := url.Parse(host)
@@ -801,24 +801,24 @@ func (eventHandler *ConfigCenterEventHandler) OnReceive(actionData []byte) {
 	configCenterEvent := new(ConfigCenterEvent)
 	err := serializers.Decode(serializers.JsonEncoder, actionData, &configCenterEvent)
 	if err != nil {
-		lager.Logger.Errorf(err, fmt.Sprintf("error in unmarshalling data on event receive with error %s", err.Error()))
+		openlogging.GetLogger().Errorf(fmt.Sprintf("error in unmarshalling data on event receive with error %s", err.Error()))
 		return
 	}
 
 	sourceConfig := make(map[string]interface{})
 	err = serializers.Decode(serializers.JsonEncoder, []byte(configCenterEvent.Value), &sourceConfig)
 	if err != nil {
-		lager.Logger.Errorf(err, fmt.Sprintf("error in unmarshalling config values %s", err.Error()))
+		openlogging.GetLogger().Errorf(fmt.Sprintf("error in unmarshalling config values %s", err.Error()))
 		return
 	}
 
 	events, err := eventHandler.configSource.populateEvents(sourceConfig)
 	if err != nil {
-		lager.Logger.Error("error in generating event", err)
+		openlogging.GetLogger().Error("error in generating event:" + err.Error())
 		return
 	}
 
-	lager.Logger.Debugf("event On Receive", events)
+	openlogging.GetLogger().Debugf("event On Receive", events)
 	for _, event := range events {
 		eventHandler.callback.OnEvent(event)
 	}
@@ -842,7 +842,7 @@ func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bo
 	if enbledAutoDiscovery(autoDiscovery) {
 		refreshError := memDiscovery.RefreshMembers()
 		if refreshError != nil {
-			lager.Logger.Error(ConfigServerMemRefreshError, refreshError)
+			openlogging.GetLogger().Error(ConfigServerMemRefreshError + refreshError.Error())
 			return nil, errors.New(ConfigServerMemRefreshError)
 		}
 	}

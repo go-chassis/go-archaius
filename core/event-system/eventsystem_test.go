@@ -4,11 +4,23 @@ import (
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-archaius/core/config-manager"
 	"github.com/go-chassis/go-archaius/core/event-system"
-	"github.com/go-chassis/go-archaius/lager"
 	"github.com/go-chassis/go-archaius/sources/test-source"
+	"github.com/go-chassis/paas-lager"
+	"github.com/go-mesh/openlogging"
 	"testing"
 	"time"
 )
+
+func init() {
+	log.Init(log.Config{
+		LoggerLevel:   "DEBUG",
+		EnableRsyslog: false,
+		LogFormatText: true,
+		Writers:       []string{"stdout"},
+	})
+	l := log.NewLogger("test")
+	openlogging.SetLogger(l)
+}
 
 type EListener struct {
 	Name      string
@@ -22,7 +34,6 @@ func (e *EListener) Event(event *core.Event) {
 func TestEventLoop1(t *testing.T) {
 	// test event
 	event := "ddd"
-	lager.InitLager(nil)
 	testConfig := map[string]interface{}{"aaa": "111", "bbb": "222"}
 	testSource := testsource.NewTestSource(testConfig)
 
@@ -59,7 +70,6 @@ func TestEventLoop1(t *testing.T) {
 func TestDispatchEvent(t *testing.T) {
 
 	//dispatcher
-	lager.InitLager(nil)
 
 	dispatcher := eventsystem.NewDispatcher()
 	var event *core.Event = nil

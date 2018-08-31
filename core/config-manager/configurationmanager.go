@@ -27,8 +27,8 @@ import (
 	"sync"
 
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-archaius/lager"
 	"github.com/go-chassis/go-archaius/sources/file-source"
+	"github.com/go-mesh/openlogging"
 )
 
 const (
@@ -78,7 +78,7 @@ func (configMgr *ConfigurationManager) Unmarshal(obj interface{}) error {
 	// only pointers are accepted
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
 		err := errors.New("invalid object supplied")
-		lager.Logger.Error("invalid object supplied ", err)
+		openlogging.GetLogger().Error("invalid object supplied: " + err.Error())
 		return err
 	}
 
@@ -89,7 +89,7 @@ func (configMgr *ConfigurationManager) Unmarshal(obj interface{}) error {
 func (configMgr *ConfigurationManager) AddSource(source core.ConfigSource, priority int) error {
 	if source == nil || source.GetSourceName() == "" {
 		err := errors.New("nil or invalid source supplied")
-		lager.Logger.Error("nil or invalid source supplied", err)
+		openlogging.GetLogger().Error("nil or invalid source supplied: " + err.Error())
 		return err
 	}
 
@@ -99,7 +99,7 @@ func (configMgr *ConfigurationManager) AddSource(source core.ConfigSource, prior
 	_, ok := configMgr.Sources[sourceName]
 	if ok {
 		err := errors.New("duplicate source supplied")
-		lager.Logger.Error("duplicate source supplied", err)
+		openlogging.GetLogger().Error("duplicate source supplied: " + err.Error())
 		configMgr.sourceMapMux.Unlock()
 		return err
 	}
@@ -109,7 +109,7 @@ func (configMgr *ConfigurationManager) AddSource(source core.ConfigSource, prior
 
 	err := configMgr.pullSourceConfigs(sourceName)
 	if err != nil {
-		lager.Logger.Errorf(err, "fail to load configuration of %s source", sourceName)
+		openlogging.GetLogger().Errorf("fail to load configuration of %s source: %s", sourceName, err)
 		errorMsg := "fail to load configuration of " + sourceName + " source"
 		return errors.New(errorMsg)
 	}
@@ -125,18 +125,18 @@ func (configMgr *ConfigurationManager) pullSourceConfigs(source string) error {
 	configMgr.sourceMapMux.Unlock()
 	if !ok {
 		err := errors.New("invalid source or source not addeded")
-		lager.Logger.Error("invalid source or source not addeded", err)
+		openlogging.GetLogger().Error("invalid source or source not addeded: " + err.Error())
 		return err
 	}
 
 	config, err := configSource.GetConfigurations()
 	if config == nil || len(config) == 0 {
 		if err != nil {
-			lager.Logger.Error("Get configuration by items failed", err)
+			openlogging.GetLogger().Error("Get configuration by items failed: " + err.Error())
 			return err
 		}
 
-		lager.Logger.Warnf("empty configurtion from %s", source)
+		openlogging.GetLogger().Warnf("empty configurtion from %s", source)
 		return nil
 	}
 
@@ -151,18 +151,18 @@ func (configMgr *ConfigurationManager) pullSourceConfigsByDI(source, di string) 
 	configMgr.sourceMapMux.Unlock()
 	if !ok {
 		err := errors.New("invalid source or source not addeded")
-		lager.Logger.Error("invalid source or source not addeded", err)
+		openlogging.GetLogger().Error("invalid source or source not addeded: " + err.Error())
 		return err
 	}
 
 	config, err := configSource.GetConfigurationsByDI(di)
 	if config == nil || len(config) == 0 {
 		if err != nil {
-			lager.Logger.Error("Get configuration by items failed", err)
+			openlogging.GetLogger().Error("Get configuration by items failed: " + err.Error())
 			return err
 		}
 
-		lager.Logger.Warnf("empty configurtion from %s", source)
+		openlogging.GetLogger().Warnf("empty configurtion from %s", source)
 		return nil
 	}
 
@@ -213,13 +213,13 @@ func (configMgr *ConfigurationManager) AddDimensionInfo(dimensionInfo string) (m
 
 	config, er := configMgr.addDimensionInfo(dimensionInfo)
 	if er != nil {
-		lager.Logger.Errorf(er, "failed to do add dimension info")
+		openlogging.GetLogger().Errorf("failed to do add dimension info %s", er)
 		return config, er
 	}
 
 	err := configMgr.pullSourceConfigsByDI("ConfigCenterSource", dimensionInfo)
 	if err != nil {
-		lager.Logger.Errorf(err, "fail to load configuration of ConfigCenterSource source")
+		openlogging.GetLogger().Errorf("fail to load configuration of ConfigCenterSource source%s", err)
 		return nil, err
 	}
 
@@ -230,7 +230,7 @@ func (configMgr *ConfigurationManager) AddDimensionInfo(dimensionInfo string) (m
 func (configMgr *ConfigurationManager) Refresh(sourceName string) error {
 	err := configMgr.pullSourceConfigs(sourceName)
 	if err != nil {
-		lager.Logger.Errorf(err, "fail to load configuration of %s source", sourceName)
+		openlogging.GetLogger().Errorf("fail to load configuration of %s source: %s", sourceName, err)
 		errorMsg := "fail to load configuration of" + sourceName + " source"
 		return errors.New(errorMsg)
 	}
@@ -282,7 +282,7 @@ func (configMgr *ConfigurationManager) addDimensionInfo(dimensionInfo string) (m
 	source, ok := configMgr.Sources["ConfigCenterSource"]
 	configMgr.sourceMapMux.Unlock()
 	if !ok {
-		lager.Logger.Errorf(nil, "source doesnot exist")
+		openlogging.GetLogger().Errorf("source doesnot exist")
 		return nil, errors.New("source doesnot exist")
 	}
 
@@ -387,7 +387,7 @@ func (configMgr *ConfigurationManager) updateEvent(event *core.Event) error {
 		return errors.New("nil or invalid event supplied")
 	}
 
-	lager.Logger.Debugf("EventReceived %s", event)
+	openlogging.GetLogger().Debugf("EventReceived %s", event)
 	//log.Println("EventReceived", event)
 	switch event.EventType {
 	case core.Create, core.Update:
@@ -438,7 +438,7 @@ func (configMgr *ConfigurationManager) updateEvent(event *core.Event) error {
 func (configMgr *ConfigurationManager) OnEvent(event *core.Event) {
 	err := configMgr.updateEvent(event)
 	if err != nil {
-		lager.Logger.Error("failed in updating event with error", err)
+		openlogging.GetLogger().Error("failed in updating event with error: " + err.Error())
 	}
 }
 

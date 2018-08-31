@@ -4,18 +4,29 @@ import (
 	"testing"
 
 	"github.com/go-chassis/go-archaius/core"
-	archlager "github.com/go-chassis/go-archaius/lager"
 	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-archaius/sources/memory-source"
 	"github.com/go-chassis/go-archaius/sources/test-source"
-	"github.com/go-chassis/go-chassis/util/fileutil"
-	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
+	"github.com/go-chassis/go-chassis/pkg/util/fileutil"
+	"github.com/go-chassis/paas-lager"
+	"github.com/go-mesh/openlogging"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"path/filepath"
 	"time"
 )
+
+func init() {
+	log.Init(log.Config{
+		LoggerLevel:   "DEBUG",
+		EnableRsyslog: false,
+		LogFormatText: true,
+		Writers:       []string{"stdout"},
+	})
+	l := log.NewLogger("test")
+	openlogging.SetLogger(l)
+}
 
 type ConfigStruct struct {
 	Yamltest1 int `yaml:"yamltest1"`
@@ -37,14 +48,12 @@ func populateCmdConfig() {
 
 func TestConfigFactory(t *testing.T) {
 
-	var lagger lager.Logger
 	root, _ := fileutil.GetWorkDir()
 	os.Setenv("CHASSIS_HOME", root)
 	t.Log(os.Getenv("CHASSIS_HOME"))
 	t.Log("Test configurationfactory.go")
 	f1content := "APPLICATION_ID: CSE\n  \ncse:\n  service:\n    registry:\n      type: servicecenter\n  protocols:\n       highway:\n         listenAddress: 127.0.0.1:8080\n  \nssl:\n  test.consumer.certFile: test.cer\n  test.consumer.keyFile: test.key\n"
 
-	archlager.InitLager(nil)
 	confdir := filepath.Join(root, "conf")
 	filename1 := filepath.Join(root, "conf", "chassis.yaml")
 
@@ -61,10 +70,10 @@ func TestConfigFactory(t *testing.T) {
 	_, err1 = io.WriteString(f1, f1content)
 	populateCmdConfig()
 
-	_, err = NewConfigFactory(lagger)
+	_, err = NewConfigFactory(nil)
 	assert.Equal(t, nil, err)
 
-	factory, err := NewConfigFactory(lagger)
+	factory, err := NewConfigFactory(nil)
 	assert.Equal(t, nil, err)
 
 	t.Log("verifying methods before config factory initialization")
@@ -199,5 +208,5 @@ func TestConfigFactory(t *testing.T) {
 }
 
 func (e EventListener) Event(event *core.Event) {
-	archlager.Logger.Infof("config value after change ", event.Key, " | ", event.Value)
+	openlogging.GetLogger().Infof("config value after change ", event.Key, " | ", event.Value)
 }

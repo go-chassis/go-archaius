@@ -30,11 +30,10 @@ import (
 	"github.com/go-chassis/go-archaius/core/cast"
 	"github.com/go-chassis/go-archaius/core/config-manager"
 	"github.com/go-chassis/go-archaius/core/event-system"
-	archlager "github.com/go-chassis/go-archaius/lager"
 	"github.com/go-chassis/go-archaius/sources/commandline-source"
 	"github.com/go-chassis/go-archaius/sources/enviromentvariable-source"
 	"github.com/go-chassis/go-archaius/sources/memory-source"
-	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
+	"github.com/go-mesh/openlogging"
 )
 
 const (
@@ -86,8 +85,8 @@ type ConfigFactory struct {
 var arc *ConfigFactory
 
 // NewConfigFactory creates a new configuration object for Config center
-func NewConfigFactory(log lager.Logger) (ConfigurationFactory, error) {
-	archlager.InitLager(log)
+func NewConfigFactory(log openlogging.Logger) (ConfigurationFactory, error) {
+
 	if arc == nil {
 
 		arc = new(ConfigFactory)
@@ -139,7 +138,7 @@ func (arc *ConfigFactory) GetConfigurationsByDimensionInfo(dimensionInfo string)
 
 	config, err := arc.configMgr.GetConfigurationsByDimensionInfo(dimensionInfo)
 	if err != nil {
-		archlager.Logger.Errorf(err, "Failed to get the configuration by dimension info")
+		openlogging.GetLogger().Errorf("Failed to get the configuration by dimension info: %s", err)
 	}
 
 	return config
@@ -196,7 +195,7 @@ func (arc *ConfigFactory) RegisterListener(listenerObj core.EventListener, keys 
 	for _, key := range keys {
 		_, err := regexp.Compile(key)
 		if err != nil {
-			archlager.Logger.Error(fmt.Sprintf("invalid key format for %s key. key registration ignored", key), err)
+			openlogging.GetLogger().Error(fmt.Sprintf("invalid key format for %s key. key registration ignored: %s", key, err))
 			return fmt.Errorf("invalid key format for %s key", key)
 		}
 	}
@@ -209,7 +208,7 @@ func (arc *ConfigFactory) UnRegisterListener(listenerObj core.EventListener, key
 	for _, key := range keys {
 		_, err := regexp.Compile(key)
 		if err != nil {
-			archlager.Logger.Error(fmt.Sprintf("invalid key format for %s key. key registration ignored", key), err)
+			openlogging.GetLogger().Error(fmt.Sprintf("invalid key format for %s key. key registration ignored: %s", key, err))
 			return fmt.Errorf("invalid key format for %s key", key)
 		}
 	}
