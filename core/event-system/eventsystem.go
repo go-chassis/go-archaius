@@ -24,7 +24,7 @@ package eventsystem
 import (
 	"errors"
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-archaius/lager"
+	"github.com/go-mesh/openlogging"
 	"regexp"
 )
 
@@ -45,7 +45,7 @@ func NewDispatcher() core.Dispatcher {
 func (dis *dispatcher) RegisterListener(listenerObj core.EventListener, keys ...string) error {
 	if listenerObj == nil {
 		err := errors.New("nil listener")
-		lager.Logger.Error("nil listtener supplied", err)
+		openlogging.GetLogger().Error("nil listener supplied:" + err.Error())
 		return errors.New("nil listener")
 	}
 
@@ -107,12 +107,12 @@ func (dis *dispatcher) DispatchEvent(event *core.Event) error {
 	for regKey, listeners := range dis.listeners {
 		matched, err := regexp.MatchString(regKey, event.Key)
 		if err != nil {
-			lager.Logger.Errorf(err, "regular expresssion for key %s failed", regKey)
+			openlogging.GetLogger().Errorf("regular expresssion for key %s failed: %s", regKey, err)
 			continue
 		}
 		if matched {
 			for _, listener := range listeners {
-				lager.Logger.Debugf("event generated for %s", regKey)
+				openlogging.GetLogger().Debugf("event generated for %s", regKey)
 				go listener.Event(event)
 			}
 		}

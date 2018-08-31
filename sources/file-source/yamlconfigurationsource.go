@@ -29,7 +29,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-archaius/lager"
+	"github.com/go-mesh/openlogging"
 	"gopkg.in/yaml.v2"
 )
 
@@ -133,18 +133,18 @@ func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32)
 		// handle Directory input. Include all yaml files as file source.
 		err := fSource.handleDirectory(fs, priority)
 		if err != nil {
-			lager.Logger.Errorf(err, "Failed to handle directory [%s]", path)
+			openlogging.GetLogger().Errorf("Failed to handle directory [%s] %s", path, err)
 			return err
 		}
 	case RegularFile:
 		// handle file and include as file source.
 		err := fSource.handleFile(fs, priority)
 		if err != nil {
-			lager.Logger.Errorf(err, "Failed to handle file [%s]", path)
+			openlogging.GetLogger().Errorf("Failed to handle file [%s] [%s]", path, err)
 			return err
 		}
 	case InvalidFileType:
-		lager.Logger.Errorf(nil, "File type of [%s] not supported", path)
+		openlogging.GetLogger().Errorf("File type of [%s] not supported: %s", path, err)
 		return fmt.Errorf("file type of [%s] not supported", path)
 	}
 
@@ -195,13 +195,13 @@ func (fSource *yamlConfigurationSource) handleDirectory(dir *os.File, priority u
 
 		fs, err := os.Open(filePath)
 		if err != nil {
-			lager.Logger.Errorf(err, "error in file open for %s file", err.Error())
+			openlogging.GetLogger().Errorf("error in file open for %s file", err.Error())
 			continue
 		}
 
 		err = fSource.handleFile(fs, priority)
 		if err != nil {
-			lager.Logger.Errorf(err, "error processing %s file source handler with error : %s ", fs.Name(),
+			openlogging.GetLogger().Errorf("error processing %s file source handler with error : %s ", fs.Name(),
 				err.Error())
 		}
 		fs.Close()
@@ -364,7 +364,7 @@ func (fSource *yamlConfigurationSource) DynamicConfigHandler(callback core.Dynam
 func newWatchPool(callback core.DynamicConfigCallback, cfgSrc *yamlConfigurationSource) (*watch, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		lager.Logger.Error("New file watcher failed", err)
+		openlogging.GetLogger().Error("New file watcher failed:" + err.Error())
 		return nil, err
 	}
 
@@ -382,13 +382,13 @@ func (wth *watch) startWatchPool() {
 	for _, file := range wth.fileSource.files {
 		dir, err := filepath.Abs(filepath.Dir(file.filePath))
 		if err != nil {
-			lager.Logger.Errorf(err, "failed to get Directory info from: %s file.", file.filePath)
+			openlogging.GetLogger().Errorf("failed to get Directory info from: %s file: %s", file.filePath, err)
 			return
 		}
 
 		err = wth.watcher.Add(dir)
 		if err != nil {
-			lager.Logger.Errorf(err, "add watcher file: %+v fail.", file)
+			openlogging.GetLogger().Errorf("add watcher file: %+v fail %s", file, err)
 			return
 		}
 	}
@@ -397,13 +397,13 @@ func (wth *watch) startWatchPool() {
 func (wth *watch) AddWatchFile(filePath string) {
 	dir, err := filepath.Abs(filepath.Dir(filePath))
 	if err != nil {
-		lager.Logger.Errorf(err, "failed to get Directory info from: %s file.", filePath)
+		openlogging.GetLogger().Errorf("failed to get Directory info from: %s file: %s", filePath, err)
 		return
 	}
 
 	err = wth.watcher.Add(dir)
 	if err != nil {
-		lager.Logger.Errorf(err, "add watcher file: %s fail.", filePath)
+		openlogging.GetLogger().Errorf("add watcher file: %s fail: %s", filePath, err)
 		return
 	}
 }
@@ -420,13 +420,13 @@ func (wth *watch) watchFile() {
 		select {
 		case event, ok := <-wth.watcher.Events:
 			if !ok {
-				lager.Logger.Warnf("file watcher stop")
+				openlogging.GetLogger().Warnf("file watcher stop")
 				return
 			}
-			lager.Logger.Debugf("the file %s is change for %s. reload it.", event.Name, event.Op.String())
+			openlogging.GetLogger().Debugf("the file %s is change for %s. reload it.", event.Name, event.Op.String())
 
 			if event.Op == fsnotify.Remove {
-				lager.Logger.Warnf("the file change mode: %s. So stop watching file",
+				openlogging.GetLogger().Warnf("the file change mode: %s. So stop watching file",
 					event.String())
 				continue
 			}
@@ -436,7 +436,7 @@ func (wth *watch) watchFile() {
 				// check existence of file
 				_, err := os.Open(event.Name)
 				if os.IsNotExist(err) {
-					lager.Logger.Warnf("[%s] file does not exist so not able to watch further", event.Name, err)
+					openlogging.GetLogger().Warnf("[%s] file does not exist so not able to watch further", event.Name, err)
 				} else {
 					wth.AddWatchFile(event.Name)
 				}
@@ -446,25 +446,25 @@ func (wth *watch) watchFile() {
 
 			yamlContent, err := ioutil.ReadFile(event.Name)
 			if err != nil {
-				lager.Logger.Error("yaml parsing error ", err)
+				openlogging.GetLogger().Error("yaml parsing error " + err.Error())
 				continue
 			}
 			ss := yaml.MapSlice{}
 			err = yaml.Unmarshal([]byte(yamlContent), &ss)
 			if err != nil {
-				lager.Logger.Warnf("unmarshaling failed may be due to invalid file data format", err)
+				openlogging.GetLogger().Warnf("unmarshaling failed may be due to invalid file data format", err)
 				continue
 			}
 
 			newConf := retrieveItems("", ss)
 			events := wth.fileSource.compareUpdate(newConf, event.Name)
-			lager.Logger.Debugf("Event generated events", events)
+			openlogging.GetLogger().Debugf("Event generated events", events)
 			for _, e := range events {
 				wth.callback.OnEvent(e)
 			}
 
 		case err := <-wth.watcher.Errors:
-			lager.Logger.Debugf("watch file error:", err)
+			openlogging.GetLogger().Debugf("watch file error:", err)
 			return
 		}
 	}
@@ -532,7 +532,7 @@ func (fSource *yamlConfigurationSource) compareUpdate(newconf map[string]interfa
 
 				if priority == filePathPriority {
 					fileConfs[key] = confInfo
-					lager.Logger.Infof("Two files have same priority. keeping %s value", confInfo.FilePath)
+					openlogging.GetLogger().Infof("Two files have same priority. keeping %s value", confInfo.FilePath)
 
 				} else if filePathPriority < priority { // lower the vale higher is the priority
 					confInfo.Value = newConfValue

@@ -4,13 +4,14 @@ import (
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-archaius/core/config-manager"
 	"github.com/go-chassis/go-archaius/core/event-system"
-	"github.com/go-chassis/go-archaius/lager"
 	"github.com/go-chassis/go-archaius/sources/commandline-source"
 	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-archaius/sources/memory-source"
 	"github.com/go-chassis/go-archaius/sources/test-source"
 	"github.com/go-chassis/go-chassis/core/config/model"
-	"github.com/go-chassis/go-chassis/util/fileutil"
+	"github.com/go-chassis/go-chassis/pkg/util/fileutil"
+	"github.com/go-chassis/paas-lager"
+	"github.com/go-mesh/openlogging"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
@@ -20,6 +21,16 @@ import (
 	"time"
 )
 
+func init() {
+	log.Init(log.Config{
+		LoggerLevel:   "DEBUG",
+		EnableRsyslog: false,
+		LogFormatText: true,
+		Writers:       []string{"stdout"},
+	})
+	l := log.NewLogger("test")
+	openlogging.SetLogger(l)
+}
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -43,7 +54,6 @@ func TestConfigurationManager(t *testing.T) {
 
 	//supplying nil source
 	var ab core.ConfigSource
-	lager.InitLager(nil)
 	err := confmanager.AddSource(ab, configmanager.DefaultPriority)
 	if err == nil {
 		t.Error("Failed to identify invalid or nil source")

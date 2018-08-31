@@ -22,16 +22,27 @@ package main
 
 import (
 	"fmt"
-	//log "github.com/Sirupsen/logrus"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-archaius/lager"
 	"github.com/go-chassis/go-archaius/sources/file-source"
+	"github.com/go-chassis/paas-lager"
+	"github.com/go-mesh/openlogging"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 )
+
+func init() {
+	log.Init(log.Config{
+		LoggerLevel:   "DEBUG",
+		EnableRsyslog: false,
+		LogFormatText: true,
+		Writers:       []string{"stdout"},
+	})
+	l := log.NewLogger("test")
+	openlogging.SetLogger(l)
+}
 
 //EventListener
 type EventListener struct {
@@ -50,13 +61,13 @@ func main() {
 	// create go-archaius object
 	configFactory, err := goarchaius.NewConfigFactory(nil)
 	if err != nil {
-		lager.Logger.Error("Error:", err)
+		openlogging.GetLogger().Error("Error:" + err.Error())
 	}
 	ConfigFactory = configFactory
 	// init go-archaius
 	err = ConfigFactory.Init()
 	if err != nil {
-		lager.Logger.Error("Error:", err)
+		openlogging.GetLogger().Error("Error:" + err.Error())
 	}
 
 	// create event receiver for configuration changes.
@@ -69,7 +80,7 @@ func main() {
 	// get default configurations from go archaius
 	// default configurations involve 1. commandline arguments 2. environment variables
 	config := ConfigFactory.GetConfigurations()
-	lager.Logger.Infof("======================== Default Config====================== ",
+	openlogging.GetLogger().Infof("======================== Default Config====================== ",
 		config,
 		"===========================================================\n")
 
@@ -84,7 +95,7 @@ func main() {
 
 	// get default and file source configurations
 	config = configFactory.GetConfigurations()
-	lager.Logger.Infof("======================== Default and File source Config====================== ",
+	openlogging.GetLogger().Infof("======================== Default and File source Config====================== ",
 		config,
 		"===========================================================\n")
 
@@ -115,11 +126,11 @@ func main() {
 
 	err = ConfigFactory.DeInit()
 	if err != nil {
-		lager.Logger.Error("Error:", err)
+		openlogging.GetLogger().Error("Error:" + err.Error())
 	}
 
 	config = ConfigFactory.GetConfigurations()
-	lager.Logger.Infof("======================== After Deinit Config======================\n ",
+	openlogging.GetLogger().Infof("======================== After Deinit Config======================\n ",
 		config,
 		"\n========================\n")
 
@@ -130,7 +141,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 	config = ConfigFactory.GetConfigurations()
-	lager.Logger.Infof("\n \n======================== after adding file source: ======================== \n", config, "======================== \n ")
+	openlogging.GetLogger().Infof("\n \n======================== after adding file source: ======================== \n", config, "======================== \n ")
 
 	//// adding config center source
 	//ConfigFactory.AddSource(configCenterSource)
@@ -140,14 +151,14 @@ func main() {
 	// can check for key existence
 	key := "name"
 	if ConfigFactory.IsKeyExist(key) {
-		lager.Logger.Infof(key, " key exist")
+		openlogging.GetLogger().Infof(key, " key exist")
 	}
 
 	name, err := ConfigFactory.GetValue(key).ToString()
 	if err != nil {
-		lager.Logger.Error("get value failed with error ", err)
+		openlogging.GetLogger().Error("get value failed with error " + err.Error())
 	} else {
-		lager.Logger.Infof("Reterived value of name is ", name)
+		openlogging.GetLogger().Infof("Reterived value of name is ", name)
 	}
 
 	sigs := make(chan os.Signal, 1)
@@ -162,5 +173,5 @@ func main() {
 func (e EventListener) Event(event *core.Event) {
 
 	configValue := ConfigFactory.GetConfigurationByKey(event.Key)
-	lager.Logger.Infof("config value ", event.Key, " | ", configValue)
+	openlogging.GetLogger().Infof("config value ", event.Key, " | ", configValue)
 }
