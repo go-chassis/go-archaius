@@ -420,13 +420,13 @@ func (wth *watch) watchFile() {
 		select {
 		case event, ok := <-wth.watcher.Events:
 			if !ok {
-				openlogging.GetLogger().Warnf("file watcher stop")
+				lager.Logger.Warnf("file watcher stop")
 				return
 			}
-			openlogging.GetLogger().Debugf("the file %s is change for %s. reload it.", event.Name, event.Op.String())
+			lager.Logger.Debugf("the file %s is change for %s. reload it.", event.Name, event.Op.String())
 
 			if event.Op == fsnotify.Remove {
-				openlogging.GetLogger().Warnf("the file change mode: %s. So stop watching file",
+				lager.Logger.Warnf("the file change mode: %s. So stop watching file",
 					event.String())
 				continue
 			}
@@ -436,7 +436,7 @@ func (wth *watch) watchFile() {
 				// check existence of file
 				_, err := os.Open(event.Name)
 				if os.IsNotExist(err) {
-					openlogging.GetLogger().Warnf("[%s] file does not exist so not able to watch further", event.Name, err)
+					lager.Logger.Warnf("[%s] file does not exist so not able to watch further", event.Name, err)
 				} else {
 					wth.AddWatchFile(event.Name)
 				}
@@ -444,27 +444,29 @@ func (wth *watch) watchFile() {
 				continue
 			}
 
-			yamlContent, err := ioutil.ReadFile(event.Name)
-			if err != nil {
-				openlogging.GetLogger().Error("yaml parsing error " + err.Error())
-				continue
-			}
-			ss := yaml.MapSlice{}
-			err = yaml.Unmarshal([]byte(yamlContent), &ss)
-			if err != nil {
-				openlogging.GetLogger().Warnf("unmarshaling failed may be due to invalid file data format", err)
-				continue
-			}
+			if event.Op == fsnotify.Write {
+				yamlContent, err := ioutil.ReadFile(event.Name)
+				if err != nil {
+					lager.Logger.Error("yaml parsing error ", err)
+					continue
+				}
+				ss := yaml.MapSlice{}
+				err = yaml.Unmarshal([]byte(yamlContent), &ss)
+				if err != nil {
+					lager.Logger.Warnf("unmarshaling failed may be due to invalid file data format", err)
+					continue
+				}
 
-			newConf := retrieveItems("", ss)
-			events := wth.fileSource.compareUpdate(newConf, event.Name)
-			openlogging.GetLogger().Debugf("Event generated events", events)
-			for _, e := range events {
-				wth.callback.OnEvent(e)
+				newConf := retrieveItems("", ss)
+				events := wth.fileSource.compareUpdate(newConf, event.Name)
+				lager.Logger.Debugf("Event generated events", events)
+				for _, e := range events {
+					wth.callback.OnEvent(e)
+				}
 			}
 
 		case err := <-wth.watcher.Errors:
-			openlogging.GetLogger().Debugf("watch file error:", err)
+			lager.Logger.Debugf("watch file error:", err)
 			return
 		}
 	}
