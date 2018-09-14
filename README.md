@@ -1,4 +1,4 @@
-### go-archius
+### go-archaius
 [![Build Status](https://travis-ci.org/ServiceComb/go-archaius.svg?branch=master)](https://travis-ci.org/ServiceComb/go-archaius)
 
 This is a dynamic configuration management tool for Go-Chassis which helps in configuration
@@ -9,7 +9,7 @@ Meanwhile go-archaius is also decoupled with go chassis, it can be used in any p
 The main objective of this project is to pull or sync the configuration from config-sources for a particular
 micro-service.
 
-### Why use go-archius
+### Why use go-archaius
 it is hard to manage configurations in a distributed system. archaius can integrate with them. Tt  keeps watching configuration changes, and fire change event if there is changes. 
 so that you can easily implement a service which has hot-reconfiguration features. when you need to change configurations. you service has zero-down time
 
