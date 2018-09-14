@@ -34,20 +34,3 @@ the config server at regular intervals.
 ```
 refreshMode: 1
 ```
-
-### Configuration for Go-Archaius client.
-You can configure the client to pull the configuration from external config server,
- the server ip address and basic parameters can be added in chassis.yaml  
- ```
-  config:
-    client:
-      serverUri: http://XX:YYY   #Config Server IP
-      tenantName:  default #This configuration is for local environment, for paas platform there is a auth plugin for authentication. If dont provide the tenant name it will take default values.
-      refreshMode: 1  # 配置动态刷新模式，0为configcenter在发生变化时主动推送，1为client端周期拉取，其他值均为非法，不会去连配置中心
-      refreshInterval: 30 #refreshMode配置为1时，client端主动从配置中心拉取配置的周期，单位秒
-      autodiscovery: false
-      api:  #Optional
-        version: v3
-
-```
-
