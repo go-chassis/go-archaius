@@ -8,7 +8,6 @@ import (
 type Options struct {
 	RequiredFiles    []string
 	OptionalFiles    []string
-	FileHandler      FileHandler
 	ConfigCenterInfo core.ConfigSource
 	ConfigInfo       ConfigCenterInfo
 	UseCLISource     bool
@@ -30,13 +29,6 @@ func WithRequiredFiles(f []string) Option {
 func WithOptionalFiles(f []string) Option {
 	return func(options *Options) {
 		options.OptionalFiles = f
-	}
-}
-
-//WithFileHandler let user custom handler
-func WithFileHandler(handler FileHandler) Option {
-	return func(options *Options) {
-		options.FileHandler = handler
 	}
 }
 

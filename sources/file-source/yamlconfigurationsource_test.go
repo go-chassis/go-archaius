@@ -17,14 +17,17 @@
 /*
 * Created by on 2017/6/22.
  */
-package filesource
+package filesource_test
 
 import (
+	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/core"
+	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-chassis/pkg/util/fileutil"
 	"github.com/go-chassis/paas-lager"
 	"github.com/go-mesh/openlogging"
 	"github.com/stretchr/testify/assert"
+
 	"io"
 	"os"
 	"path/filepath"
@@ -107,34 +110,34 @@ testfilekey3:
 	_, err = io.WriteString(f2, f2content)
 	check(err)
 
-	fSource := NewYamlConfigurationSource()
+	fSource := filesource.NewYamlConfigurationSource()
 
 	//Configuration file1 is adding to the filesource
-	err = fSource.AddFileSource(file1, 0)
+	err = fSource.AddFileSource(file1, 0, nil)
 	if err != nil {
 		t.Error(err)
 	}
 
 	//Duplicate file(file1) is adding to the filesource
-	err = fSource.AddFileSource(file1, 0)
+	err = fSource.AddFileSource(file1, 0, nil)
 	if err != nil {
 		t.Error(err)
 	}
 
 	//Not existing path file adding to the filesource
-	err = fSource.AddFileSource(confdir+"/notexistingdir/notexisting.yaml", 0)
+	err = fSource.AddFileSource(confdir+"/notexistingdir/notexisting.yaml", 0, nil)
 	if err == nil {
 		t.Error("filesource working on not existing path")
 	}
 
-	//Not existing file adding to the filesource
-	err = fSource.AddFileSource(confdir+"/notexisting.yaml", 0)
+	////Not existing file adding to the filesource
+	err = fSource.AddFileSource(confdir+"/notexisting.yaml", 0, nil)
 	if err == nil {
 		t.Error("filesource working on not existing file")
 	}
 
 	//Adding directory to the filesource
-	err = fSource.AddFileSource(confdir, 0)
+	err = fSource.AddFileSource(confdir, 0, nil)
 	if err != nil {
 		t.Error("Failed to add directory to the filesource")
 	}
@@ -173,7 +176,6 @@ testfilekey3:
 	if filesourcecleanup != nil {
 		t.Error("filesource cleanup is Failed")
 	}
-
 }
 
 func TestDynamicConfigurations(t *testing.T) {
@@ -187,18 +189,24 @@ func TestDynamicConfigurations(t *testing.T) {
 	filename3 := filepath.Join(root, "tmp", "test3.yaml")
 	filename4 := filepath.Join(root, "tmp", "test4.yaml")
 	filename5 := filepath.Join(root, "tmp", "test5.yaml")
+	filenameAsKey := filepath.Join(root, "tmp", "filenameAsKey.yaml")
+	filenameAsTxtKey := filepath.Join(root, "tmp", "filenameAsKey.txt")
 
 	yamlContent1 := "yamlkeytest11: test11\n \nyamlkeytest12: test12\n \nyamlkeytest123: test1231"
 	yamlContent2 := "yamlkeytest21: test21\n \nyamlkeytest22: test22\n \nyamlkeytest123: test1232"
 	yamlContent3 := "yamlkeytest31: test31\n \nyamlkeytest32: test32\n \nyamlkeytest123: test1233"
 	yamlContent4 := "yamlkeytest41: test41\n \nyamlkeytest42: test32\n \nyamlkeytest45: test454"
 	yamlContent5 := "yamlkeytest51: test51\n \nyamlkeytest52: test52\n \nyamlkeytest123: test1233"
+	yamlContent := "cse: opensource\n \ncse1: opensource1"
+	textContent := "hi: hello"
 
 	os.Remove(filename1)
 	os.Remove(filename2)
 	os.Remove(filename3)
 	os.Remove(filename4)
 	os.Remove(filename5)
+	os.Remove(filenameAsKey)
+	os.Remove(filenameAsTxtKey)
 	os.Remove(tmpdir)
 	err := os.Mkdir(tmpdir, 0777)
 	check(err)
@@ -225,6 +233,16 @@ func TestDynamicConfigurations(t *testing.T) {
 	defer f5.Close()
 	defer os.Remove(filename5)
 
+	f6, err := os.Create(filenameAsKey)
+	check(err)
+	defer f6.Close()
+	defer os.Remove(filenameAsKey)
+
+	f7, err := os.Create(filenameAsTxtKey)
+	check(err)
+	defer f7.Close()
+	defer os.Remove(filenameAsTxtKey)
+
 	_, err = io.WriteString(f1, yamlContent1)
 	check(err)
 	_, err = io.WriteString(f2, yamlContent2)
@@ -235,11 +253,16 @@ func TestDynamicConfigurations(t *testing.T) {
 	check(err)
 	_, err = io.WriteString(f5, yamlContent5)
 	check(err)
+	_, err = io.WriteString(f6, yamlContent)
+	check(err)
 
-	fSource := NewYamlConfigurationSource()
-	fSource.AddFileSource(filename1, 0)
-	fSource.AddFileSource(filename2, 1)
-	fSource.AddFileSource(filename3, 2)
+	_, err = io.WriteString(f7, textContent)
+	check(err)
+
+	fSource := filesource.NewYamlConfigurationSource()
+	fSource.AddFileSource(filename1, 0, nil)
+	fSource.AddFileSource(filename2, 1, nil)
+	fSource.AddFileSource(filename3, 2, nil)
 
 	dynHandler := new(TestDynamicConfigHandler)
 	fSource.DynamicConfigHandler(dynHandler)
@@ -294,8 +317,8 @@ func TestDynamicConfigurations(t *testing.T) {
 	}
 
 	t.Log("adding new files after dynhandler is inited")
-	fSource.AddFileSource(filename4, 3)
-	fSource.AddFileSource(filename5, 4)
+	fSource.AddFileSource(filename4, 3, nil)
+	fSource.AddFileSource(filename5, 4, nil)
 	time.Sleep(10 * time.Millisecond)
 
 	t.Log("verifying the configurations of newely added files")
@@ -321,6 +344,38 @@ func TestDynamicConfigurations(t *testing.T) {
 	t.Log("verifying the event from lowest priority file(filename5)")
 	assert.NotEqual(t, "test455", configkey)
 	assert.Equal(t, "test454", configkey)
+
+	fSource.AddFileSource(filenameAsKey, 0, archaius.WithFileHandler)
+	time.Sleep(10 * time.Millisecond)
+	configkey, _ = fSource.GetConfigurationByKey(filenameAsKey)
+	v := "cse: opensource\n \ncse1: opensource1"
+	assert.Equal(t, v, configkey)
+
+	// Adding new value to the existing file
+	textContent = "\ncse2: service2\n"
+	_, err = io.WriteString(f6, textContent)
+	check(err)
+	time.Sleep(10 * time.Millisecond)
+
+	configkey, _ = fSource.GetConfigurationByKey(filenameAsKey)
+	v = "cse: opensource\n \ncse1: opensource1\ncse2: service2\n"
+	assert.Equal(t, v, configkey)
+
+	// Supporting adding of a text file
+	fSource.AddFileSource(filenameAsTxtKey, 0, archaius.WithFileHandler)
+	time.Sleep(10 * time.Millisecond)
+	configkey, _ = fSource.GetConfigurationByKey(filenameAsTxtKey)
+	v = "hi: hello"
+	assert.Equal(t, v, configkey)
+
+	textContent = "hi1: how"
+	_, err = io.WriteString(f7, textContent)
+	check(err)
+	time.Sleep(10 * time.Millisecond)
+
+	configkey, _ = fSource.GetConfigurationByKey(filenameAsTxtKey)
+	v = "hi: hellohi1: how"
+	assert.Equal(t, v, configkey)
 
 	data, err := fSource.GetConfigurationByKeyAndDimensionInfo("data@default#0.1", "hello")
 	if data != nil || err != nil {
@@ -356,10 +411,10 @@ func TestNewYamlConfigurationSource2(t *testing.T) {
 	_, err = io.WriteString(f1, file1content)
 	check(err)
 
-	fSource := NewYamlConfigurationSource()
+	fSource := filesource.NewYamlConfigurationSource()
 
 	t.Log("improper configuration file adding to the filesource")
-	err = fSource.AddFileSource(file1, 0)
+	err = fSource.AddFileSource(file1, 0, nil)
 	if err == nil {
 		t.Error(err)
 	}

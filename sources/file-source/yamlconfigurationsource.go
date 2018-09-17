@@ -67,6 +67,7 @@ type yamlConfigurationSource struct {
 	watchPool      *watch
 	filelock       sync.Mutex
 	sync.RWMutex
+	JavaOpts map[string]bool
 }
 
 type file struct {
@@ -91,14 +92,18 @@ var fileConfigSource *yamlConfigurationSource
 	accepts files and directories as file-source
   		1. Directory: all yaml files considered as file source
   		2. File: specified yaml file considered as file source
-
   	TODO: Currently file sources priority not considered. if key conflicts then latest key will get considered
 */
+
+//FileHandler is a function type which accepts filename and give the key values
+//Where key is a filename and value as a file content.
+type FileHandler func(fileName string) (map[string]interface{}, error)
 
 //FileSource is a interface
 type FileSource interface {
 	core.ConfigSource
-	AddFileSource(filePath string, priority uint32) error
+	AddFileSource(filePath string, priority uint32, f FileHandler) error
+	HandleFunc(path string) error
 }
 
 //NewYamlConfigurationSource creates new yaml configuration
@@ -111,7 +116,30 @@ func NewYamlConfigurationSource() FileSource {
 	return fileConfigSource
 }
 
-func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32) error {
+func (fSource *yamlConfigurationSource) HandleFunc(path string) error {
+	fSource.JavaOpts = make(map[string]bool, 0)
+	fSource.JavaOpts[path] = true
+	err := fSource.fileOperation(path, 0)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32, f FileHandler) error {
+
+	var err error
+	if f != nil {
+		err = fSource.HandleFunc(p)
+	} else {
+		err = fSource.fileOperation(p, priority)
+	}
+
+	return err
+}
+
+func (fSource *yamlConfigurationSource) fileOperation(p string, priority uint32) error {
 	path, err := filepath.Abs(p)
 	if err != nil {
 		return err
@@ -120,6 +148,16 @@ func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32)
 	// check existence of file
 	fs, err := os.Open(path)
 	if os.IsNotExist(err) {
+		if len(fSource.JavaOpts) != 0 {
+			if fSource.JavaOpts[path] {
+				events := fSource.compareUpdate(nil, path)
+				if fSource.watchPool != nil && fSource.watchPool.callback != nil { // if file source already added and try to add
+					for _, e := range events {
+						fSource.watchPool.callback.OnEvent(e)
+					}
+				}
+			}
+		}
 		return fmt.Errorf("[%s] file not exist", path)
 	}
 	defer fs.Close()
@@ -214,9 +252,21 @@ func (fSource *yamlConfigurationSource) handleDirectory(dir *os.File, priority u
 }
 
 func (fSource *yamlConfigurationSource) handleFile(file *os.File, priority uint32) error {
-	config, err := fileConfigSource.pullYamlFileConfig(file.Name())
-	if err != nil {
-		return fmt.Errorf("failed to pull configurations from [%s] file, %s", file.Name(), err)
+	var (
+		config map[string]interface{}
+		err    error
+	)
+
+	if !fSource.JavaOpts[file.Name()] {
+		config, err = fileConfigSource.pullYamlFileConfig(file.Name())
+		if err != nil {
+			return fmt.Errorf("failed to pull configurations from [%s] file, %s", file.Name(), err)
+		}
+	} else {
+		config, err = fileConfigSource.pullYamlFileConfigOfAnyFileFormat(file.Name())
+		if err != nil {
+			return fmt.Errorf("failed to pull configurations from [%s] file, %s", file.Name(), err)
+		}
 	}
 
 	err = fSource.handlePriority(file.Name(), priority)
@@ -280,6 +330,18 @@ func (fSource *yamlConfigurationSource) pullYamlFileConfig(fileName string) (map
 	return configMap, nil
 }
 
+func (fSource *yamlConfigurationSource) pullYamlFileConfigOfAnyFileFormat(fileName string) (map[string]interface{}, error) {
+	configMap := make(map[string]interface{})
+	content, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	configMap[fileName] = string(content)
+
+	return configMap, nil
+}
+
 func (fSource *yamlConfigurationSource) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
 
@@ -325,6 +387,7 @@ func (fSource *yamlConfigurationSource) GetConfigurationByKey(key string) (inter
 	defer fSource.Unlock()
 
 	for ckey, confInfo := range fSource.Configurations {
+
 		if confInfo == nil {
 			confInfo.Value = nil
 			continue
@@ -423,6 +486,7 @@ func (wth *watch) watchFile() {
 				//ignore
 				continue
 			}
+			//normal code check
 			openlogging.GetLogger().Debugf("file event %s, operation is %d. reload it.", event.Name, event.Op)
 
 			if event.Op == fsnotify.Remove {
@@ -434,12 +498,7 @@ func (wth *watch) watchFile() {
 				wth.watcher.Remove(event.Name)
 				// check existence of file
 				_, err := os.Open(event.Name)
-				if os.IsNotExist(err) {
-					openlogging.GetLogger().Warnf("[%s] file does not exist so not able to watch further", event.Name, err)
-				} else {
-					wth.AddWatchFile(event.Name)
-				}
-
+				wth.addFileWatch(event.Name, err)
 				continue
 			}
 
@@ -447,20 +506,34 @@ func (wth *watch) watchFile() {
 				time.Sleep(time.Millisecond)
 			}
 
-			yamlContent, err := ioutil.ReadFile(event.Name)
-			if err != nil {
-				openlogging.GetLogger().Error("yaml parsing error " + err.Error())
-				continue
-			}
-			ss := yaml.MapSlice{}
-			err = yaml.Unmarshal([]byte(yamlContent), &ss)
-			if err != nil {
-				openlogging.GetLogger().Warnf("unmarshaling failed may be due to invalid file data format", err)
-				continue
-			}
+			newConf := make(map[string]interface{})
+			if !wth.fileSource.JavaOpts[event.Name] {
+				yamlContent, err := ioutil.ReadFile(event.Name)
+				if err != nil {
+					openlogging.GetLogger().Error("yaml parsing error " + err.Error())
+					continue
+				}
+				ss := yaml.MapSlice{}
+				err = yaml.Unmarshal([]byte(yamlContent), &ss)
+				if err != nil {
+					openlogging.GetLogger().Warnf("unmarshaling failed may be due to invalid file data format", err)
+					continue
+				}
 
-			newConf := retrieveItems("", ss)
-			events := wth.fileSource.compareUpdate(newConf, event.Name)
+				newConf = retrieveItems("", ss)
+			} else {
+
+				content, err := ioutil.ReadFile(event.Name)
+				if err != nil {
+					openlogging.GetLogger().Error("file parsing error " + err.Error())
+					continue
+				}
+
+				newConf[event.Name] = string(content)
+			}
+			// Dynamic event handling
+			events := wth.dynamicEventHandler(newConf, event.Name)
+
 			openlogging.GetLogger().Debugf("Event generated events %s", events)
 			for _, e := range events {
 				wth.callback.OnEvent(e)
@@ -471,7 +544,29 @@ func (wth *watch) watchFile() {
 			return
 		}
 	}
+}
 
+func (wth *watch) addFileWatch(name string, err error) {
+	if os.IsNotExist(err) {
+		openlogging.GetLogger().Warnf("[%s] file does not exist so not able to watch further", name, err)
+	} else {
+		wth.AddWatchFile(name)
+	}
+}
+
+func (wth *watch) dynamicEventHandler(newConf map[string]interface{}, name string) []*core.Event {
+	var events []*core.Event
+
+	if wth.fileSource.JavaOpts[name] {
+		events = wth.fileSource.compareUpdate(newConf, name)
+	} else {
+		if len(wth.fileSource.JavaOpts) == 0 {
+			wth.fileSource.JavaOpts = make(map[string]bool, 0)
+		}
+		wth.fileSource.JavaOpts[name] = false
+		events = wth.fileSource.compareUpdate(newConf, name)
+	}
+	return events
 }
 
 func (fSource *yamlConfigurationSource) compareUpdate(newconf map[string]interface{}, filePath string) []*core.Event {
@@ -483,6 +578,29 @@ func (fSource *yamlConfigurationSource) compareUpdate(newconf map[string]interfa
 
 	fSource.Lock()
 	defer fSource.Unlock()
+
+	// update and delete with latest configs
+	if !fSource.JavaOpts[filePath] {
+		events = fSource.eventsForDefaultFile(newconf, filePath, events, fileConfs)
+		if events == nil {
+			return nil
+		}
+	} else {
+		events = fSource.eventsForNewFile(newconf, filePath, events, fileConfs)
+		if events == nil {
+			return nil
+		}
+	}
+
+	// create add/create new config
+	fileConfs, events = fSource.addOrCreateConf(fileConfs, newconf, events, filePath)
+	fSource.Configurations = fileConfs
+
+	return events
+}
+
+func (fSource *yamlConfigurationSource) eventsForDefaultFile(newconf map[string]interface{}, filePath string,
+	events []*core.Event, fileConfs map[string]*ConfigInfo) []*core.Event {
 
 	var filePathPriority uint32 = math.MaxUint32
 	for _, file := range fSource.files {
@@ -551,45 +669,120 @@ func (fSource *yamlConfigurationSource) compareUpdate(newconf map[string]interfa
 			}
 		}
 	}
+	return events
+}
 
-	// create add/create new config
-	fileConfs, events = fSource.addOrCreateConf(fileConfs, newconf, events, filePath)
+func (fSource *yamlConfigurationSource) eventsForNewFile(newconf map[string]interface{}, filePath string,
+	events []*core.Event, fileConfs map[string]*ConfigInfo) []*core.Event {
 
-	fSource.Configurations = fileConfs
+	var filePathPriority uint32 = math.MaxUint32
+	for _, file := range fSource.files {
+		if file.filePath == filePath {
+			filePathPriority = file.priority
+		}
+	}
+
+	if filePathPriority == math.MaxUint32 {
+		return nil
+	}
+
+	for key, confInfo := range fSource.Configurations {
+		// If file doesnot exist and the key is present then delete from the configuration
+		_, err := os.Open(filePath)
+		if os.IsNotExist(err) {
+			_, ok := fSource.Configurations[filePath]
+			if ok {
+				delete(fSource.Configurations, filePath)
+			}
+			break
+
+		}
+
+		if confInfo == nil {
+			confInfo.Value = nil
+			continue
+		}
+
+		// If key(filePath) is adding for the first time
+		if key != filePath {
+			fileConfs[key] = confInfo
+			continue
+		} else {
+			// If any updation for the file
+			switch confInfo.FilePath {
+			case filePath:
+				newConfValue, ok := newconf[filePath]
+				if !ok {
+					confInfo.Value = newconf[filePath]
+					confInfo.FilePath = filePath
+					fileConfs[filePath] = confInfo
+
+					events = append(events, &core.Event{EventSource: FileConfigSourceConst, Key: filePath,
+						EventType: core.Update, Value: newconf[filePath]})
+				} else if reflect.DeepEqual(confInfo.Value, newConfValue) {
+					fileConfs[key] = confInfo
+					continue
+				}
+
+				confInfo.Value = newConfValue
+				confInfo.FilePath = filePath
+				fileConfs[filePath] = confInfo
+
+				events = append(events, &core.Event{EventSource: FileConfigSourceConst, Key: filePath,
+					EventType: core.Update, Value: newConfValue})
+			}
+		}
+	}
 
 	return events
 }
 
 func (fSource *yamlConfigurationSource) addOrCreateConf(fileConfs map[string]*ConfigInfo, newconf map[string]interface{},
 	events []*core.Event, filePath string) (map[string]*ConfigInfo, []*core.Event) {
-	for key, value := range newconf {
+
+	if fSource.JavaOpts[filePath] {
+		_, err := os.Open(filePath)
+		if os.IsNotExist(err) {
+			return fSource.Configurations, events
+		}
+
 		handled := false
 
-		_, ok := fileConfs[key]
+		_, ok := fileConfs[filePath]
 		if ok {
 			handled = true
 		}
 
 		if !handled {
-			events = append(events, &core.Event{EventSource: FileConfigSourceConst, Key: key,
-				EventType: core.Create, Value: value})
-			fileConfs[key] = &ConfigInfo{
+			events = append(events, &core.Event{EventSource: FileConfigSourceConst, Key: filePath,
+				EventType: core.Create, Value: newconf[filePath]})
+			fileConfs[filePath] = &ConfigInfo{
 				FilePath: filePath,
-				Value:    value,
+				Value:    newconf[filePath],
+			}
+		}
+	} else {
+		for key, value := range newconf {
+			handled := false
+
+			_, ok := fileConfs[key]
+			if ok {
+				handled = true
+			}
+
+			if !handled {
+				events = append(events, &core.Event{EventSource: FileConfigSourceConst, Key: key,
+					EventType: core.Create, Value: value})
+				fileConfs[key] = &ConfigInfo{
+					FilePath: filePath,
+					Value:    value,
+				}
 			}
 		}
 	}
 
 	return fileConfs, events
 }
-
-//func generateKey(key, filepath string) string {
-//	return key + `#` + filepath
-//}
-//
-//func getFileKeyNPath(configKey string) []string {
-//	return strings.Split(configKey, `#`)
-//}
 
 func (fSource *yamlConfigurationSource) Cleanup() error {
 

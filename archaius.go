@@ -48,7 +48,7 @@ func initFileSource(o *Options) (core.ConfigSource, error) {
 	fs = filesource.NewYamlConfigurationSource()
 	// adding all files with file source
 	for _, v := range o.RequiredFiles {
-		if err := fs.AddFileSource(v, filesource.DefaultFilePriority); err != nil {
+		if err := fs.AddFileSource(v, filesource.DefaultFilePriority, nil); err != nil {
 			openlogging.GetLogger().Errorf("add file source error [%s].", err.Error())
 			return nil, err
 		}
@@ -60,7 +60,7 @@ func initFileSource(o *Options) (core.ConfigSource, error) {
 			openlogging.GetLogger().Infof("[%s] not exist", v)
 			continue
 		}
-		if err := fs.AddFileSource(v, filesource.DefaultFilePriority); err != nil {
+		if err := fs.AddFileSource(v, filesource.DefaultFilePriority, nil); err != nil {
 			openlogging.GetLogger().Infof("%v", err)
 			return nil, err
 		}
@@ -285,9 +285,26 @@ func UnRegisterListener(listenerObj core.EventListener, key ...string) error {
 	return factory.UnRegisterListener(listenerObj, key...)
 }
 
-// AddFile is for to add the configuration files into the configfactory at run time
-func AddFile(file string) error {
-	return fs.AddFileSource(file, filesource.DefaultFilePriority)
+//WithFileHandler let user custom handler
+func WithFileHandler(path string) (map[string]interface{}, error) {
+	var data map[string]interface{}
+	err := filesource.NewYamlConfigurationSource().HandleFunc(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if data == nil {
+		data = make(map[string]interface{})
+	}
+
+	data[path] = Get(path)
+
+	return data, nil
+}
+
+// AddFile is for to add the configuration files into the configfactory at run time.
+func AddFile(file string, f func(path string) (map[string]interface{}, error)) error {
+	return fs.AddFileSource(file, filesource.DefaultFilePriority, f)
 }
 
 //AddKeyValue is for to add the configuration key, value pairs into the configfactory at run time
