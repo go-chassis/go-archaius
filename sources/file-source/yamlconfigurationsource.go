@@ -31,6 +31,7 @@ import (
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-mesh/openlogging"
 	"gopkg.in/yaml.v2"
+	"time"
 )
 
 const (
@@ -443,26 +444,28 @@ func (wth *watch) watchFile() {
 
 				continue
 			}
-			if event.Op == fsnotify.Write {
-				yamlContent, err := ioutil.ReadFile(event.Name)
-				if err != nil {
-					openlogging.GetLogger().Error("yaml parsing error " + err.Error())
-					continue
-				}
-				ss := yaml.MapSlice{}
-				err = yaml.Unmarshal([]byte(yamlContent), &ss)
-				if err != nil {
-					openlogging.GetLogger().Warnf("unmarshaling failed may be due to invalid file data format", err)
-					continue
-				}
 
-				newConf := retrieveItems("", ss)
-				events := wth.fileSource.compareUpdate(newConf, event.Name)
-				openlogging.GetLogger().Debugf("Event generated events", events)
-				for _, e := range events {
-					wth.callback.OnEvent(e)
-				}
+			if event.Op == fsnotify.Create {
+				time.Sleep(time.Millisecond)
+			}
 
+			yamlContent, err := ioutil.ReadFile(event.Name)
+			if err != nil {
+				openlogging.GetLogger().Error("yaml parsing error " + err.Error())
+				continue
+			}
+			ss := yaml.MapSlice{}
+			err = yaml.Unmarshal([]byte(yamlContent), &ss)
+			if err != nil {
+				openlogging.GetLogger().Warnf("unmarshaling failed may be due to invalid file data format", err)
+				continue
+			}
+
+			newConf := retrieveItems("", ss)
+			events := wth.fileSource.compareUpdate(newConf, event.Name)
+			openlogging.GetLogger().Debugf("Event generated events", events)
+			for _, e := range events {
+				wth.callback.OnEvent(e)
 			}
 
 		case err := <-wth.watcher.Errors:
