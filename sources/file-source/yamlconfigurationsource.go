@@ -31,6 +31,7 @@ import (
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-mesh/openlogging"
 	"gopkg.in/yaml.v2"
+	"strings"
 	"time"
 )
 
@@ -410,13 +411,6 @@ func (wth *watch) AddWatchFile(filePath string) {
 }
 
 func (wth *watch) watchFile() {
-
-	//watchAgain:
-	//	err := wth.watcher.Add(filePath)
-	//	if err != nil {
-	//		log.Logger.Errorf("add watcher file: %s fail.", filePath)
-	//		return
-	//	}
 	for {
 		select {
 		case event, ok := <-wth.watcher.Events:
@@ -424,11 +418,15 @@ func (wth *watch) watchFile() {
 				openlogging.GetLogger().Warnf("file watcher stop")
 				return
 			}
-			openlogging.GetLogger().Debugf("the file %s is change for %s. reload it.", event.Name, event.Op.String())
+
+			if strings.HasSuffix(event.Name, ".swx") || strings.HasSuffix(event.Name, ".swp") || strings.HasSuffix(event.Name, "~") {
+				//ignore
+				continue
+			}
+			openlogging.GetLogger().Debugf("file event %s, operation is %d. reload it.", event.Name, event.Op)
 
 			if event.Op == fsnotify.Remove {
-				openlogging.GetLogger().Warnf("the file change mode: %s. So stop watching file",
-					event.String())
+				openlogging.GetLogger().Warnf("the file change mode: %s, continue", event.String())
 				continue
 			}
 
@@ -463,7 +461,7 @@ func (wth *watch) watchFile() {
 
 			newConf := retrieveItems("", ss)
 			events := wth.fileSource.compareUpdate(newConf, event.Name)
-			openlogging.GetLogger().Debugf("Event generated events", events)
+			openlogging.GetLogger().Debugf("Event generated events %s", events)
 			for _, e := range events {
 				wth.callback.OnEvent(e)
 			}
