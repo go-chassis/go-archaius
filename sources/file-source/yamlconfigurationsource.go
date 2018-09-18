@@ -553,14 +553,15 @@ func (fSource *yamlConfigurationSource) compareUpdate(newconf map[string]interfa
 	}
 
 	// create add/create new config
-	fileConfs = fSource.addOrCreateConf(fileConfs, newconf, events, filePath)
+	fileConfs, events = fSource.addOrCreateConf(fileConfs, newconf, events, filePath)
+
 	fSource.Configurations = fileConfs
 
 	return events
 }
 
 func (fSource *yamlConfigurationSource) addOrCreateConf(fileConfs map[string]*ConfigInfo, newconf map[string]interface{},
-	events []*core.Event, filePath string) map[string]*ConfigInfo {
+	events []*core.Event, filePath string) (map[string]*ConfigInfo, []*core.Event) {
 	for key, value := range newconf {
 		handled := false
 
@@ -579,7 +580,7 @@ func (fSource *yamlConfigurationSource) addOrCreateConf(fileConfs map[string]*Co
 		}
 	}
 
-	return fileConfs
+	return fileConfs, events
 }
 
 //func generateKey(key, filepath string) string {
