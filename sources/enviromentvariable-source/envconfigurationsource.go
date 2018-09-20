@@ -40,19 +40,15 @@ type EnvConfigurationSource struct {
 
 var _ core.ConfigSource = &EnvConfigurationSource{}
 
-var envConfigSource *EnvConfigurationSource
-
 //NewEnvConfigurationSource configures a new environment configuration
 func NewEnvConfigurationSource() core.ConfigSource {
-	if envConfigSource == nil {
-		envConfigSource = new(EnvConfigurationSource)
-		config, err := envConfigSource.pullConfigurations()
-		if err != nil {
-			openlogging.GetLogger().Error("failed to initialize environment configurations: " + err.Error())
-			return envConfigSource
-		}
-		envConfigSource.Configurations = config
+	envConfigSource := new(EnvConfigurationSource)
+	config, err := envConfigSource.pullConfigurations()
+	if err != nil {
+		openlogging.GetLogger().Error("failed to initialize environment configurations: " + err.Error())
+		return envConfigSource
 	}
+	envConfigSource.Configurations = config
 
 	return envConfigSource
 }

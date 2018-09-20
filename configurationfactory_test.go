@@ -1,14 +1,13 @@
-package goarchaius
+package archaius_test
 
 import (
 	"testing"
 
+	"fmt"
+	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-archaius/sources/file-source"
-	"github.com/go-chassis/go-archaius/sources/memory-source"
 	"github.com/go-chassis/go-archaius/sources/test-source"
-	"github.com/go-chassis/go-chassis/pkg/util/fileutil"
-	"github.com/go-chassis/paas-lager"
 	"github.com/go-mesh/openlogging"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -17,23 +16,11 @@ import (
 	"time"
 )
 
-func init() {
-	log.Init(log.Config{
-		LoggerLevel:   "DEBUG",
-		EnableRsyslog: false,
-		LogFormatText: true,
-		Writers:       []string{"stdout"},
-	})
-	l := log.NewLogger("test")
-	openlogging.SetLogger(l)
-}
-
-type ConfigStruct struct {
-	Yamltest1 int `yaml:"yamltest1"`
-}
-
 type EventListener struct{}
 
+func (e EventListener) Keys() []string {
+	return []string{"age"}
+}
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -47,19 +34,18 @@ func populateCmdConfig() {
 }
 
 func TestConfigFactory(t *testing.T) {
-
-	root, _ := fileutil.GetWorkDir()
-	os.Setenv("CHASSIS_HOME", root)
-	t.Log(os.Getenv("CHASSIS_HOME"))
+	t.Log("write files")
+	d, err := os.Getwd()
+	assert.NoError(t, err)
 	t.Log("Test configurationfactory.go")
 	f1content := "APPLICATION_ID: CSE\n  \ncse:\n  service:\n    registry:\n      type: servicecenter\n  protocols:\n       highway:\n         listenAddress: 127.0.0.1:8080\n  \nssl:\n  test.consumer.certFile: test.cer\n  test.consumer.keyFile: test.key\n"
 
-	confdir := filepath.Join(root, "conf")
-	filename1 := filepath.Join(root, "conf", "chassis.yaml")
+	confdir := filepath.Join(d, "conf")
+	filename1 := filepath.Join(d, "conf", "chassis.yaml")
 
 	os.Remove(filename1)
 	os.Remove(confdir)
-	err := os.Mkdir(confdir, 0777)
+	err = os.Mkdir(confdir, 0777)
 	check(err)
 	f1, err1 := os.Create(filename1)
 	check(err1)
@@ -69,14 +55,13 @@ func TestConfigFactory(t *testing.T) {
 
 	_, err1 = io.WriteString(f1, f1content)
 	populateCmdConfig()
-
-	_, err = NewConfigFactory(nil)
+	fmt.Println("init factory")
+	factory, err := archaius.NewConfigFactory(nil)
 	assert.Equal(t, nil, err)
+	fmt.Println("verifying methods before config factory initialization")
+	factory.DeInit()
+	fmt.Println(factory.GetValue("testkey"))
 
-	factory, err := NewConfigFactory(nil)
-	assert.Equal(t, nil, err)
-
-	t.Log("verifying methods before config factory initialization")
 	assert.Equal(t, nil, factory.GetValue("testkey"))
 	assert.Equal(t, nil, factory.AddSource(nil))
 	assert.Equal(t, map[string]interface{}(map[string]interface{}(nil)), factory.GetConfigurations())
@@ -85,8 +70,9 @@ func TestConfigFactory(t *testing.T) {
 	assert.Equal(t, nil, factory.GetConfigurationByKey("testkey"))
 	assert.Equal(t, nil, factory.AddSource(nil))
 	assert.Equal(t, nil, factory.GetConfigurationByKeyAndDimensionInfo("data@default#0.1", "hello"))
-
+	fmt.Println("DeInit")
 	factory.DeInit()
+	fmt.Println("Init")
 	factory.Init()
 	defer factory.DeInit()
 
@@ -98,51 +84,50 @@ func TestConfigFactory(t *testing.T) {
 	//fileSourcePriority    = 	4
 
 	time.Sleep(10 * time.Millisecond)
+	fmt.Println("wake up")
 	eventHandler := EventListener{}
 	t.Log("Register Listener")
 	err = factory.RegisterListener(eventHandler, "a*")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	defer factory.UnRegisterListener(eventHandler, "a*")
 	defer t.Log("UnRegister Listener")
 
-	t.Log("verifying existing configuration keyvalue pair")
+	fmt.Println("verifying existing configuration keyvalue pair")
 	configvalue := factory.GetConfigurationByKey("commonkey")
 	if configvalue != "cmdsource1" {
 		t.Error("Failed to get the existing keyvalue pair")
 	}
 
-	t.Log("Adding filesource to the configfactroy")
+	fmt.Println("Adding filesource to the configfactroy")
 	fsource := filesource.NewYamlConfigurationSource()
 	fsource.AddFileSource(filename1, 0)
 	factory.AddSource(fsource)
 
-	t.Log("Generating event through testsource(priority 1)")
-	memsource := memoryconfigsource.NewMemoryConfigurationSource()
-	memsource.AddKeyValue("commonkey", "memsource1")
+	fmt.Println("Generating event through testsource(priority 1)")
+	fmt.Println("Generating event through testsource(priority 1)")
+	archaius.AddKeyValue("commonkey", "memsource1")
 
-	t.Log("verifying the key of lower priority source")
+	fmt.Println("verifying the key of lower priority source")
 	time.Sleep(10 * time.Millisecond)
 	configvalue = factory.GetConfigurationByKey("commonkey")
 	if configvalue != "memsource1" {
 		t.Error("Failed to get the existing keyvalue pair")
 	}
 
-	t.Log("Adding testsource to the configfactory")
+	fmt.Println("Adding testsource to the configfactory")
 	testConfig := map[string]interface{}{"aaa": "111", "bbb": "222", "commonkey": "testsource1"}
 	testSource := testsource.NewTestSource(testConfig)
 	factory.AddSource(testSource)
 	defer testsource.CleanupTestSource()
 
-	t.Log("verifying common configuration keyvalue pair ")
+	fmt.Println("verifying common configuration keyvalue pair ")
 	time.Sleep(10 * time.Millisecond)
 	configvalue = factory.GetConfigurationByKey("commonkey")
 	if configvalue != "testsource1" {
 		t.Error("Failed to get the key highest priority sorce")
 	}
 
-	t.Log("verifying filesource configurations ")
+	fmt.Println("verifying filesource configurations ")
 	configurations := factory.GetConfigurations()
 	if configurations["testcmdkey2"] != "cmdkey2" || configurations["APPLICATION_ID"] != "CSE" {
 		t.Error("Failed to get the configurations")
@@ -158,15 +143,15 @@ func TestConfigFactory(t *testing.T) {
 		t.Error("Failed to get the exist status of the keys")
 	}
 
-	t.Log("verifying memsource configurations and accessing in different data type formats")
-	memsource.AddKeyValue("stringkey", "true")
+	fmt.Println("verifying memsource configurations and accessing in different data type formats")
+	archaius.AddKeyValue("stringkey", "true")
 	time.Sleep(10 * time.Millisecond)
 	configvalue2, err := factory.GetValue("stringkey").ToBool()
 	if err != nil || configvalue2 != true {
 		t.Error("failed to get the value in bool")
 	}
 
-	memsource.AddKeyValue("boolkey", "hello")
+	archaius.AddKeyValue("boolkey", "hello")
 	time.Sleep(10 * time.Millisecond)
 	configvalue3, err := factory.GetValue("boolkey").ToBool()
 	if err != nil || configvalue3 != false {
@@ -189,9 +174,8 @@ func TestConfigFactory(t *testing.T) {
 	}
 
 	time.Sleep(10 * time.Millisecond)
-	if configmap["testcmdkey1"] != "cmdkey1" || configmap["aaa"] != "111" {
-		t.Error("Failed to get the keyvalue pairs through unmarshall")
-	}
+	assert.Equal(t, "cmdkey1", configmap["testcmdkey1"])
+	assert.Equal(t, "111", configmap["aaa"])
 
 	//supplying nil listener.
 	var listener core.EventListener

@@ -48,15 +48,11 @@ type MemorySource interface {
 
 var _ core.ConfigSource = &MemoryConfigurationSource{}
 
-var memoryConfigSource *MemoryConfigurationSource
-
 //NewMemoryConfigurationSource initializes all necessary components for memory configuration
 func NewMemoryConfigurationSource() MemorySource {
-	if memoryConfigSource == nil {
-		memoryConfigSource = new(MemoryConfigurationSource)
-		memoryConfigSource.Configurations = make(map[string]interface{})
-		memoryConfigSource.CallbackCheck = make(chan bool)
-	}
+	memoryConfigSource := new(MemoryConfigurationSource)
+	memoryConfigSource.Configurations = make(map[string]interface{})
+	memoryConfigSource.CallbackCheck = make(chan bool)
 
 	return memoryConfigSource
 }

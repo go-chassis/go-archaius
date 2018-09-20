@@ -18,8 +18,7 @@
 * Created by on 2017/6/22.
  */
 
-// Package goarchaius provides you a list of interface which helps in communciation with config-center
-package goarchaius
+package archaius
 
 import (
 	"errors"
@@ -41,14 +40,14 @@ const (
 	UnsuccessfulArchaiusInit = "issue with go-archaius initialization"
 )
 
-// ConfigurationFactory is a list of Interface for Config Center
+// ConfigurationFactory is a list of Interface for config Center
 type ConfigurationFactory interface {
 	// Init ConfigurationFactory
 	Init() error
 	// dump complete configuration managed by config-client based on priority
-	// (1. Config Center 2. Commandline Argument 3.Environment Variable  4.ConfigFile , 1 with highest priority
+	// (1. config Center 2. Commandline Argument 3.Environment Variable  4.ConfigFile , 1 with highest priority
 	GetConfigurations() map[string]interface{}
-	// dump complete configuration managed by config-client for Config Center based on dimension info.
+	// dump complete configuration managed by config-client for config Center based on dimension info.
 	GetConfigurationsByDimensionInfo(dimensionInfo string) map[string]interface{}
 	// add the dimension info for other services
 	AddByDimensionInfo(dimensionInfo string) (map[string]string, error)
@@ -82,32 +81,26 @@ type ConfigFactory struct {
 	//logger      *ccLogger.ConfigClientLogger
 }
 
-var arc *ConfigFactory
-
-// NewConfigFactory creates a new configuration object for Config center
+// NewConfigFactory creates a new configuration object for config center
 func NewConfigFactory(log openlogging.Logger) (ConfigurationFactory, error) {
+	arc := new(ConfigFactory)
+	//// Source init should be before config manager init
+	//sources.NewSourceInit()
+	arc.dispatcher = eventsystem.NewDispatcher()
+	arc.configMgr = configmanager.NewConfigurationManager(arc.dispatcher)
 
-	if arc == nil {
+	// Default config source init
+	// 1. Command line source
+	cmdSource := commandlinesource.NewCommandlineConfigSource()
+	arc.configMgr.AddSource(cmdSource, cmdSource.GetPriority())
 
-		arc = new(ConfigFactory)
-		//// Source init should be before config manager init
-		//sources.NewSourceInit()
-		arc.dispatcher = eventsystem.NewDispatcher()
-		arc.configMgr = configmanager.NewConfigurationManager(arc.dispatcher)
-
-		// Default config source init
-		// 1. Command line source
-		cmdSource := commandlinesource.NewCommandlineConfigSource()
-		arc.configMgr.AddSource(cmdSource, cmdSource.GetPriority())
-
-		// Environment variable source
-		envSource := envconfigsource.NewEnvConfigurationSource()
-		arc.configMgr.AddSource(envSource, envSource.GetPriority())
-		// External variable source
-		memorySource := memoryconfigsource.NewMemoryConfigurationSource()
-		arc.configMgr.AddSource(memorySource, memorySource.GetPriority())
-	}
-
+	// Environment variable source
+	envSource := envconfigsource.NewEnvConfigurationSource()
+	arc.configMgr.AddSource(envSource, envSource.GetPriority())
+	// External variable source
+	memorySource = memoryconfigsource.NewMemoryConfigurationSource()
+	arc.configMgr.AddSource(memorySource, memorySource.GetPriority())
+	openlogging.GetLogger().Debug("ConfigurationFactory Initiated")
 	return arc, nil
 }
 
@@ -120,7 +113,7 @@ func (arc *ConfigFactory) Init() error {
 // GetConfigurations dump complete configuration managed by config-client
 //   Only return highest priority key value:-
 //   1. ConfigFile 		2. Environment Variable
-//   3. Commandline Argument	4. Config Center configuration
+//   3. Commandline Argument	4. config Center configuration
 //   config-center value being the highest priority
 func (arc *ConfigFactory) GetConfigurations() map[string]interface{} {
 	if arc.initSuccess == false {
@@ -130,7 +123,7 @@ func (arc *ConfigFactory) GetConfigurations() map[string]interface{} {
 	return arc.configMgr.GetConfigurations()
 }
 
-//GetConfigurationsByDimensionInfo dump complete configuration managed by config-client Only return Config Center configurations.
+//GetConfigurationsByDimensionInfo dump complete configuration managed by config-client Only return config Center configurations.
 func (arc *ConfigFactory) GetConfigurationsByDimensionInfo(dimensionInfo string) map[string]interface{} {
 	if arc.initSuccess == false {
 		return nil
@@ -238,7 +231,7 @@ func (arc *ConfigFactory) DeInit() error {
 	if arc.initSuccess == false {
 		return nil
 	}
-
+	arc.initSuccess = false
 	arc.configMgr.Cleanup()
 	return nil
 }

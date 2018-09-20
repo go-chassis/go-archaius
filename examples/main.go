@@ -50,16 +50,16 @@ type EventListener struct {
 }
 
 //ConfigFactory
-var ConfigFactory goarchaius.ConfigurationFactory
+var ConfigFactory archaius.ConfigurationFactory
 
 func main() {
 	// init logger for archaius
-	//logger = log.New()
+	//logger = log.Init()
 	//logger.Formatter = new(log.JSONFormatter)
 	//logger.Level = log.InfoLevel
 
 	// create go-archaius object
-	configFactory, err := goarchaius.NewConfigFactory(nil)
+	configFactory, err := archaius.NewConfigFactory(nil)
 	if err != nil {
 		openlogging.GetLogger().Error("Error:" + err.Error())
 	}
@@ -80,7 +80,7 @@ func main() {
 	// get default configurations from go archaius
 	// default configurations involve 1. commandline arguments 2. environment variables
 	config := ConfigFactory.GetConfigurations()
-	openlogging.GetLogger().Infof("======================== Default Config====================== ",
+	openlogging.GetLogger().Infof("======================== Default config====================== ",
 		config,
 		"===========================================================\n")
 
@@ -95,7 +95,7 @@ func main() {
 
 	// get default and file source configurations
 	config = configFactory.GetConfigurations()
-	openlogging.GetLogger().Infof("======================== Default and File source Config====================== ",
+	openlogging.GetLogger().Infof("======================== Default and File source config====================== ",
 		config,
 		"===========================================================\n")
 
@@ -130,7 +130,7 @@ func main() {
 	}
 
 	config = ConfigFactory.GetConfigurations()
-	openlogging.GetLogger().Infof("======================== After Deinit Config======================\n ",
+	openlogging.GetLogger().Infof("======================== After Deinit config======================\n ",
 		config,
 		"\n========================\n")
 
@@ -174,4 +174,9 @@ func (e EventListener) Event(event *core.Event) {
 
 	configValue := ConfigFactory.GetConfigurationByKey(event.Key)
 	openlogging.GetLogger().Infof("config value ", event.Key, " | ", configValue)
+}
+
+//Event is a method get config value and logs it
+func (e EventListener) Keys() []string {
+	return []string{"age"}
 }
