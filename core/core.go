@@ -34,6 +34,7 @@ type Dispatcher interface {
 // EventListener All EventListener should implement this Interface
 type EventListener interface {
 	Event(event *Event)
+	Keys() []string
 }
 
 // ConfigMgr manager Source

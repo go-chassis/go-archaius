@@ -10,8 +10,6 @@ import (
 	"github.com/go-chassis/go-archaius/sources/test-source"
 	"github.com/go-chassis/go-chassis/core/config/model"
 	"github.com/go-chassis/go-chassis/pkg/util/fileutil"
-	"github.com/go-chassis/paas-lager"
-	"github.com/go-mesh/openlogging"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
@@ -21,16 +19,6 @@ import (
 	"time"
 )
 
-func init() {
-	log.Init(log.Config{
-		LoggerLevel:   "DEBUG",
-		EnableRsyslog: false,
-		LogFormatText: true,
-		Writers:       []string{"stdout"},
-	})
-	l := log.NewLogger("test")
-	openlogging.SetLogger(l)
-}
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -52,13 +40,6 @@ func TestConfigurationManager(t *testing.T) {
 	confmanager := configmanager.NewConfigurationManager(dispatcher)
 	t.Log("Test configurationmanager.go")
 
-	//supplying nil source
-	var ab core.ConfigSource
-	err := confmanager.AddSource(ab, configmanager.DefaultPriority)
-	if err == nil {
-		t.Error("Failed to identify invalid or nil source")
-	}
-
 	//note: lowest value has highest priority
 	//testSource priority 	=	0
 	//memorySourcePriority 	= 	1
@@ -67,7 +48,7 @@ func TestConfigurationManager(t *testing.T) {
 	//fileSourcePriority    = 	4
 
 	t.Log("Adding testSource to the configuration manager")
-	err = confmanager.AddSource(testSource, testSource.GetPriority())
+	err := confmanager.AddSource(testSource, testSource.GetPriority())
 	if err != nil {
 		t.Error("Error in adding testSource to the  configuration manager", err)
 	}
@@ -386,8 +367,7 @@ cse:
 	//update the event through extsource
 	extsource.AddKeyValue("commonkey3", "extsource")
 	time.Sleep(10 * time.Millisecond)
-	assert.Equal(t, "filesource", confmanager.GetConfigurationsByKey("commonkey3"))
-	assert.NotEqual(t, "extsource", confmanager.GetConfigurationsByKey("commonkey3"))
+	assert.Equal(t, "extsource", confmanager.GetConfigurationsByKey("commonkey3"))
 
 	assert.NotEqual(t, "extsource", confmanager.GetConfigurationsByKeyAndDimensionInfo("data@default#0.1", "commonkey3"))
 

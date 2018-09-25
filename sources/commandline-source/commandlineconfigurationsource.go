@@ -40,19 +40,15 @@ type CommandLineConfigurationSource struct {
 	sync.RWMutex
 }
 
-var cmdlineConfig *CommandLineConfigurationSource
-
 //NewCommandlineConfigSource defines a fucntion used for creating configuration source
 func NewCommandlineConfigSource() core.ConfigSource {
-	if cmdlineConfig == nil {
-		cmdlineConfig = new(CommandLineConfigurationSource)
-		config, err := cmdlineConfig.pullCmdLineConfig()
-		if err != nil {
-			openlogging.GetLogger().Error("failed to initialize commandline configurations:" + err.Error())
-			return cmdlineConfig
-		}
-		cmdlineConfig.Configurations = config
+	cmdlineConfig := new(CommandLineConfigurationSource)
+	config, err := cmdlineConfig.pullCmdLineConfig()
+	if err != nil {
+		openlogging.GetLogger().Error("failed to initialize commandline configurations:" + err.Error())
+		return cmdlineConfig
 	}
+	cmdlineConfig.Configurations = config
 
 	return cmdlineConfig
 }
