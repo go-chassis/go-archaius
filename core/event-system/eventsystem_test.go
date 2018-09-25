@@ -30,9 +30,7 @@ type EListener struct {
 func (e *EListener) Event(event *core.Event) {
 	e.EventName = event.Key
 }
-func (e *EListener) Keys() []string {
-	return []string{}
-}
+
 func TestEventLoop1(t *testing.T) {
 	// test event
 	event := "ddd"

@@ -23,12 +23,6 @@ func (e *Listener) Event(event *core.Event) {
 	openlogging.GetLogger().Info(event.EventType)
 }
 
-//Event is a method get config value and logs it
-func (e Listener) Keys() []string {
-	return []string{"age"}
-}
-
-//
 func main() {
 	lager.Initialize("", "DEBUG", "", "size", true, 1, 10, 7)
 	configFactory, err := archaius.NewConfigFactory(nil)

@@ -1,16 +1,19 @@
 package archaius
 
-import "github.com/go-chassis/go-archaius/core"
+import (
+	"github.com/go-chassis/go-archaius/core"
+)
 
 //Options hold options
 type Options struct {
 	RequiredFiles    []string
 	OptionalFiles    []string
 	FileHandler      FileHandler
-	ConfigCenterInfo ConfigCenterInfo
-	EventListeners   []core.EventListener
+	ConfigCenterInfo core.ConfigSource
+	ConfigInfo       ConfigCenterInfo
 	UseCLISource     bool
 	UseENVSource     bool
+	ExternalSource   core.ConfigSource
 }
 
 //Option is a func
@@ -40,7 +43,7 @@ func WithFileHandler(handler FileHandler) Option {
 //WithConfigCenter accept the information for initiating a config center client and archaius config source
 func WithConfigCenter(cci ConfigCenterInfo) Option {
 	return func(options *Options) {
-		options.ConfigCenterInfo = cci
+		options.ConfigInfo = cci
 	}
 }
 
@@ -58,9 +61,16 @@ func WithENVSource() Option {
 	}
 }
 
-//WithEventListeners will register listeners to archaius runtime
-func WithEventListeners(ls ...core.EventListener) Option {
+//WithExternalSource accept the information for initiating a External source
+func WithExternalSource(e core.ConfigSource) Option {
 	return func(options *Options) {
-		options.EventListeners = ls
+		options.ExternalSource = e
+	}
+}
+
+//WithMemorySource accept the information for initiating a Memory source
+func WithMemorySource(e core.ConfigSource) Option {
+	return func(options *Options) {
+		options.ExternalSource = e
 	}
 }

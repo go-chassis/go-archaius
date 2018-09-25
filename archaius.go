@@ -3,24 +3,43 @@
 package archaius
 
 import (
+	"crypto/tls"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/go-chassis/go-archaius/core"
+	"github.com/go-chassis/go-archaius/sources/configcenter-source"
 	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-archaius/sources/memory-source"
+	"github.com/go-chassis/go-chassis/core/lager"
 	"github.com/go-mesh/openlogging"
-	"sync"
 )
 
-var factory ConfigurationFactory
-var fs filesource.FileSource
-var memorySource memoryconfigsource.MemorySource
+var (
+	factory      ConfigurationFactory
+	fs           filesource.FileSource
+	memorySource memoryconfigsource.MemorySource
 
-//ConfigCenterInfo holds config center info
-//TODO add more infos
+	once             = sync.Once{}
+	onceConfigCenter = sync.Once{}
+	onceExternal     = sync.Once{}
+)
+
+// ConfigCenterInfo has attribute for config center initialization
 type ConfigCenterInfo struct {
-	URL string
+	URL             string
+	DimensionInfo   string
+	TenantName      string
+	EnableSSL       bool
+	TLSConfig       *tls.Config
+	RefreshMode     int
+	RefreshInterval int
+	Autodiscovery   bool
+	ClientType      string
+	Version         string
+	RefreshPort     string
+	Environment     string
 }
 
 func initFileSource(o *Options) (core.ConfigSource, error) {
@@ -51,10 +70,7 @@ func initFileSource(o *Options) (core.ConfigSource, error) {
 	return fs, nil
 }
 
-var once = sync.Once{}
-
 // Init create a Archaius config singleton
-// TODO init logic for config source
 func Init(opts ...Option) error {
 	var errG error
 	once.Do(func() {
@@ -83,14 +99,104 @@ func Init(opts ...Option) error {
 			errG = err
 			return
 		}
-		for _, l := range o.EventListeners {
-			factory.RegisterListener(l, l.Keys()...)
 
+		eventHandler := EventListener{
+			Name:    "EventHandler",
+			Factory: factory,
 		}
+
+		factory.RegisterListener(eventHandler, "a*")
 
 	})
 
 	return errG
+}
+
+// InitConfigCenter create a Config Center config singleton
+func InitConfigCenter(opts ...Option) error {
+	var errG error
+	onceConfigCenter.Do(func() {
+		var err error
+		o := &Options{}
+		for _, opt := range opts {
+			opt(o)
+		}
+
+		configCenterSource, err := configcentersource.InitConfigCenter(o.ConfigInfo.URL,
+			o.ConfigInfo.DimensionInfo, o.ConfigInfo.TenantName, o.ConfigInfo.EnableSSL,
+			o.ConfigInfo.TLSConfig, o.ConfigInfo.RefreshMode, o.ConfigInfo.RefreshInterval,
+			o.ConfigInfo.Autodiscovery, o.ConfigInfo.ClientType, o.ConfigInfo.Version, o.ConfigInfo.RefreshPort,
+			o.ConfigInfo.Environment)
+
+		if err != nil {
+			errG = err
+			return
+		}
+
+		err = factory.AddSource(configCenterSource)
+		if err != nil {
+			errG = err
+			return
+		}
+
+		eventHandler := EventListener{
+			Name:    "EventHandler",
+			Factory: factory,
+		}
+
+		factory.RegisterListener(eventHandler, "a*")
+	})
+
+	return errG
+}
+
+// InitExternal create any config singleton
+func InitExternal(opts ...Option) error {
+	var errG error
+	onceExternal.Do(func() {
+		var err error
+		o := &Options{}
+		for _, opt := range opts {
+			opt(o)
+		}
+
+		factory, err = NewConfigFactory(openlogging.GetLogger())
+		if err != nil {
+			errG = err
+			return
+		}
+
+		factory.DeInit()
+		factory.Init()
+
+		err = factory.AddSource(o.ExternalSource)
+		if err != nil {
+			errG = err
+			return
+		}
+
+		eventHandler := EventListener{
+			Name:    "EventHandler",
+			Factory: factory,
+		}
+
+		factory.RegisterListener(eventHandler, "a*")
+
+	})
+
+	return errG
+}
+
+// EventListener is a struct having information about registering key and object
+type EventListener struct {
+	Name    string
+	Factory ConfigurationFactory
+}
+
+// Event is invoked while generating events at run time
+func (e EventListener) Event(event *core.Event) {
+	value := e.Factory.GetConfigurationByKey(event.Key)
+	lager.Logger.Infof("config value after change %s | %s", event.Key, value)
 }
 
 // Get is for to get the value of configuration key
