@@ -70,7 +70,8 @@ func TestGetConfigurationsForInvalidCCIP(t *testing.T) {
 	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
 	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testSource.GetInvalidConfigServer())
-	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil, "default", 1, 1, false)
+	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
+		"default", 1, 1, false, "", "", "")
 
 	_, er := configcentersource.GetConfigurations()
 	if er != nil {
@@ -91,7 +92,8 @@ func TestGetConfigurationsWithCCIP(t *testing.T) {
 	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
 	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testSource.GetConfigServer())
-	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil, "default", 1, 1, false)
+	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
+		"default", 1, 1, false, "", "", "")
 	config.GlobalDefinition = &model.GlobalCfg{}
 
 	t.Log("Accessing concenter source configurations")
@@ -148,7 +150,8 @@ func Test_DynamicConfigHandler(t *testing.T) {
 	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
 	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testsource.GetConfigServer())
-	configcentersource := NewConfigCenterSource(memDiscovery, testsource.GetDimensionInfo(), nil, "default", 1, 1, false)
+	configcentersource := NewConfigCenterSource(memDiscovery, testsource.GetDimensionInfo(), nil,
+		"default", 1, 1, false, "", "", "")
 
 	dynamicconfig := new(TestDynamicConfigHandler)
 
@@ -174,7 +177,8 @@ func Test_OnReceive(t *testing.T) {
 	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
 	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testSource.GetInvalidConfigServer())
-	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil, "default", 0, 1, false)
+	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
+		"default", 0, 1, false, "", "", "")
 
 	_, er := configcentersource.GetConfigurations()
 	if er != nil {

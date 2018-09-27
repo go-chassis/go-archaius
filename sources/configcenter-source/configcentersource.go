@@ -26,7 +26,6 @@ import (
 
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-cc-client/configcenter-client"
-	"github.com/go-chassis/go-chassis/core/config"
 
 	"fmt"
 	"github.com/go-chassis/go-cc-client"
@@ -77,13 +76,17 @@ type ConfigCenterSourceHandler struct {
 	TenantName      string
 	RefreshMode     int
 	RefreshInterval time.Duration
+	Version         string
+	RefreshPort     string
+	Environment     string
 	client          *httpclient.URLClient
 }
 
 var configCenterConfig *ConfigCenterSourceHandler
 
 //NewConfigCenterSource initializes all components of configuration center
-func NewConfigCenterSource(memberDiscovery configcenterclient.MemberDiscovery, dimInfo string, tlsConfig *tls.Config, tenantName string, refreshMode, refreshInterval int, enableSSL bool) core.ConfigSource {
+func NewConfigCenterSource(memberDiscovery configcenterclient.MemberDiscovery, dimInfo string, tlsConfig *tls.Config, tenantName string,
+	refreshMode, refreshInterval int, enableSSL bool, version, refreshPort, env string) core.ConfigSource {
 
 	if configCenterConfig == nil {
 		configCenterConfig = new(ConfigCenterSourceHandler)
@@ -94,10 +97,14 @@ func NewConfigCenterSource(memberDiscovery configcenterclient.MemberDiscovery, d
 		configCenterConfig.TenantName = tenantName
 		configCenterConfig.RefreshMode = refreshMode
 		configCenterConfig.RefreshInterval = time.Second * time.Duration(refreshInterval)
+		configCenterConfig.Version = version
+		configCenterConfig.RefreshPort = refreshPort
+		configCenterConfig.Environment = env
+
 		//Read the version for yaml file
 		//Set Default api version to V3
 		var apiVersion string
-		switch config.GlobalDefinition.Cse.Config.Client.APIVersion.Version {
+		switch version {
 		case "v2":
 			apiVersion = "v2"
 		case "V2":
@@ -501,7 +508,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) DynamicConfigHandler(callback co
 		// Pull All the configuration for the first time.
 		cfgSrcHandler.refreshConfigurations("")
 		//Start a web socket connection to recieve change events.
-		dynCfgHandler.startDynamicConfigHandler()
+		dynCfgHandler.startDynamicConfigHandler(cfgSrcHandler.RefreshPort)
 	}
 
 	return nil
@@ -638,7 +645,7 @@ func newDynConfigHandlerSource(cfgSrc *ConfigCenterSourceHandler, callback core.
 	return dynCfgHandler, nil
 }
 
-func (dynHandler *DynamicConfigHandler) getWebSocketURL() (*url.URL, error) {
+func (dynHandler *DynamicConfigHandler) getWebSocketURL(refreshPort string) (*url.URL, error) {
 
 	var defaultTLS bool
 	var parsedEndPoint []string
@@ -656,7 +663,7 @@ func (dynHandler *DynamicConfigHandler) getWebSocketURL() (*url.URL, error) {
 	for _, server := range activeEndPointList {
 		parsedEndPoint = strings.Split(server, `://`)
 		hostArr := strings.Split(parsedEndPoint[1], `:`)
-		port := config.GlobalDefinition.Cse.Config.Client.RefreshPort
+		port := refreshPort
 		if port == "" {
 			port = "30104"
 		}
@@ -691,7 +698,7 @@ func (dynHandler *DynamicConfigHandler) getWebSocketURL() (*url.URL, error) {
 	return hostURL, nil
 }
 
-func (dynHandler *DynamicConfigHandler) startDynamicConfigHandler() error {
+func (dynHandler *DynamicConfigHandler) startDynamicConfigHandler(refreshPort string) error {
 	parsedDimensionInfo := strings.Replace(dynHandler.dimensionsInfo, "#", "%23", -1)
 	refreshConfigPath := ConfigRefreshPath + `?` + dimensionsInfo + `=` + parsedDimensionInfo
 	if dynHandler != nil && dynHandler.wsDialer != nil {
@@ -701,7 +708,7 @@ func (dynHandler *DynamicConfigHandler) startDynamicConfigHandler() error {
 		3. Call KeepAlive in seperate thread
 		3. Generate events on Recieve Data
 		*/
-		baseURL, err := dynHandler.getWebSocketURL()
+		baseURL, err := dynHandler.getWebSocketURL(refreshPort)
 		if err != nil {
 			error := errors.New("error in getting default server info")
 			return error
@@ -827,8 +834,9 @@ func (eventHandler *ConfigCenterEventHandler) OnReceive(actionData []byte) {
 }
 
 //InitConfigCenter is a function which initializes the memberDiscovery of go-cc-client
-func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bool, tlsConfig *tls.Config, refreshMode int, refreshInterval int, autoDiscovery bool, clientType string) (core.ConfigSource, error) {
-	memDiscovery := configcenterclient.NewConfiCenterInit(tlsConfig, tenantName, enableSSL, config.GlobalDefinition.Cse.Config.Client.APIVersion.Version, autoDiscovery, config.MicroserviceDefinition.ServiceDescription.Environment)
+func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bool, tlsConfig *tls.Config, refreshMode int,
+	refreshInterval int, autoDiscovery bool, clientType, apiVersion, refreshPort, environment string) (core.ConfigSource, error) {
+	memDiscovery := configcenterclient.NewConfiCenterInit(tlsConfig, tenantName, enableSSL, apiVersion, autoDiscovery, environment)
 
 	configCenters := strings.Split(ccEndpoint, ",")
 	cCenters := make([]string, 0)
@@ -849,7 +857,7 @@ func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bo
 
 	configCenterSource := NewConfigCenterSource(
 		memDiscovery, dimensionInfo, tlsConfig, tenantName, refreshMode,
-		refreshInterval, enableSSL)
+		refreshInterval, enableSSL, apiVersion, refreshPort, environment)
 
 	configcenterclient.MemberDiscoveryService = memDiscovery
 	installPlugin(clientType)

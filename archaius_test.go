@@ -18,9 +18,6 @@ type EListener struct{}
 func (e EListener) Event(event *core.Event) {
 	lager.Logger.Infof("config value after change ", event.Key, " | ", event.Value)
 }
-func (e EListener) Keys() []string {
-	return []string{"age"}
-}
 
 var filename2 string
 

@@ -175,8 +175,3 @@ func (e EventListener) Event(event *core.Event) {
 	configValue := ConfigFactory.GetConfigurationByKey(event.Key)
 	openlogging.GetLogger().Infof("config value ", event.Key, " | ", configValue)
 }
-
-//Event is a method get config value and logs it
-func (e EventListener) Keys() []string {
-	return []string{"age"}
-}
