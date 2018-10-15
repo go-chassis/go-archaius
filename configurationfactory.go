@@ -71,6 +71,7 @@ type ConfigurationFactory interface {
 	GetConfigurationByKeyAndDimensionInfo(dimensionInfo, key string) interface{}
 	// an abstraction to return key's value in respective type based on dimension info which is provided by user
 	GetValueByDI(dimensionInfo, key string) cast.Value
+	Refresh(name string) error
 }
 
 // ConfigFactory is a struct which stores configuration information
@@ -268,4 +269,9 @@ func (arc *ConfigFactory) GetValueByDI(dimensionInfo, key string) cast.Value {
 	}
 
 	return confValue
+}
+
+//Refresh pull config from source and update configuration map
+func (arc *ConfigFactory) Refresh(name string) error {
+	return arc.configMgr.Refresh(name)
 }

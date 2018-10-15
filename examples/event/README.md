@@ -4,7 +4,7 @@ the event will be triggered, and listener will receive the event
 
 ```
 go build event.go
-./event.go
+./event
 ```
 
 change **age** config in event.yaml 
