@@ -1,4 +1,4 @@
-package archaius
+package filesource
 
 import (
 	"fmt"

@@ -39,12 +39,12 @@ func main() {
 	// add file in file source.
 	// file can be regular yaml file or directory like fSource.AddFileSource("./conf", 0)
 	// second argument is priority of file
-	fSource.AddFileSource("./event.yaml", 0)
+	fSource.AddFileSource("./event.yaml", 0, nil)
 	// add file source to go-archaius
 	configFactory.AddSource(fSource)
 	configFactory.RegisterListener(&Listener{}, "age")
 	for {
 		log.Println(configFactory.GetConfigurationByKey("age"))
-		time.Sleep(20 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }

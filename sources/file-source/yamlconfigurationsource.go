@@ -64,6 +64,7 @@ type ConfigInfo struct {
 type yamlConfigurationSource struct {
 	Configurations map[string]*ConfigInfo
 	files          []file
+	fileHandlers   map[string]FileHandler
 	watchPool      *watch
 	filelock       sync.Mutex
 	sync.RWMutex
@@ -98,7 +99,7 @@ var fileConfigSource *yamlConfigurationSource
 //FileSource is a interface
 type FileSource interface {
 	core.ConfigSource
-	AddFileSource(filePath string, priority uint32) error
+	AddFileSource(filePath string, priority uint32, handler FileHandler) error
 }
 
 //NewYamlConfigurationSource creates new yaml configuration
@@ -106,17 +107,17 @@ func NewYamlConfigurationSource() FileSource {
 	if fileConfigSource == nil {
 		fileConfigSource = new(yamlConfigurationSource)
 		fileConfigSource.files = make([]file, 0)
+		fileConfigSource.fileHandlers = make(map[string]FileHandler)
 	}
 
 	return fileConfigSource
 }
 
-func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32) error {
+func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32, handle FileHandler) error {
 	path, err := filepath.Abs(p)
 	if err != nil {
 		return err
 	}
-
 	// check existence of file
 	fs, err := os.Open(path)
 	if os.IsNotExist(err) {
@@ -128,19 +129,19 @@ func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32)
 	if fSource.isFileSrcExist(path) {
 		return nil
 	}
-
+	fSource.fileHandlers[path] = handle
 	fileType := fileType(fs)
 	switch fileType {
 	case Directory:
 		// handle Directory input. Include all yaml files as file source.
-		err := fSource.handleDirectory(fs, priority)
+		err := fSource.handleDirectory(fs, priority, handle)
 		if err != nil {
 			openlogging.GetLogger().Errorf("Failed to handle directory [%s] %s", path, err)
 			return err
 		}
 	case RegularFile:
 		// handle file and include as file source.
-		err := fSource.handleFile(fs, priority)
+		err := fSource.handleFile(fs, priority, handle)
 		if err != nil {
 			openlogging.GetLogger().Errorf("Failed to handle file [%s] [%s]", path, err)
 			return err
@@ -185,7 +186,7 @@ func fileType(fs *os.File) FileSourceTypes {
 	return InvalidFileType
 }
 
-func (fSource *yamlConfigurationSource) handleDirectory(dir *os.File, priority uint32) error {
+func (fSource *yamlConfigurationSource) handleDirectory(dir *os.File, priority uint32, handle FileHandler) error {
 
 	filesInfo, err := dir.Readdir(-1)
 	if err != nil {
@@ -201,7 +202,7 @@ func (fSource *yamlConfigurationSource) handleDirectory(dir *os.File, priority u
 			continue
 		}
 
-		err = fSource.handleFile(fs, priority)
+		err = fSource.handleFile(fs, priority, handle)
 		if err != nil {
 			openlogging.GetLogger().Errorf("error processing %s file source handler with error : %s ", fs.Name(),
 				err.Error())
@@ -213,8 +214,17 @@ func (fSource *yamlConfigurationSource) handleDirectory(dir *os.File, priority u
 	return nil
 }
 
-func (fSource *yamlConfigurationSource) handleFile(file *os.File, priority uint32) error {
-	config, err := fileConfigSource.pullYamlFileConfig(file.Name())
+func (fSource *yamlConfigurationSource) handleFile(file *os.File, priority uint32, handle FileHandler) error {
+	yamlContent, err := ioutil.ReadFile(file.Name())
+	if err != nil {
+		return err
+	}
+	var config map[string]interface{}
+	if handle != nil {
+		config, err = handle(yamlContent)
+	} else {
+		config, err = Convert2JavaProps(yamlContent)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to pull configurations from [%s] file, %s", file.Name(), err)
 	}
@@ -295,29 +305,6 @@ func (fSource *yamlConfigurationSource) GetConfigurations() (map[string]interfac
 	}
 
 	return configMap, nil
-}
-
-func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{} {
-	if prefix != "" {
-		prefix += "."
-	}
-
-	result := map[string]interface{}{}
-
-	for _, item := range subItems {
-		//If there are sub-items existing
-		_, isSlice := item.Value.(yaml.MapSlice)
-		if isSlice {
-			subResult := retrieveItems(prefix+item.Key.(string), item.Value.(yaml.MapSlice))
-			for k, v := range subResult {
-				result[k] = v
-			}
-		} else {
-			result[prefix+item.Key.(string)] = item.Value
-		}
-	}
-
-	return result
 }
 
 func (fSource *yamlConfigurationSource) GetConfigurationByKey(key string) (interface{}, error) {
@@ -446,20 +433,21 @@ func (wth *watch) watchFile() {
 			if event.Op == fsnotify.Create {
 				time.Sleep(time.Millisecond)
 			}
-
+			handle := wth.fileSource.fileHandlers[event.Name]
+			if handle == nil {
+				handle = Convert2JavaProps
+			}
 			yamlContent, err := ioutil.ReadFile(event.Name)
 			if err != nil {
 				openlogging.GetLogger().Error("yaml parsing error " + err.Error())
 				continue
 			}
-			ss := yaml.MapSlice{}
-			err = yaml.Unmarshal([]byte(yamlContent), &ss)
+
+			newConf, err := handle(yamlContent)
 			if err != nil {
-				openlogging.GetLogger().Warnf("unmarshaling failed may be due to invalid file data format", err)
+				openlogging.GetLogger().Error("convert error " + err.Error())
 				continue
 			}
-
-			newConf := retrieveItems("", ss)
 			events := wth.fileSource.compareUpdate(newConf, event.Name)
 			openlogging.GetLogger().Debugf("Event generated events %s", events)
 			for _, e := range events {

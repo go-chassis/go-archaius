@@ -48,7 +48,7 @@ func initFileSource(o *Options) (core.ConfigSource, error) {
 	fs = filesource.NewYamlConfigurationSource()
 	// adding all files with file source
 	for _, v := range o.RequiredFiles {
-		if err := fs.AddFileSource(v, filesource.DefaultFilePriority); err != nil {
+		if err := fs.AddFileSource(v, filesource.DefaultFilePriority, o.FileHandler); err != nil {
 			openlogging.GetLogger().Errorf("add file source error [%s].", err.Error())
 			return nil, err
 		}
@@ -60,7 +60,7 @@ func initFileSource(o *Options) (core.ConfigSource, error) {
 			openlogging.GetLogger().Infof("[%s] not exist", v)
 			continue
 		}
-		if err := fs.AddFileSource(v, filesource.DefaultFilePriority); err != nil {
+		if err := fs.AddFileSource(v, filesource.DefaultFilePriority, o.FileHandler); err != nil {
 			openlogging.GetLogger().Infof("%v", err)
 			return nil, err
 		}
@@ -287,7 +287,7 @@ func UnRegisterListener(listenerObj core.EventListener, key ...string) error {
 
 // AddFile is for to add the configuration files into the configfactory at run time
 func AddFile(file string) error {
-	return fs.AddFileSource(file, filesource.DefaultFilePriority)
+	return fs.AddFileSource(file, filesource.DefaultFilePriority, nil)
 }
 
 //AddKeyValue is for to add the configuration key, value pairs into the configfactory at run time
