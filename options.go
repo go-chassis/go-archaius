@@ -2,13 +2,14 @@ package archaius
 
 import (
 	"github.com/go-chassis/go-archaius/core"
+	"github.com/go-chassis/go-archaius/sources/file-source"
 )
 
 //Options hold options
 type Options struct {
 	RequiredFiles    []string
 	OptionalFiles    []string
-	FileHandler      FileHandler
+	FileHandler      filesource.FileHandler
 	ConfigCenterInfo core.ConfigSource
 	ConfigInfo       ConfigCenterInfo
 	UseCLISource     bool
@@ -34,7 +35,7 @@ func WithOptionalFiles(f []string) Option {
 }
 
 //WithFileHandler let user custom handler
-func WithFileHandler(handler FileHandler) Option {
+func WithFileHandler(handler filesource.FileHandler) Option {
 	return func(options *Options) {
 		options.FileHandler = handler
 	}

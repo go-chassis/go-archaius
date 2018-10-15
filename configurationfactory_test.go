@@ -100,7 +100,7 @@ func TestConfigFactory(t *testing.T) {
 
 	fmt.Println("Adding filesource to the configfactroy")
 	fsource := filesource.NewYamlConfigurationSource()
-	fsource.AddFileSource(filename1, 0)
+	fsource.AddFileSource(filename1, 0, nil)
 	factory.AddSource(fsource)
 
 	fmt.Println("Generating event through testsource(priority 1)")
