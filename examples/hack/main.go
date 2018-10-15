@@ -18,7 +18,7 @@
 * Created by on 2017/7/19.
  */
 // Package main for examples
-package main
+package hack
 
 import (
 	"fmt"
@@ -89,7 +89,7 @@ func main() {
 	// add file in file source.
 	// file can be regular yaml file or directory like fSource.AddFileSource("./conf", 0)
 	// second argument is priority of file
-	fSource.AddFileSource("./conf/name.yaml", 0)
+	fSource.AddFileSource("./conf/name.yaml", 0, nil)
 	// add file source to go-archaius
 	ConfigFactory.AddSource(fSource)
 
@@ -135,7 +135,7 @@ func main() {
 		"\n========================\n")
 
 	//second argument is priority of file
-	fSource.AddFileSource("./conf/name.yaml", 0)
+	fSource.AddFileSource("./conf/name.yaml", 0, nil)
 	// add file source to go-`archaius
 	ConfigFactory.AddSource(fSource)
 

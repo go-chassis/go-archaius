@@ -287,7 +287,10 @@ func UnRegisterListener(listenerObj core.EventListener, key ...string) error {
 
 // AddFile is for to add the configuration files into the configfactory at run time
 func AddFile(file string) error {
-	return fs.AddFileSource(file, filesource.DefaultFilePriority, nil)
+	if err := fs.AddFileSource(file, filesource.DefaultFilePriority, nil); err != nil {
+		return err
+	}
+	return factory.Refresh(fs.GetSourceName())
 }
 
 //AddKeyValue is for to add the configuration key, value pairs into the configfactory at run time

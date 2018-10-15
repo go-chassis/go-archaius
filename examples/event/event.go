@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-chassis/core/lager"
 	"github.com/go-mesh/openlogging"
 	"log"
@@ -25,26 +24,15 @@ func (e *Listener) Event(event *core.Event) {
 
 func main() {
 	lager.Initialize("", "DEBUG", "", "size", true, 1, 10, 7)
-	configFactory, err := archaius.NewConfigFactory(nil)
-	if err != nil {
-		openlogging.GetLogger().Error("Error:" + err.Error())
-	}
-	// init go-archaius
-	err = configFactory.Init()
+	err := archaius.Init(archaius.WithRequiredFiles([]string{
+		"./event.yaml",
+	}))
 	if err != nil {
 		openlogging.GetLogger().Error("Error:" + err.Error())
 	}
 
-	fSource := filesource.NewYamlConfigurationSource()
-	// add file in file source.
-	// file can be regular yaml file or directory like fSource.AddFileSource("./conf", 0)
-	// second argument is priority of file
-	fSource.AddFileSource("./event.yaml", 0, nil)
-	// add file source to go-archaius
-	configFactory.AddSource(fSource)
-	configFactory.RegisterListener(&Listener{}, "age")
 	for {
-		log.Println(configFactory.GetConfigurationByKey("age"))
+		log.Println(archaius.Get("age"))
 		time.Sleep(5 * time.Second)
 	}
 }
