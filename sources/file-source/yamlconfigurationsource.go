@@ -369,13 +369,13 @@ func newWatchPool(callback core.DynamicConfigCallback, cfgSrc *yamlConfiguration
 func (wth *watch) startWatchPool() {
 	go wth.watchFile()
 	for _, file := range wth.fileSource.files {
-		dir, err := filepath.Abs(filepath.Dir(file.filePath))
+		f, err := filepath.Abs(file.filePath)
 		if err != nil {
 			openlogging.GetLogger().Errorf("failed to get Directory info from: %s file: %s", file.filePath, err)
 			return
 		}
 
-		err = wth.watcher.Add(dir)
+		err = wth.watcher.Add(f)
 		if err != nil {
 			openlogging.GetLogger().Errorf("add watcher file: %+v fail %s", file, err)
 			return
@@ -384,13 +384,7 @@ func (wth *watch) startWatchPool() {
 }
 
 func (wth *watch) AddWatchFile(filePath string) {
-	dir, err := filepath.Abs(filepath.Dir(filePath))
-	if err != nil {
-		openlogging.GetLogger().Errorf("failed to get Directory info from: %s file: %s", filePath, err)
-		return
-	}
-
-	err = wth.watcher.Add(dir)
+	err := wth.watcher.Add(filePath)
 	if err != nil {
 		openlogging.GetLogger().Errorf("add watcher file: %s fail: %s", filePath, err)
 		return
