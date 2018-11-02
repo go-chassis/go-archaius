@@ -2,7 +2,7 @@ module github.com/go-chassis/go-archaius
 
 require (
 	github.com/fsnotify/fsnotify v1.4.7
-	github.com/go-chassis/go-cc-client v0.0.0-20180831085349-c2bb6cef1640
+	github.com/go-chassis/go-cc-client v0.0.0-20181102101915-dea430061a34
 	github.com/go-chassis/go-chassis v0.8.3
 	github.com/go-chassis/paas-lager v0.0.0-20180905100939-eff93e5e67db
 	github.com/go-mesh/openlogging v0.0.0-20180912071658-0fd4707a75ab

@@ -847,7 +847,7 @@ func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bo
 
 	memDiscovery.ConfigurationInit(cCenters)
 
-	if enbledAutoDiscovery(autoDiscovery) {
+	if enabledAutoDiscovery(autoDiscovery) {
 		refreshError := memDiscovery.RefreshMembers()
 		if refreshError != nil {
 			openlogging.GetLogger().Error(ConfigServerMemRefreshError + refreshError.Error())
@@ -860,17 +860,17 @@ func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bo
 		refreshInterval, enableSSL, apiVersion, refreshPort, environment)
 
 	configcenterclient.MemberDiscoveryService = memDiscovery
-	installPlugin(clientType)
+	if err := installPlugin(clientType); err != nil {
+		return nil, err
+	}
 	return configCenterSource, nil
 }
 
-func installPlugin(clientType string) {
-
-	client.Enable(clientType)
-
+func installPlugin(clientType string) error {
+	return client.Enable(clientType)
 }
 
-func enbledAutoDiscovery(autoDiscovery bool) bool {
+func enabledAutoDiscovery(autoDiscovery bool) bool {
 	if autoDiscovery {
 		return true
 	}
