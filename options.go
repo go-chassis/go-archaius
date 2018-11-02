@@ -10,8 +10,7 @@ type Options struct {
 	RequiredFiles    []string
 	OptionalFiles    []string
 	FileHandler      filesource.FileHandler
-	ConfigCenterInfo core.ConfigSource
-	ConfigInfo       ConfigCenterInfo
+	ConfigCenterInfo ConfigCenterInfo
 	UseCLISource     bool
 	UseENVSource     bool
 	ExternalSource   core.ConfigSource
@@ -44,7 +43,7 @@ func WithFileHandler(handler filesource.FileHandler) Option {
 //WithConfigCenter accept the information for initiating a config center client and archaius config source
 func WithConfigCenter(cci ConfigCenterInfo) Option {
 	return func(options *Options) {
-		options.ConfigInfo = cci
+		options.ConfigCenterInfo = cci
 	}
 }
 

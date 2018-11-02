@@ -78,3 +78,11 @@ func TestConfig_RegisterListener(t *testing.T) {
 	defer archaius.UnRegisterListener(eventHandler, "a*")
 
 }
+func TestInitConfigCenter(t *testing.T) {
+	err := archaius.InitConfigCenter(archaius.ConfigCenterInfo{})
+	assert.Error(t, err)
+	err = archaius.InitConfigCenter(archaius.ConfigCenterInfo{
+		ClientType: "fake",
+	})
+	assert.Error(t, err)
+}

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"errors"
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-archaius/sources/configcenter-source"
 	"github.com/go-chassis/go-archaius/sources/file-source"
@@ -94,6 +95,12 @@ func Init(opts ...Option) error {
 			errG = err
 			return
 		}
+		if o.ConfigCenterInfo != (ConfigCenterInfo{}) {
+			if err := InitConfigCenter(o.ConfigCenterInfo); err != nil {
+				errG = err
+				return
+			}
+		}
 		err = factory.AddSource(fs)
 		if err != nil {
 			errG = err
@@ -113,20 +120,19 @@ func Init(opts ...Option) error {
 }
 
 // InitConfigCenter create a Config Center config singleton
-func InitConfigCenter(opts ...Option) error {
+func InitConfigCenter(ci ConfigCenterInfo) error {
 	var errG error
+	if ci == (ConfigCenterInfo{}) {
+		return errors.New("ConfigCenterInfo can not be empty")
+	}
 	onceConfigCenter.Do(func() {
 		var err error
-		o := &Options{}
-		for _, opt := range opts {
-			opt(o)
-		}
 
-		configCenterSource, err := configcentersource.InitConfigCenter(o.ConfigInfo.URL,
-			o.ConfigInfo.DimensionInfo, o.ConfigInfo.TenantName, o.ConfigInfo.EnableSSL,
-			o.ConfigInfo.TLSConfig, o.ConfigInfo.RefreshMode, o.ConfigInfo.RefreshInterval,
-			o.ConfigInfo.Autodiscovery, o.ConfigInfo.ClientType, o.ConfigInfo.Version, o.ConfigInfo.RefreshPort,
-			o.ConfigInfo.Environment)
+		configCenterSource, err := configcentersource.InitConfigCenter(ci.URL,
+			ci.DimensionInfo, ci.TenantName, ci.EnableSSL,
+			ci.TLSConfig, ci.RefreshMode, ci.RefreshInterval,
+			ci.Autodiscovery, ci.ClientType, ci.Version, ci.RefreshPort,
+			ci.Environment)
 
 		if err != nil {
 			errG = err
