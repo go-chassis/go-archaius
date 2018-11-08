@@ -7,12 +7,14 @@ import (
 )
 
 func main() {
-	err := archaius.Init(archaius.WithRequiredFiles([]string{"f1.yaml"}))
+	err := archaius.Init(archaius.WithRequiredFiles([]string{"./dir", "f1.yaml"}))
 	if err != nil {
 		openlogging.GetLogger().Error("Error:" + err.Error())
 	}
 	log.Println(archaius.Get("age"))
 	log.Println(archaius.Get("name"))
+	log.Println(archaius.Get("c"))
+	log.Println(archaius.Get("b"))
 	err = archaius.AddFile("f2.yaml")
 	if err != nil {
 		log.Panicln(err)
