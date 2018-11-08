@@ -13,14 +13,13 @@ import (
 	"github.com/go-chassis/go-archaius/sources/configcenter-source"
 	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-archaius/sources/memory-source"
-	"github.com/go-chassis/go-chassis/core/lager"
 	"github.com/go-mesh/openlogging"
 )
 
 var (
-	factory      ConfigurationFactory
-	fs           filesource.FileSource
-	memorySource memoryconfigsource.MemorySource
+	factory ConfigurationFactory
+	fs      filesource.FileSource
+	ms      = memoryconfigsource.NewMemoryConfigurationSource()
 
 	once             = sync.Once{}
 	onceConfigCenter = sync.Once{}
@@ -82,7 +81,7 @@ func Init(opts ...Option) error {
 		}
 
 		// created config factory object
-		factory, err = NewConfigFactory(openlogging.GetLogger())
+		factory, err = NewConfigFactory()
 		if err != nil {
 			errG = err
 			return
@@ -106,7 +105,6 @@ func Init(opts ...Option) error {
 			errG = err
 			return
 		}
-
 		eventHandler := EventListener{
 			Name:    "EventHandler",
 			Factory: factory,
@@ -166,7 +164,7 @@ func InitExternal(opts ...Option) error {
 			opt(o)
 		}
 
-		factory, err = NewConfigFactory(openlogging.GetLogger())
+		factory, err = NewConfigFactory()
 		if err != nil {
 			errG = err
 			return
@@ -202,7 +200,7 @@ type EventListener struct {
 // Event is invoked while generating events at run time
 func (e EventListener) Event(event *core.Event) {
 	value := e.Factory.GetConfigurationByKey(event.Key)
-	lager.Logger.Infof("config value after change %s | %s", event.Key, value)
+	openlogging.GetLogger().Infof("config value after change %s | %s", event.Key, value)
 }
 
 // Get is for to get the value of configuration key
@@ -302,10 +300,20 @@ func AddFile(file string) error {
 //AddKeyValue is for to add the configuration key, value pairs into the configfactory at run time
 // it is just affect the local configs
 func AddKeyValue(key string, value interface{}) error {
-	return memorySource.AddKeyValue(key, value)
+	return ms.AddKeyValue(key, value)
 }
 
 // DeleteKeyValue is for to delete the configuration key, value pairs into the configfactory at run time
 func DeleteKeyValue(key string, value interface{}) error {
-	return memorySource.DeleteKeyValue(key, value)
+	return ms.DeleteKeyValue(key, value)
+}
+
+//AddSource add source implementation
+func AddSource(source core.ConfigSource) error {
+	return factory.AddSource(source)
+}
+
+//GetConfigFactory return factory
+func GetConfigFactory() ConfigurationFactory {
+	return factory
 }

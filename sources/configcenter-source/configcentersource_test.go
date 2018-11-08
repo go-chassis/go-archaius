@@ -4,13 +4,13 @@ import (
 	"github.com/go-chassis/go-cc-client/configcenter-client"
 
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-chassis/core/archaius"
 	"github.com/go-chassis/go-chassis/core/config"
 	"github.com/go-chassis/go-chassis/core/config/model"
 	"github.com/stretchr/testify/assert"
 
 	"encoding/json"
 	"errors"
+	"github.com/go-chassis/go-archaius"
 	"math/rand"
 	"os"
 	"testing"
@@ -104,7 +104,7 @@ func TestGetConfigurationsWithCCIP(t *testing.T) {
 	}
 	archaius.Init()
 	t.Log("concenter source adding to the archaiuscleanup")
-	e := archaius.DefaultConf.ConfigFactory.AddSource(configcentersource)
+	e := archaius.AddSource(configcentersource)
 	if e != nil {
 		assert.Error(t, e)
 	}

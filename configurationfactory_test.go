@@ -56,7 +56,7 @@ func TestConfigFactory(t *testing.T) {
 	_, err1 = io.WriteString(f1, f1content)
 	populateCmdConfig()
 	fmt.Println("init factory")
-	factory, err := archaius.NewConfigFactory(nil)
+	factory, err := archaius.NewConfigFactory()
 	assert.Equal(t, nil, err)
 	fmt.Println("verifying methods before config factory initialization")
 	factory.DeInit()

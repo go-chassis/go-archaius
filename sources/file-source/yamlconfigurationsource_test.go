@@ -22,8 +22,6 @@ package filesource
 import (
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-chassis/pkg/util/fileutil"
-	"github.com/go-chassis/paas-lager"
-	"github.com/go-mesh/openlogging"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
@@ -31,17 +29,6 @@ import (
 	"testing"
 	"time"
 )
-
-func init() {
-	log.Init(log.Config{
-		LoggerLevel:   "DEBUG",
-		EnableRsyslog: false,
-		LogFormatText: true,
-		Writers:       []string{"stdout"},
-	})
-	l := log.NewLogger("test")
-	openlogging.SetLogger(l)
-}
 
 type EListener struct {
 	Name      string

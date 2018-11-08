@@ -124,8 +124,8 @@ func (configMgr *ConfigurationManager) pullSourceConfigs(source string) error {
 	configSource, ok := configMgr.Sources[source]
 	configMgr.sourceMapMux.Unlock()
 	if !ok {
-		err := errors.New("invalid source or source not addeded")
-		openlogging.GetLogger().Error("invalid source or source not addeded: " + err.Error())
+		err := errors.New("invalid source or source not added")
+		openlogging.GetLogger().Error("invalid source or source not added: " + err.Error())
 		return err
 	}
 
@@ -162,7 +162,7 @@ func (configMgr *ConfigurationManager) pullSourceConfigsByDI(source, di string) 
 			return err
 		}
 
-		openlogging.GetLogger().Warnf("empty configurtion from %s", source)
+		openlogging.GetLogger().Warnf("empty configuration from %s", source)
 		return nil
 	}
 
