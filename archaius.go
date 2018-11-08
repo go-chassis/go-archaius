@@ -111,7 +111,7 @@ func Init(opts ...Option) error {
 		}
 
 		factory.RegisterListener(eventHandler, "a*")
-
+		openlogging.GetLogger().Info("archaius init success")
 	})
 
 	return errG
