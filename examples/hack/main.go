@@ -25,24 +25,12 @@ import (
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-archaius/sources/file-source"
-	"github.com/go-chassis/paas-lager"
 	"github.com/go-mesh/openlogging"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 )
-
-func init() {
-	log.Init(log.Config{
-		LoggerLevel:   "DEBUG",
-		EnableRsyslog: false,
-		LogFormatText: true,
-		Writers:       []string{"stdout"},
-	})
-	l := log.NewLogger("test")
-	openlogging.SetLogger(l)
-}
 
 //EventListener
 type EventListener struct {
@@ -59,7 +47,7 @@ func main() {
 	//logger.Level = log.InfoLevel
 
 	// create go-archaius object
-	configFactory, err := archaius.NewConfigFactory(nil)
+	configFactory, err := archaius.NewConfigFactory()
 	if err != nil {
 		openlogging.GetLogger().Error("Error:" + err.Error())
 	}

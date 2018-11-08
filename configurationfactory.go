@@ -83,7 +83,7 @@ type ConfigFactory struct {
 }
 
 // NewConfigFactory creates a new configuration object for config center
-func NewConfigFactory(log openlogging.Logger) (ConfigurationFactory, error) {
+func NewConfigFactory() (ConfigurationFactory, error) {
 	arc := new(ConfigFactory)
 	//// Source init should be before config manager init
 	//sources.NewSourceInit()
@@ -99,8 +99,8 @@ func NewConfigFactory(log openlogging.Logger) (ConfigurationFactory, error) {
 	envSource := envconfigsource.NewEnvConfigurationSource()
 	arc.configMgr.AddSource(envSource, envSource.GetPriority())
 	// External variable source
-	memorySource = memoryconfigsource.NewMemoryConfigurationSource()
-	arc.configMgr.AddSource(memorySource, memorySource.GetPriority())
+	ms = memoryconfigsource.NewMemoryConfigurationSource()
+	arc.configMgr.AddSource(ms, ms.GetPriority())
 	openlogging.GetLogger().Debug("ConfigurationFactory Initiated")
 	return arc, nil
 }

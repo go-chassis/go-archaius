@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-chassis/core/lager"
 	"github.com/go-mesh/openlogging"
 	"log"
 	"time"
@@ -23,7 +22,6 @@ func (e *Listener) Event(event *core.Event) {
 }
 
 func main() {
-	lager.Initialize("", "DEBUG", "", "size", true, 1, 10, 7)
 	err := archaius.Init(archaius.WithRequiredFiles([]string{
 		"./event.yaml",
 	}))

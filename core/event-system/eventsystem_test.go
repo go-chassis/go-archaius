@@ -5,22 +5,9 @@ import (
 	"github.com/go-chassis/go-archaius/core/config-manager"
 	"github.com/go-chassis/go-archaius/core/event-system"
 	"github.com/go-chassis/go-archaius/sources/test-source"
-	"github.com/go-chassis/paas-lager"
-	"github.com/go-mesh/openlogging"
 	"testing"
 	"time"
 )
-
-func init() {
-	log.Init(log.Config{
-		LoggerLevel:   "DEBUG",
-		EnableRsyslog: false,
-		LogFormatText: true,
-		Writers:       []string{"stdout"},
-	})
-	l := log.NewLogger("test")
-	openlogging.SetLogger(l)
-}
 
 type EListener struct {
 	Name      string

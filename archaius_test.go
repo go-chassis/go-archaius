@@ -1,7 +1,6 @@
 package archaius_test
 
 import (
-	_ "github.com/go-chassis/go-chassis/initiator"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,14 +8,14 @@ import (
 
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-chassis/core/lager"
+	"github.com/go-mesh/openlogging"
 	"github.com/stretchr/testify/assert"
 )
 
 type EListener struct{}
 
 func (e EListener) Event(event *core.Event) {
-	lager.Logger.Infof("config value after change ", event.Key, " | ", event.Value)
+	openlogging.GetLogger().Infof("config value after change ", event.Key, " | ", event.Value)
 }
 
 var filename2 string

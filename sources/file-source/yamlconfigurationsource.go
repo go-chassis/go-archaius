@@ -362,7 +362,7 @@ func newWatchPool(callback core.DynamicConfigCallback, cfgSrc *yamlConfiguration
 	//watch.files = make([]string, 0)
 	watch.fileSource = cfgSrc
 	watch.watcher = watcher
-
+	openlogging.GetLogger().Info("create new watcher")
 	return watch, nil
 }
 
