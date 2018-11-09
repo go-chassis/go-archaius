@@ -290,8 +290,12 @@ func UnRegisterListener(listenerObj core.EventListener, key ...string) error {
 }
 
 // AddFile is for to add the configuration files into the configfactory at run time
-func AddFile(file string) error {
-	if err := fs.AddFileSource(file, filesource.DefaultFilePriority, nil); err != nil {
+func AddFile(file string, opts ...FileOption) error {
+	o := &FileOptions{}
+	for _, f := range opts {
+		f(o)
+	}
+	if err := fs.AddFileSource(file, filesource.DefaultFilePriority, o.Handler); err != nil {
 		return err
 	}
 	return factory.Refresh(fs.GetSourceName())

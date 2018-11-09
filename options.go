@@ -33,8 +33,8 @@ func WithOptionalFiles(f []string) Option {
 	}
 }
 
-//WithFileHandler let user custom handler
-func WithFileHandler(handler filesource.FileHandler) Option {
+//WithDefaultFileHandler let user custom handler
+func WithDefaultFileHandler(handler filesource.FileHandler) Option {
 	return func(options *Options) {
 		options.FileHandler = handler
 	}
@@ -73,4 +73,20 @@ func WithMemorySource(e core.ConfigSource) Option {
 	return func(options *Options) {
 		options.ExternalSource = e
 	}
+}
+
+//FileOptions for AddFile func
+type FileOptions struct {
+	Handler filesource.FileHandler
+}
+
+//FileOption is a func
+type FileOption func(options *FileOptions)
+
+//WithFileHandler use custom handler
+func WithFileHandler(h filesource.FileHandler) FileOption {
+	return func(options *FileOptions) {
+		options.Handler = h
+	}
+
 }
