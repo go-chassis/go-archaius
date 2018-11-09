@@ -12,7 +12,7 @@ b: 2
 c:
  d: 3
 `)
-	m, err := Convert2JavaProps(b)
+	m, err := Convert2JavaProps("test.yaml", b)
 	assert.NoError(t, err)
 	assert.Equal(t, m["c.d"], 3)
 }

@@ -45,10 +45,10 @@ type ConfigCenterInfo struct {
 func initFileSource(o *Options) (core.ConfigSource, error) {
 	files := make([]string, 0)
 	// created file source object
-	fs = filesource.NewYamlConfigurationSource()
+	fs = filesource.NewFileSource()
 	// adding all files with file source
 	for _, v := range o.RequiredFiles {
-		if err := fs.AddFileSource(v, filesource.DefaultFilePriority, o.FileHandler); err != nil {
+		if err := fs.AddFile(v, filesource.DefaultFilePriority, o.FileHandler); err != nil {
 			openlogging.GetLogger().Errorf("add file source error [%s].", err.Error())
 			return nil, err
 		}
@@ -60,7 +60,7 @@ func initFileSource(o *Options) (core.ConfigSource, error) {
 			openlogging.GetLogger().Infof("[%s] not exist", v)
 			continue
 		}
-		if err := fs.AddFileSource(v, filesource.DefaultFilePriority, o.FileHandler); err != nil {
+		if err := fs.AddFile(v, filesource.DefaultFilePriority, o.FileHandler); err != nil {
 			openlogging.GetLogger().Infof("%v", err)
 			return nil, err
 		}
@@ -295,7 +295,7 @@ func AddFile(file string, opts ...FileOption) error {
 	for _, f := range opts {
 		f(o)
 	}
-	if err := fs.AddFileSource(file, filesource.DefaultFilePriority, o.Handler); err != nil {
+	if err := fs.AddFile(file, filesource.DefaultFilePriority, o.Handler); err != nil {
 		return err
 	}
 	return factory.Refresh(fs.GetSourceName())

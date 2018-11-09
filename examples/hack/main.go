@@ -73,11 +73,11 @@ func main() {
 		"===========================================================\n")
 
 	// create file source object
-	fSource := filesource.NewYamlConfigurationSource()
+	fSource := filesource.NewFileSource()
 	// add file in file source.
-	// file can be regular yaml file or directory like fSource.AddFileSource("./conf", 0)
+	// file can be regular yaml file or directory like fSource.AddFile("./conf", 0)
 	// second argument is priority of file
-	fSource.AddFileSource("./conf/name.yaml", 0, nil)
+	fSource.AddFile("./conf/name.yaml", 0, nil)
 	// add file source to go-archaius
 	ConfigFactory.AddSource(fSource)
 
@@ -123,7 +123,7 @@ func main() {
 		"\n========================\n")
 
 	//second argument is priority of file
-	fSource.AddFileSource("./conf/name.yaml", 0, nil)
+	fSource.AddFile("./conf/name.yaml", 0, nil)
 	// add file source to go-`archaius
 	ConfigFactory.AddSource(fSource)
 

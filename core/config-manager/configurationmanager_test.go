@@ -307,8 +307,8 @@ cse:
 	dispatcher := eventsystem.NewDispatcher()
 	confmanager := configmanager.NewConfigurationManager(dispatcher)
 
-	fsource := filesource.NewYamlConfigurationSource()
-	fsource.AddFileSource(file1, 0, nil)
+	fsource := filesource.NewFileSource()
+	fsource.AddFile(file1, 0, nil)
 
 	confmanager.AddSource(fsource, fsource.GetPriority())
 	time.Sleep(2 * time.Second)
@@ -326,7 +326,7 @@ cse:
 
 	confmanager = configmanager.NewConfigurationManager(dispatcher)
 
-	fsource.AddFileSource(lbFileName, 0, nil)
+	fsource.AddFile(lbFileName, 0, nil)
 
 	confmanager.AddSource(fsource, fsource.GetPriority())
 	time.Sleep(2 * time.Second)
