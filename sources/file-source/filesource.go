@@ -30,7 +30,6 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-mesh/openlogging"
-	"gopkg.in/yaml.v2"
 	"strings"
 	"time"
 )
@@ -61,7 +60,7 @@ type ConfigInfo struct {
 	Value    interface{}
 }
 
-type yamlConfigurationSource struct {
+type fileSource struct {
 	Configurations map[string]*ConfigInfo
 	files          []file
 	fileHandlers   map[string]FileHandler
@@ -79,19 +78,19 @@ type watch struct {
 	//files   []string
 	watcher    *fsnotify.Watcher
 	callback   core.DynamicConfigCallback
-	fileSource *yamlConfigurationSource
+	fileSource *fileSource
 	sync.RWMutex
 }
 
-var _ core.ConfigSource = &yamlConfigurationSource{}
-var _ FileSource = &yamlConfigurationSource{}
+var _ core.ConfigSource = &fileSource{}
+var _ FileSource = &fileSource{}
 
-var fileConfigSource *yamlConfigurationSource
+var fileConfigSource *fileSource
 
 /*
 	accepts files and directories as file-source
-  		1. Directory: all yaml files considered as file source
-  		2. File: specified yaml file considered as file source
+  		1. Directory: all files considered as file source
+  		2. File: specified file considered as file source
 
   	TODO: Currently file sources priority not considered. if key conflicts then latest key will get considered
 */
@@ -99,13 +98,13 @@ var fileConfigSource *yamlConfigurationSource
 //FileSource is a interface
 type FileSource interface {
 	core.ConfigSource
-	AddFileSource(filePath string, priority uint32, handler FileHandler) error
+	AddFile(filePath string, priority uint32, handler FileHandler) error
 }
 
-//NewYamlConfigurationSource creates new yaml configuration
-func NewYamlConfigurationSource() FileSource {
+//NewFileSource creates a source which can handler local files
+func NewFileSource() FileSource {
 	if fileConfigSource == nil {
-		fileConfigSource = new(yamlConfigurationSource)
+		fileConfigSource = new(fileSource)
 		fileConfigSource.files = make([]file, 0)
 		fileConfigSource.fileHandlers = make(map[string]FileHandler)
 	}
@@ -113,7 +112,7 @@ func NewYamlConfigurationSource() FileSource {
 	return fileConfigSource
 }
 
-func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32, handle FileHandler) error {
+func (fSource *fileSource) AddFile(p string, priority uint32, handle FileHandler) error {
 	path, err := filepath.Abs(p)
 	if err != nil {
 		return err
@@ -133,7 +132,7 @@ func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32,
 	fileType := fileType(fs)
 	switch fileType {
 	case Directory:
-		// handle Directory input. Include all yaml files as file source.
+		// handle Directory input. Include all files as file source.
 		err := fSource.handleDirectory(fs, priority, handle)
 		if err != nil {
 			openlogging.GetLogger().Errorf("Failed to handle directory [%s] %s", path, err)
@@ -158,7 +157,7 @@ func (fSource *yamlConfigurationSource) AddFileSource(p string, priority uint32,
 	return nil
 }
 
-func (fSource *yamlConfigurationSource) isFileSrcExist(filePath string) bool {
+func (fSource *fileSource) isFileSrcExist(filePath string) bool {
 	var exist bool
 	for _, file := range fSource.files {
 		if filePath == file.filePath {
@@ -186,7 +185,7 @@ func fileType(fs *os.File) FileSourceTypes {
 	return InvalidFileType
 }
 
-func (fSource *yamlConfigurationSource) handleDirectory(dir *os.File, priority uint32, handle FileHandler) error {
+func (fSource *fileSource) handleDirectory(dir *os.File, priority uint32, handle FileHandler) error {
 
 	filesInfo, err := dir.Readdir(-1)
 	if err != nil {
@@ -214,16 +213,16 @@ func (fSource *yamlConfigurationSource) handleDirectory(dir *os.File, priority u
 	return nil
 }
 
-func (fSource *yamlConfigurationSource) handleFile(file *os.File, priority uint32, handle FileHandler) error {
-	yamlContent, err := ioutil.ReadFile(file.Name())
+func (fSource *fileSource) handleFile(file *os.File, priority uint32, handle FileHandler) error {
+	Content, err := ioutil.ReadFile(file.Name())
 	if err != nil {
 		return err
 	}
 	var config map[string]interface{}
 	if handle != nil {
-		config, err = handle(yamlContent)
+		config, err = handle(file.Name(), Content)
 	} else {
-		config, err = Convert2JavaProps(yamlContent)
+		config, err = Convert2JavaProps(file.Name(), Content)
 	}
 	if err != nil {
 		return fmt.Errorf("failed to pull configurations from [%s] file, %s", file.Name(), err)
@@ -244,7 +243,7 @@ func (fSource *yamlConfigurationSource) handleFile(file *os.File, priority uint3
 	return nil
 }
 
-func (fSource *yamlConfigurationSource) handlePriority(filePath string, priority uint32) error {
+func (fSource *fileSource) handlePriority(filePath string, priority uint32) error {
 	fSource.Lock()
 	newFilePriority := make([]file, 0)
 	var prioritySet bool
@@ -273,24 +272,7 @@ func (fSource *yamlConfigurationSource) handlePriority(filePath string, priority
 	return nil
 }
 
-func (fSource *yamlConfigurationSource) pullYamlFileConfig(fileName string) (map[string]interface{}, error) {
-	configMap := make(map[string]interface{})
-	yamlContent, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	ss := yaml.MapSlice{}
-	err = yaml.Unmarshal([]byte(yamlContent), &ss)
-	if err != nil {
-		return nil, fmt.Errorf("yaml unmarshal [%s] failed, %s", fileName, err)
-	}
-	configMap = retrieveItems("", ss)
-
-	return configMap, nil
-}
-
-func (fSource *yamlConfigurationSource) GetConfigurations() (map[string]interface{}, error) {
+func (fSource *fileSource) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
 
 	fSource.Lock()
@@ -307,7 +289,7 @@ func (fSource *yamlConfigurationSource) GetConfigurations() (map[string]interfac
 	return configMap, nil
 }
 
-func (fSource *yamlConfigurationSource) GetConfigurationByKey(key string) (interface{}, error) {
+func (fSource *fileSource) GetConfigurationByKey(key string) (interface{}, error) {
 	fSource.Lock()
 	defer fSource.Unlock()
 
@@ -325,15 +307,15 @@ func (fSource *yamlConfigurationSource) GetConfigurationByKey(key string) (inter
 	return nil, errors.New("key does not exist")
 }
 
-func (*yamlConfigurationSource) GetSourceName() string {
+func (*fileSource) GetSourceName() string {
 	return FileConfigSourceConst
 }
 
-func (*yamlConfigurationSource) GetPriority() int {
+func (*fileSource) GetPriority() int {
 	return fileSourcePriority
 }
 
-func (fSource *yamlConfigurationSource) DynamicConfigHandler(callback core.DynamicConfigCallback) error {
+func (fSource *fileSource) DynamicConfigHandler(callback core.DynamicConfigCallback) error {
 	if callback == nil {
 		return errors.New("call back can not be nil")
 	}
@@ -350,7 +332,7 @@ func (fSource *yamlConfigurationSource) DynamicConfigHandler(callback core.Dynam
 	return nil
 }
 
-func newWatchPool(callback core.DynamicConfigCallback, cfgSrc *yamlConfigurationSource) (*watch, error) {
+func newWatchPool(callback core.DynamicConfigCallback, cfgSrc *fileSource) (*watch, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		openlogging.GetLogger().Error("New file watcher failed:" + err.Error())
@@ -431,13 +413,13 @@ func (wth *watch) watchFile() {
 			if handle == nil {
 				handle = Convert2JavaProps
 			}
-			yamlContent, err := ioutil.ReadFile(event.Name)
+			content, err := ioutil.ReadFile(event.Name)
 			if err != nil {
-				openlogging.GetLogger().Error("yaml parsing error " + err.Error())
+				openlogging.GetLogger().Error("read file error " + err.Error())
 				continue
 			}
 
-			newConf, err := handle(yamlContent)
+			newConf, err := handle(event.Name, content)
 			if err != nil {
 				openlogging.GetLogger().Error("convert error " + err.Error())
 				continue
@@ -456,7 +438,7 @@ func (wth *watch) watchFile() {
 
 }
 
-func (fSource *yamlConfigurationSource) compareUpdate(newconf map[string]interface{}, filePath string) []*core.Event {
+func (fSource *fileSource) compareUpdate(newconf map[string]interface{}, filePath string) []*core.Event {
 	events := make([]*core.Event, 0)
 	fileConfs := make(map[string]*ConfigInfo)
 	if fSource == nil {
@@ -542,7 +524,7 @@ func (fSource *yamlConfigurationSource) compareUpdate(newconf map[string]interfa
 	return events
 }
 
-func (fSource *yamlConfigurationSource) addOrCreateConf(fileConfs map[string]*ConfigInfo, newconf map[string]interface{},
+func (fSource *fileSource) addOrCreateConf(fileConfs map[string]*ConfigInfo, newconf map[string]interface{},
 	events []*core.Event, filePath string) (map[string]*ConfigInfo, []*core.Event) {
 	for key, value := range newconf {
 		handled := false
@@ -573,7 +555,7 @@ func (fSource *yamlConfigurationSource) addOrCreateConf(fileConfs map[string]*Co
 //	return strings.Split(configKey, `#`)
 //}
 
-func (fSource *yamlConfigurationSource) Cleanup() error {
+func (fSource *fileSource) Cleanup() error {
 
 	fSource.filelock.Lock()
 	defer fSource.filelock.Unlock()
@@ -596,14 +578,14 @@ func (fSource *yamlConfigurationSource) Cleanup() error {
 	return nil
 }
 
-func (fSource *yamlConfigurationSource) GetConfigurationByKeyAndDimensionInfo(key, di string) (interface{}, error) {
+func (fSource *fileSource) GetConfigurationByKeyAndDimensionInfo(key, di string) (interface{}, error) {
 	return nil, nil
 }
 
-func (fSource *yamlConfigurationSource) AddDimensionInfo(dimensionInfo string) (map[string]string, error) {
+func (fSource *fileSource) AddDimensionInfo(dimensionInfo string) (map[string]string, error) {
 	return nil, nil
 }
 
-func (fSource *yamlConfigurationSource) GetConfigurationsByDI(dimensionInfo string) (map[string]interface{}, error) {
+func (fSource *fileSource) GetConfigurationsByDI(dimensionInfo string) (map[string]interface{}, error) {
 	return nil, nil
 }

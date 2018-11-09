@@ -7,11 +7,11 @@ import (
 
 //FileHandler decide how to convert a file content into key values
 //archaius will manage file content as those key values
-type FileHandler func(content []byte) (map[string]interface{}, error)
+type FileHandler func(filePath string, content []byte) (map[string]interface{}, error)
 
 //Convert2JavaProps is a FileHandler
 //it convert the yaml content into java props
-func Convert2JavaProps(content []byte) (map[string]interface{}, error) {
+func Convert2JavaProps(p string, content []byte) (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
 
 	ss := yaml.MapSlice{}

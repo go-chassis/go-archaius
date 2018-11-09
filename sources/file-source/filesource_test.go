@@ -94,34 +94,34 @@ testfilekey3:
 	_, err = io.WriteString(f2, f2content)
 	check(err)
 
-	fSource := NewYamlConfigurationSource()
+	fSource := NewFileSource()
 
 	//Configuration file1 is adding to the filesource
-	err = fSource.AddFileSource(file1, 0, nil)
+	err = fSource.AddFile(file1, 0, nil)
 	if err != nil {
 		t.Error(err)
 	}
 
 	//Duplicate file(file1) is adding to the filesource
-	err = fSource.AddFileSource(file1, 0, nil)
+	err = fSource.AddFile(file1, 0, nil)
 	if err != nil {
 		t.Error(err)
 	}
 
 	//Not existing path file adding to the filesource
-	err = fSource.AddFileSource(confdir+"/notexistingdir/notexisting.yaml", 0, nil)
+	err = fSource.AddFile(confdir+"/notexistingdir/notexisting.yaml", 0, nil)
 	if err == nil {
 		t.Error("filesource working on not existing path")
 	}
 
 	//Not existing file adding to the filesource
-	err = fSource.AddFileSource(confdir+"/notexisting.yaml", 0, nil)
+	err = fSource.AddFile(confdir+"/notexisting.yaml", 0, nil)
 	if err == nil {
 		t.Error("filesource working on not existing file")
 	}
 
 	//Adding directory to the filesource
-	err = fSource.AddFileSource(confdir, 0, nil)
+	err = fSource.AddFile(confdir, 0, nil)
 	if err != nil {
 		t.Error("Failed to add directory to the filesource")
 	}
@@ -223,10 +223,10 @@ func TestDynamicConfigurations(t *testing.T) {
 	_, err = io.WriteString(f5, yamlContent5)
 	check(err)
 
-	fSource := NewYamlConfigurationSource()
-	fSource.AddFileSource(filename1, 0, nil)
-	fSource.AddFileSource(filename2, 1, nil)
-	fSource.AddFileSource(filename3, 2, nil)
+	fSource := NewFileSource()
+	fSource.AddFile(filename1, 0, nil)
+	fSource.AddFile(filename2, 1, nil)
+	fSource.AddFile(filename3, 2, nil)
 
 	dynHandler := new(TestDynamicConfigHandler)
 	fSource.DynamicConfigHandler(dynHandler)
@@ -281,8 +281,8 @@ func TestDynamicConfigurations(t *testing.T) {
 	}
 
 	t.Log("adding new files after dynhandler is inited")
-	fSource.AddFileSource(filename4, 3, nil)
-	fSource.AddFileSource(filename5, 4, nil)
+	fSource.AddFile(filename4, 3, nil)
+	fSource.AddFile(filename5, 4, nil)
 	time.Sleep(10 * time.Millisecond)
 
 	t.Log("verifying the configurations of newely added files")
@@ -343,10 +343,10 @@ func TestNewYamlConfigurationSource2(t *testing.T) {
 	_, err = io.WriteString(f1, file1content)
 	check(err)
 
-	fSource := NewYamlConfigurationSource()
+	fSource := NewFileSource()
 
 	t.Log("improper configuration file adding to the filesource")
-	err = fSource.AddFileSource(file1, 0, nil)
+	err = fSource.AddFile(file1, 0, nil)
 	if err == nil {
 		t.Error(err)
 	}
