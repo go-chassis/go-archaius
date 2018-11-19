@@ -45,3 +45,10 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 
 	return result
 }
+
+//Convert2configMap  converts the yaml file file name as key and the content as value
+func Convert2configMap(p string, content []byte) (map[string]interface{}, error) {
+	configMap := make(map[string]interface{})
+	configMap[p] = content
+	return configMap, nil
+}
