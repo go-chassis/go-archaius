@@ -8,8 +8,6 @@ import (
 	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-archaius/sources/memory-source"
 	"github.com/go-chassis/go-archaius/sources/test-source"
-	"github.com/go-chassis/go-chassis/core/config/model"
-	"github.com/go-chassis/go-chassis/pkg/util/fileutil"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
@@ -18,6 +16,79 @@ import (
 	"testing"
 	"time"
 )
+
+//GlobalCfg chassis.yaml 配置项
+type GlobalCfg struct {
+	AppID      string            `yaml:"APPLICATION_ID"` //Deprecated
+	Panel      ControlPanel      `yaml:"control"`
+	Ssl        map[string]string `yaml:"ssl"`
+	Tracing    TracingStruct     `yaml:"tracing"`
+	DataCenter *DataCenterInfo   `yaml:"region"`
+}
+
+// DataCenterInfo gives data center information
+type DataCenterInfo struct {
+	Name          string `yaml:"name"`
+	Region        string `yaml:"region"`
+	AvailableZone string `yaml:"availableZone"`
+}
+
+// TracingStruct tracing structure
+type TracingStruct struct {
+	Tracer   string            `yaml:"tracer"`
+	Settings map[string]string `yaml:"settings"`
+}
+
+//ControlPanel define control panel config
+type ControlPanel struct {
+	Infra    string            `yaml:"infra"`
+	Settings map[string]string `yaml:"settings"`
+}
+
+// LBWrapper loadbalancing structure
+type LBWrapper struct {
+	Prefix *LoadBalancingConfig `yaml:"cse"`
+}
+
+// LoadBalancingConfig loadbalancing structure
+type LoadBalancingConfig struct {
+	LBConfig *LoadBalancing `yaml:"loadbalance"`
+}
+
+// LoadBalancing loadbalancing structure
+type LoadBalancing struct {
+	Strategy              map[string]string            `yaml:"strategy"`
+	RetryEnabled          bool                         `yaml:"retryEnabled"`
+	RetryOnNext           int                          `yaml:"retryOnNext"`
+	RetryOnSame           int                          `yaml:"retryOnSame"`
+	Filters               string                       `yaml:"serverListFilters"`
+	Backoff               BackoffStrategy              `yaml:"backoff"`
+	SessionStickinessRule SessionStickinessRule        `yaml:"SessionStickinessRule"`
+	AnyService            map[string]LoadBalancingSpec `yaml:",inline"`
+}
+
+// LoadBalancingSpec loadbalancing structure
+type LoadBalancingSpec struct {
+	Strategy              map[string]string     `yaml:"strategy"`
+	SessionStickinessRule SessionStickinessRule `yaml:"SessionStickinessRule"`
+	RetryEnabled          bool                  `yaml:"retryEnabled"`
+	RetryOnNext           int                   `yaml:"retryOnNext"`
+	RetryOnSame           int                   `yaml:"retryOnSame"`
+	Backoff               BackoffStrategy       `yaml:"backoff"`
+}
+
+// SessionStickinessRule loadbalancing structure
+type SessionStickinessRule struct {
+	SessionTimeoutInSeconds int `yaml:"sessionTimeoutInSeconds"`
+	SuccessiveFailedTimes   int `yaml:"successiveFailedTimes"`
+}
+
+// BackoffStrategy back off strategy
+type BackoffStrategy struct {
+	Kind  string `yaml:"kind"`
+	MinMs int    `yaml:"minMs"`
+	MaxMs int    `yaml:"maxMs"`
+}
 
 func check(e error) {
 	if e != nil {
@@ -195,6 +266,14 @@ func TestConfigurationManager(t *testing.T) {
 
 }
 
+//GetWorkDir is a function used to get the working directory
+func GetWorkDir() (string, error) {
+	wd, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		return "", err
+	}
+	return wd, nil
+}
 func TestConfigurationManager_AddSource(t *testing.T) {
 
 	file := []byte(`
@@ -278,7 +357,7 @@ cse:
 
 `)
 
-	root, _ := fileutil.GetWorkDir()
+	root, _ := GetWorkDir()
 	os.Setenv("CHASSIS_HOME", root)
 	t.Log(os.Getenv("CHASSIS_HOME"))
 
@@ -314,7 +393,7 @@ cse:
 	time.Sleep(2 * time.Second)
 
 	t.Log("verifying Unmarshalling")
-	globalDef := model.GlobalCfg{}
+	globalDef := GlobalCfg{}
 	err = confmanager.Unmarshal(&globalDef)
 	if err != nil {
 		t.Error(err)
@@ -331,7 +410,7 @@ cse:
 	confmanager.AddSource(fsource, fsource.GetPriority())
 	time.Sleep(2 * time.Second)
 
-	lbConfig := model.LBWrapper{}
+	lbConfig := LBWrapper{}
 	err = confmanager.Unmarshal(&lbConfig)
 	if err != nil {
 		t.Error(err)

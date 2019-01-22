@@ -21,7 +21,6 @@ package filesource
 
 import (
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-chassis/pkg/util/fileutil"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
@@ -53,9 +52,17 @@ func (t *TestDynamicConfigHandler) OnEvent(e *core.Event) {
 	t.EventValue = e.Value
 }
 
+//GetWorkDir is a function used to get the working directory
+func GetWorkDir() (string, error) {
+	wd, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		return "", err
+	}
+	return wd, nil
+}
 func TestNewYamlConfigurationSource1(t *testing.T) {
 
-	root, _ := fileutil.GetWorkDir()
+	root, _ := GetWorkDir()
 	os.Setenv("CHASSIS_HOME", root)
 
 	t.Log("Test yamlconfigurationsource.go")
@@ -165,7 +172,7 @@ testfilekey3:
 
 func TestDynamicConfigurations(t *testing.T) {
 
-	root, _ := fileutil.GetWorkDir()
+	root, _ := GetWorkDir()
 	os.Setenv("CHASSIS_HOME", root)
 
 	tmpdir := filepath.Join(root, "tmp")
@@ -323,7 +330,7 @@ func TestDynamicConfigurations(t *testing.T) {
 
 func TestNewYamlConfigurationSource2(t *testing.T) {
 
-	root, _ := fileutil.GetWorkDir()
+	root, _ := GetWorkDir()
 	os.Setenv("CHASSIS_HOME", root)
 
 	tmpdir := filepath.Join(root, "tmp")

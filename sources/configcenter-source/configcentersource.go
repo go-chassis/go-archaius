@@ -20,7 +20,6 @@ package configcentersource
 import (
 	"crypto/tls"
 	"errors"
-	"net/http"
 	"sync"
 	"time"
 
@@ -30,10 +29,8 @@ import (
 	"fmt"
 	"github.com/go-chassis/go-cc-client"
 	"github.com/go-chassis/go-cc-client/serializers"
-	"github.com/go-chassis/go-chassis/pkg/httpclient"
 	"github.com/go-mesh/openlogging"
 	"github.com/gorilla/websocket"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"reflect"
@@ -60,8 +57,8 @@ var (
 	ConfigRefreshPath = ""
 )
 
-//ConfigCenterSourceHandler handles
-type ConfigCenterSourceHandler struct {
+//Handler handles configs from config center
+type Handler struct {
 	MemberDiscovery              configcenterclient.MemberDiscovery
 	dynamicConfigHandler         *DynamicConfigHandler
 	dimensionsInfo               string
@@ -79,27 +76,27 @@ type ConfigCenterSourceHandler struct {
 	Version         string
 	RefreshPort     string
 	Environment     string
-	client          *httpclient.URLClient
 }
 
-var configCenterConfig *ConfigCenterSourceHandler
+//ConfigCenterConfig is pointer of config center source
+var ConfigCenterConfig *Handler
 
 //NewConfigCenterSource initializes all components of configuration center
 func NewConfigCenterSource(memberDiscovery configcenterclient.MemberDiscovery, dimInfo string, tlsConfig *tls.Config, tenantName string,
 	refreshMode, refreshInterval int, enableSSL bool, version, refreshPort, env string) core.ConfigSource {
 
-	if configCenterConfig == nil {
-		configCenterConfig = new(ConfigCenterSourceHandler)
-		configCenterConfig.MemberDiscovery = memberDiscovery
-		configCenterConfig.dimensionsInfo = dimInfo
-		configCenterConfig.initSuccess = true
-		configCenterConfig.TLSClientConfig = tlsConfig
-		configCenterConfig.TenantName = tenantName
-		configCenterConfig.RefreshMode = refreshMode
-		configCenterConfig.RefreshInterval = time.Second * time.Duration(refreshInterval)
-		configCenterConfig.Version = version
-		configCenterConfig.RefreshPort = refreshPort
-		configCenterConfig.Environment = env
+	if ConfigCenterConfig == nil {
+		ConfigCenterConfig = new(Handler)
+		ConfigCenterConfig.MemberDiscovery = memberDiscovery
+		ConfigCenterConfig.dimensionsInfo = dimInfo
+		ConfigCenterConfig.initSuccess = true
+		ConfigCenterConfig.TLSClientConfig = tlsConfig
+		ConfigCenterConfig.TenantName = tenantName
+		ConfigCenterConfig.RefreshMode = refreshMode
+		ConfigCenterConfig.RefreshInterval = time.Second * time.Duration(refreshInterval)
+		ConfigCenterConfig.Version = version
+		ConfigCenterConfig.RefreshPort = refreshPort
+		ConfigCenterConfig.Environment = env
 
 		//Read the version for yaml file
 		//Set Default api version to V3
@@ -119,26 +116,8 @@ func NewConfigCenterSource(memberDiscovery configcenterclient.MemberDiscovery, d
 		//Update the API Base Path based on the Version
 		updateAPIPath(apiVersion)
 
-		options := &httpclient.URLClientOption{
-			SSLEnabled: enableSSL,
-			TLSConfig:  tlsConfig,
-			Compressed: false,
-			Verbose:    false,
-		}
-		configCenterConfig.client, _ = httpclient.GetURLClient(options)
 	}
-	return configCenterConfig
-}
-
-//HTTPDo uses http-client package for rest communication
-func (cfgSrcHandler *ConfigCenterSourceHandler) HTTPDo(method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
-	if len(headers) == 0 {
-		headers = make(http.Header)
-	}
-	for k, v := range configcenterclient.GetDefaultHeaders(cfgSrcHandler.TenantName) {
-		headers[k] = v
-	}
-	return cfgSrcHandler.client.HTTPDo(method, rawURL, headers, body)
+	return ConfigCenterConfig
 }
 
 //Update the Base PATH and HEADERS Based on the version of Configcenter used.
@@ -173,115 +152,10 @@ type CreateConfigAPI struct {
 }
 
 // ensure to implement config source
-var _ core.ConfigSource = &ConfigCenterSourceHandler{}
-
-func (cfgSrcHandler *ConfigCenterSourceHandler) pullConfigurations() (map[string]interface{}, error) {
-	var (
-		count int
-	)
-
-	config := make(map[string]interface{})
-	configServerHost, err := cfgSrcHandler.MemberDiscovery.GetConfigServer()
-	if err != nil {
-		err := cfgSrcHandler.MemberDiscovery.RefreshMembers()
-		if err != nil {
-			openlogging.GetLogger().Error("error in refreshing config client members:" + err.Error())
-			return nil, errors.New("error in refreshing config client members")
-		}
-		cfgSrcHandler.MemberDiscovery.Shuffle()
-		configServerHost, _ = cfgSrcHandler.MemberDiscovery.GetConfigServer()
-	}
-
-	confgCenterIP := len(configServerHost)
-	for _, server := range configServerHost {
-		configAPIRes := make(GetConfigAPI)
-		parsedDimensionInfo := strings.Replace(cfgSrcHandler.dimensionsInfo, "#", "%23", -1)
-		resp, err := cfgSrcHandler.HTTPDo("GET", server+ConfigPath+"?"+dimensionsInfo+"="+parsedDimensionInfo, nil, nil)
-		if err != nil {
-			count++
-			if confgCenterIP <= count {
-				return nil, err
-			}
-			openlogging.GetLogger().Error("config source item request failed with error:" + err.Error())
-			continue
-		}
-		var body []byte
-		body, err = ioutil.ReadAll(resp.Body)
-		contentType := resp.Header.Get("Content-Type")
-		if len(contentType) > 0 && (len(defaultContentType) > 0 && !strings.Contains(contentType, defaultContentType)) {
-			openlogging.GetLogger().Error("config source item request failed with error content type mis match")
-			continue
-		}
-		error := serializers.Decode(defaultContentType, body, &configAPIRes)
-		if error != nil {
-			openlogging.GetLogger().Error("config source item request failed with error error in decoding the request:" + error.Error())
-			openlogging.GetLogger().Debugf("config source item request failed with error", error, "with body", body)
-			continue
-		}
-		for _, v := range configAPIRes {
-			for key, value := range v {
-				config[key] = value
-			}
-		}
-	}
-	return config, nil
-}
-
-func (cfgSrcHandler *ConfigCenterSourceHandler) pullConfigurationsByDI(dimensionInfo string) (map[string]map[string]interface{}, error) {
-	// update dimensionInfo value
-	var diInfo string
-	for _, value := range cfgSrcHandler.dimensionInfoMap {
-		if value == dimensionInfo {
-			diInfo = dimensionInfo
-		}
-	}
-
-	var (
-		count int
-	)
-	configAPIRes := make(GetConfigAPI)
-	configServerHost, err := cfgSrcHandler.MemberDiscovery.GetConfigServer()
-	if err != nil {
-		err := cfgSrcHandler.MemberDiscovery.RefreshMembers()
-		if err != nil {
-			openlogging.GetLogger().Error("error in refreshing config client members:" + err.Error())
-			return nil, errors.New("error in refreshing config client members")
-		}
-		cfgSrcHandler.MemberDiscovery.Shuffle()
-		configServerHost, _ = cfgSrcHandler.MemberDiscovery.GetConfigServer()
-	}
-
-	confgCenterIP := len(configServerHost)
-	for _, server := range configServerHost {
-		parsedDimensionInfo := strings.Replace(diInfo, "#", "%23", -1)
-		resp, err := cfgSrcHandler.HTTPDo("GET", server+ConfigPath+"?"+dimensionsInfo+"="+parsedDimensionInfo, nil, nil)
-		if err != nil {
-			count++
-			if confgCenterIP <= count {
-				return nil, err
-			}
-			openlogging.GetLogger().Error("config source item request failed with error:" + err.Error())
-			continue
-		}
-		var body []byte
-		body, err = ioutil.ReadAll(resp.Body)
-		contentType := resp.Header.Get("Content-Type")
-		if len(contentType) > 0 && (len(defaultContentType) > 0 && !strings.Contains(contentType, defaultContentType)) {
-			openlogging.GetLogger().Error("config source item request failed with error content type mis match")
-			continue
-		}
-		error := serializers.Decode(defaultContentType, body, &configAPIRes)
-		if error != nil {
-			openlogging.GetLogger().Error("config source item request failed with error error in decoding the request:" + error.Error())
-			openlogging.GetLogger().Debugf("config source item request failed with error", error, "with body", body)
-			continue
-		}
-	}
-	return configAPIRes, nil
-}
+var _ core.ConfigSource = &Handler{}
 
 //GetConfigurations gets a particular configuration
-func (cfgSrcHandler *ConfigCenterSourceHandler) GetConfigurations() (map[string]interface{}, error) {
+func (cfgSrcHandler *Handler) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
 
 	err := cfgSrcHandler.refreshConfigurations("")
@@ -301,7 +175,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) GetConfigurations() (map[string]
 }
 
 //GetConfigurationsByDI gets required configurations for particular dimension info
-func (cfgSrcHandler *ConfigCenterSourceHandler) GetConfigurationsByDI(dimensionInfo string) (map[string]interface{}, error) {
+func (cfgSrcHandler *Handler) GetConfigurationsByDI(dimensionInfo string) (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
 
 	err := cfgSrcHandler.refreshConfigurations(dimensionInfo)
@@ -321,7 +195,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) GetConfigurationsByDI(dimensionI
 	return configMap, nil
 }
 
-func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurationsPeriodically(dimensionInfo string) {
+func (cfgSrcHandler *Handler) refreshConfigurationsPeriodically(dimensionInfo string) {
 	ticker := time.Tick(cfgSrcHandler.RefreshInterval)
 	isConnectionFailed := false
 	for range ticker {
@@ -337,7 +211,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurationsPeriodicall
 	}
 }
 
-func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionInfo string) error {
+func (cfgSrcHandler *Handler) refreshConfigurations(dimensionInfo string) error {
 	var (
 		config     map[string]interface{}
 		configByDI map[string]map[string]interface{}
@@ -378,7 +252,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 	if cfgSrcHandler.dynamicConfigHandler != nil {
 		openlogging.GetLogger().Debugf("event On Receive %+v", events)
 		for _, event := range events {
-			cfgSrcHandler.dynamicConfigHandler.EventHandler.callback.OnEvent(event)
+			cfgSrcHandler.dynamicConfigHandler.EventHandler.Callback.OnEvent(event)
 		}
 	}
 
@@ -389,7 +263,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) refreshConfigurations(dimensionI
 	return nil
 }
 
-func (cfgSrcHandler *ConfigCenterSourceHandler) updatedimensionsInfoConfigurations(dimensionInfo string,
+func (cfgSrcHandler *Handler) updatedimensionsInfoConfigurations(dimensionInfo string,
 	configByDI map[string]map[string]interface{}, config map[string]interface{}) {
 
 	if dimensionInfo == "" {
@@ -427,7 +301,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) updatedimensionsInfoConfiguratio
 }
 
 //GetConfigurationByKey gets required configuration for a particular key
-func (cfgSrcHandler *ConfigCenterSourceHandler) GetConfigurationByKey(key string) (interface{}, error) {
+func (cfgSrcHandler *Handler) GetConfigurationByKey(key string) (interface{}, error) {
 	cfgSrcHandler.Lock()
 	configSrcVal, ok := cfgSrcHandler.Configurations[key]
 	cfgSrcHandler.Unlock()
@@ -439,7 +313,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) GetConfigurationByKey(key string
 }
 
 //GetConfigurationByKeyAndDimensionInfo gets required configuration for a particular key and dimension pair
-func (cfgSrcHandler *ConfigCenterSourceHandler) GetConfigurationByKeyAndDimensionInfo(key, dimensionInfo string) (interface{}, error) {
+func (cfgSrcHandler *Handler) GetConfigurationByKeyAndDimensionInfo(key, dimensionInfo string) (interface{}, error) {
 	var (
 		configSrcVal interface{}
 		actualValue  interface{}
@@ -464,7 +338,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) GetConfigurationByKeyAndDimensio
 }
 
 //AddDimensionInfo adds dimension info for a configuration
-func (cfgSrcHandler *ConfigCenterSourceHandler) AddDimensionInfo(dimensionInfo string) (map[string]string, error) {
+func (cfgSrcHandler *Handler) AddDimensionInfo(dimensionInfo string) (map[string]string, error) {
 	if len(cfgSrcHandler.dimensionInfoMap) == 0 {
 		cfgSrcHandler.dimensionInfoMap = make(map[string]string)
 	}
@@ -482,25 +356,25 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) AddDimensionInfo(dimensionInfo s
 }
 
 //GetSourceName returns name of the configuration
-func (*ConfigCenterSourceHandler) GetSourceName() string {
+func (*Handler) GetSourceName() string {
 	return ConfigCenterSourceConst
 }
 
 //GetPriority returns priority of a configuration
-func (*ConfigCenterSourceHandler) GetPriority() int {
+func (*Handler) GetPriority() int {
 	return configCenterSourcePriority
 }
 
 //DynamicConfigHandler dynamically handles a configuration
-func (cfgSrcHandler *ConfigCenterSourceHandler) DynamicConfigHandler(callback core.DynamicConfigCallback) error {
+func (cfgSrcHandler *Handler) DynamicConfigHandler(callback core.DynamicConfigCallback) error {
 	if cfgSrcHandler.initSuccess != true {
 		return errors.New("config center source initialization failed")
 	}
 
 	dynCfgHandler, err := newDynConfigHandlerSource(cfgSrcHandler, callback)
 	if err != nil {
-		openlogging.GetLogger().Error("failed to initialize dynamic config center ConfigCenterSourceHandler:" + err.Error())
-		return errors.New("failed to initialize dynamic config center ConfigCenterSourceHandler")
+		openlogging.GetLogger().Error("failed to initialize dynamic config center Handler:" + err.Error())
+		return errors.New("failed to initialize dynamic config center Handler")
 	}
 	cfgSrcHandler.dynamicConfigHandler = dynCfgHandler
 
@@ -515,7 +389,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) DynamicConfigHandler(callback co
 }
 
 //Cleanup cleans the particular configuration up
-func (cfgSrcHandler *ConfigCenterSourceHandler) Cleanup() error {
+func (cfgSrcHandler *Handler) Cleanup() error {
 	cfgSrcHandler.connsLock.Lock()
 	defer cfgSrcHandler.connsLock.Unlock()
 
@@ -529,7 +403,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) Cleanup() error {
 	return nil
 }
 
-func (cfgSrcHandler *ConfigCenterSourceHandler) populateEvents(updatedConfig map[string]interface{}) ([]*core.Event, error) {
+func (cfgSrcHandler *Handler) populateEvents(updatedConfig map[string]interface{}) ([]*core.Event, error) {
 	events := make([]*core.Event, 0)
 	newConfig := make(map[string]interface{})
 	cfgSrcHandler.Lock()
@@ -562,7 +436,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) populateEvents(updatedConfig map
 	return events, nil
 }
 
-func (cfgSrcHandler *ConfigCenterSourceHandler) setKeyValueByDI(updatedConfig map[string]map[string]interface{}, dimensionInfo string) ([]*core.Event, error) {
+func (cfgSrcHandler *Handler) setKeyValueByDI(updatedConfig map[string]map[string]interface{}, dimensionInfo string) ([]*core.Event, error) {
 	events := make([]*core.Event, 0)
 	newConfigForDI := make(map[string]map[string]interface{})
 	cfgSrcHandler.Lock()
@@ -612,7 +486,7 @@ func (cfgSrcHandler *ConfigCenterSourceHandler) setKeyValueByDI(updatedConfig ma
 	return events, nil
 }
 
-func (cfgSrcHandler *ConfigCenterSourceHandler) constructEvent(eventType string, key string, value interface{}) *core.Event {
+func (cfgSrcHandler *Handler) constructEvent(eventType string, key string, value interface{}) *core.Event {
 	newEvent := new(core.Event)
 	newEvent.EventSource = ConfigCenterSourceConst
 	newEvent.EventType = eventType
@@ -632,7 +506,7 @@ type DynamicConfigHandler struct {
 	memberDiscovery configcenterclient.MemberDiscovery
 }
 
-func newDynConfigHandlerSource(cfgSrc *ConfigCenterSourceHandler, callback core.DynamicConfigCallback) (*DynamicConfigHandler, error) {
+func newDynConfigHandlerSource(cfgSrc *Handler, callback core.DynamicConfigCallback) (*DynamicConfigHandler, error) {
 	eventHandler := newConfigCenterEventHandler(cfgSrc, callback)
 	dynCfgHandler := new(DynamicConfigHandler)
 	dynCfgHandler.EventHandler = eventHandler
@@ -763,7 +637,7 @@ func keepAlive(c *websocket.Conn, timeout time.Duration) {
 	}()
 }
 
-//Cleanup cleans particular dynamic configuration ConfigCenterSourceHandler up
+//Cleanup cleans particular dynamic configuration Handler up
 func (dynHandler *DynamicConfigHandler) Cleanup() error {
 	dynHandler.dynamicLock.Lock()
 	defer dynHandler.dynamicLock.Unlock()
@@ -776,8 +650,8 @@ func (dynHandler *DynamicConfigHandler) Cleanup() error {
 
 //ConfigCenterEventHandler handles a event of a configuration center
 type ConfigCenterEventHandler struct {
-	configSource *ConfigCenterSourceHandler
-	callback     core.DynamicConfigCallback
+	ConfigSource *Handler
+	Callback     core.DynamicConfigCallback
 }
 
 //ConfigCenterEvent stores info about an configuration center event
@@ -786,10 +660,10 @@ type ConfigCenterEvent struct {
 	Value  string `json:"value"`
 }
 
-func newConfigCenterEventHandler(cfgSrc *ConfigCenterSourceHandler, callback core.DynamicConfigCallback) *ConfigCenterEventHandler {
+func newConfigCenterEventHandler(cfgSrc *Handler, callback core.DynamicConfigCallback) *ConfigCenterEventHandler {
 	eventHandler := new(ConfigCenterEventHandler)
-	eventHandler.configSource = cfgSrc
-	eventHandler.callback = callback
+	eventHandler.ConfigSource = cfgSrc
+	eventHandler.Callback = callback
 	return eventHandler
 }
 
@@ -819,7 +693,7 @@ func (eventHandler *ConfigCenterEventHandler) OnReceive(actionData []byte) {
 		return
 	}
 
-	events, err := eventHandler.configSource.populateEvents(sourceConfig)
+	events, err := eventHandler.ConfigSource.populateEvents(sourceConfig)
 	if err != nil {
 		openlogging.GetLogger().Error("error in generating event:" + err.Error())
 		return
@@ -827,7 +701,7 @@ func (eventHandler *ConfigCenterEventHandler) OnReceive(actionData []byte) {
 
 	openlogging.GetLogger().Debugf("event On Receive", events)
 	for _, event := range events {
-		eventHandler.callback.OnEvent(event)
+		eventHandler.Callback.OnEvent(event)
 	}
 
 	return
