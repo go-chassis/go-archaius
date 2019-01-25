@@ -1,16 +1,15 @@
-package configcentersource
+package configcentersource_test
 
 import (
 	"github.com/go-chassis/go-cc-client/configcenter-client"
 
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-chassis/core/config"
-	"github.com/go-chassis/go-chassis/core/config/model"
 	"github.com/stretchr/testify/assert"
 
 	"encoding/json"
 	"errors"
 	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-archaius/sources/configcenter-source"
 	"math/rand"
 	"os"
 	"testing"
@@ -61,101 +60,91 @@ func (*Testingsource) GetInvalidConfigServer() []string {
 func TestGetConfigurationsForInvalidCCIP(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("CHASSIS_HOME", gopath+"/src/code.huawei.com/cse/go-chassis-examples/discovery/server/")
-	config.Init()
 	testSource := &Testingsource{}
 
 	t.Log("Test configcentersource.go")
 
-	config.GlobalDefinition = &model.GlobalCfg{}
-	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
 	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testSource.GetInvalidConfigServer())
-	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
+	ccs := configcentersource.NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
 		"default", 1, 1, false, "", "", "")
 
-	_, er := configcentersource.GetConfigurations()
+	_, er := ccs.GetConfigurations()
 	if er != nil {
 		assert.Error(t, er)
 	}
 
 	time.Sleep(2 * time.Second)
-	configCenterConfig.Cleanup()
+	configcentersource.ConfigCenterConfig.Cleanup()
 }
 
 func TestGetConfigurationsWithCCIP(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("CHASSIS_HOME", gopath+"/src/code.huawei.com/cse/go-chassis-examples/discovery/server/")
-	config.Init()
 	testSource := &Testingsource{}
 
-	config.GlobalDefinition = &model.GlobalCfg{}
-	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
 	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testSource.GetConfigServer())
-	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
+	ccs := configcentersource.NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
 		"default", 1, 1, false, "", "", "")
-	config.GlobalDefinition = &model.GlobalCfg{}
 
 	t.Log("Accessing concenter source configurations")
 	time.Sleep(2 * time.Second)
-	_, er := configcentersource.GetConfigurations()
+	_, er := ccs.GetConfigurations()
 	if er != nil {
 		assert.Error(t, er)
 	}
 	archaius.Init()
 	t.Log("concenter source adding to the archaiuscleanup")
-	e := archaius.AddSource(configcentersource)
+	e := archaius.AddSource(ccs)
 	if e != nil {
 		assert.Error(t, e)
 	}
 
 	t.Log("verifying configcentersource configurations by GetConfigurations method")
-	_, err := configcentersource.GetConfigurationByKey("refreshInterval")
+	_, err := ccs.GetConfigurationByKey("refreshInterval")
 	if err != nil {
 		assert.Error(t, err)
 	}
 
-	_, err = configcentersource.GetConfigurationByKey("test")
+	_, err = ccs.GetConfigurationByKey("test")
 	if err != nil {
 		assert.Error(t, err)
 	}
 
-	_, err = configcentersource.GetConfigurationByKeyAndDimensionInfo("data@default#0.1", "test")
+	_, err = ccs.GetConfigurationByKeyAndDimensionInfo("data@default#0.1", "test")
 	if err != nil {
 		assert.Error(t, err)
 	}
 
 	t.Log("verifying configcentersource name")
-	sourceName := configCenterConfig.GetSourceName()
+	sourceName := configcentersource.ConfigCenterConfig.GetSourceName()
 	if sourceName != "ConfigCenterSource" {
 		t.Error("config-center name is mismatched")
 	}
 
 	t.Log("verifying configcentersource priority")
-	priority := configCenterConfig.GetPriority()
+	priority := configcentersource.ConfigCenterConfig.GetPriority()
 	if priority != 0 {
 		t.Error("config-center priority is mismatched")
 	}
 
 	t.Log("concenter source cleanup")
-	configCenterConfig.Cleanup()
+	configcentersource.ConfigCenterConfig.Cleanup()
 
 }
 
 func Test_DynamicConfigHandler(t *testing.T) {
 	testsource := &Testingsource{}
 
-	config.Init()
-	config.GlobalDefinition = &model.GlobalCfg{}
-	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
 	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testsource.GetConfigServer())
-	configcentersource := NewConfigCenterSource(memDiscovery, testsource.GetDimensionInfo(), nil,
+	ccs := configcentersource.NewConfigCenterSource(memDiscovery, testsource.GetDimensionInfo(), nil,
 		"default", 1, 1, false, "", "", "")
 
 	dynamicconfig := new(TestDynamicConfigHandler)
 
-	configcentersource.DynamicConfigHandler(dynamicconfig)
+	ccs.DynamicConfigHandler(dynamicconfig)
 
 	//post the new key, or update the already existing key, or delete the existing key to get the events
 	time.Sleep(4 * time.Second)
@@ -170,24 +159,21 @@ func Test_DynamicConfigHandler(t *testing.T) {
 func Test_OnReceive(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("CHASSIS_HOME", gopath+"/src/code.huawei.com/cse/go-chassis-examples/discovery/server/")
-	config.Init()
 	testSource := &Testingsource{}
 
-	config.GlobalDefinition = &model.GlobalCfg{}
-	config.GlobalDefinition.Cse.Config.Client.APIVersion.Version = "v2"
 	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
 	memDiscovery.ConfigurationInit(testSource.GetInvalidConfigServer())
-	configcentersource := NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
+	ccs := configcentersource.NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
 		"default", 0, 1, false, "", "", "")
 
-	_, er := configcentersource.GetConfigurations()
+	_, er := ccs.GetConfigurations()
 	if er != nil {
 		assert.Error(t, er)
 	}
 
 	dynamicconfig := new(TestDynamicConfigHandler)
 
-	configCenterEvent := new(ConfigCenterEvent)
+	configCenterEvent := new(configcentersource.ConfigCenterEvent)
 	configCenterEvent.Action = "test"
 	check := make(map[string]interface{})
 	check["refreshMode"] = 7
@@ -195,9 +181,9 @@ func Test_OnReceive(t *testing.T) {
 	configCenterEvent.Value = string(data)
 
 	data1, _ := json.Marshal(&configCenterEvent)
-	configCenterEventHandler := new(ConfigCenterEventHandler)
-	configCenterEventHandler.configSource = configCenterConfig
-	configCenterEventHandler.callback = dynamicconfig
+	configCenterEventHandler := new(configcentersource.ConfigCenterEventHandler)
+	configCenterEventHandler.ConfigSource = configcentersource.ConfigCenterConfig
+	configCenterEventHandler.Callback = dynamicconfig
 
 	configCenterEventHandler.OnReceive(data1)
 }
