@@ -2,7 +2,7 @@ module github.com/go-chassis/go-archaius
 
 require (
 	github.com/fsnotify/fsnotify v1.4.7
-	github.com/go-chassis/go-cc-client v0.0.0-20181109091810-e4f730e7ed13
+	github.com/go-chassis/go-cc-client v0.3.0
 	github.com/go-chassis/go-chassis v1.2.2 // indirect
 	github.com/go-mesh/openlogging v0.0.0-20181122085847-3daf3ad8ed35
 	github.com/gorilla/websocket v1.4.0

@@ -1,17 +1,17 @@
-package configcentersource_test
+package configcenter_test
 
 import (
-	"github.com/go-chassis/go-cc-client/configcenter-client"
+	"github.com/go-chassis/go-cc-client"
+	_ "github.com/go-chassis/go-cc-client/configcenter"
 
+	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/core"
+	"github.com/go-chassis/go-archaius/sources/configcenter"
 	"github.com/stretchr/testify/assert"
 
 	"encoding/json"
 	"errors"
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/sources/configcenter-source"
 	"math/rand"
-	"os"
 	"testing"
 	"time"
 )
@@ -58,15 +58,16 @@ func (*Testingsource) GetInvalidConfigServer() []string {
 }
 
 func TestGetConfigurationsForInvalidCCIP(t *testing.T) {
-	gopath := os.Getenv("GOPATH")
-	os.Setenv("CHASSIS_HOME", gopath+"/src/code.huawei.com/cse/go-chassis-examples/discovery/server/")
 	testSource := &Testingsource{}
 
-	t.Log("Test configcentersource.go")
-
-	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
-	memDiscovery.ConfigurationInit(testSource.GetInvalidConfigServer())
-	ccs := configcentersource.NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
+	t.Log("Test configcenter.go")
+	opts := ccclient.Options{
+		DimensionInfo: testSource.GetDimensionInfo(),
+		TenantName:    "default",
+	}
+	cc, err := ccclient.NewClient("config_center", opts)
+	assert.NoError(t, err)
+	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), nil,
 		"default", 1, 1, false, "", "", "")
 
 	_, er := ccs.GetConfigurations()
@@ -75,17 +76,18 @@ func TestGetConfigurationsForInvalidCCIP(t *testing.T) {
 	}
 
 	time.Sleep(2 * time.Second)
-	configcentersource.ConfigCenterConfig.Cleanup()
+	configcenter.ConfigCenterConfig.Cleanup()
 }
 
 func TestGetConfigurationsWithCCIP(t *testing.T) {
-	gopath := os.Getenv("GOPATH")
-	os.Setenv("CHASSIS_HOME", gopath+"/src/code.huawei.com/cse/go-chassis-examples/discovery/server/")
 	testSource := &Testingsource{}
-
-	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
-	memDiscovery.ConfigurationInit(testSource.GetConfigServer())
-	ccs := configcentersource.NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
+	opts := ccclient.Options{
+		DimensionInfo: testSource.GetDimensionInfo(),
+		TenantName:    "default",
+	}
+	cc, err := ccclient.NewClient("config_center", opts)
+	assert.NoError(t, err)
+	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), nil,
 		"default", 1, 1, false, "", "", "")
 
 	t.Log("Accessing concenter source configurations")
@@ -101,8 +103,8 @@ func TestGetConfigurationsWithCCIP(t *testing.T) {
 		assert.Error(t, e)
 	}
 
-	t.Log("verifying configcentersource configurations by GetConfigurations method")
-	_, err := ccs.GetConfigurationByKey("refreshInterval")
+	t.Log("verifying configcenter configurations by GetConfigurations method")
+	_, err = ccs.GetConfigurationByKey("refreshInterval")
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -117,29 +119,32 @@ func TestGetConfigurationsWithCCIP(t *testing.T) {
 		assert.Error(t, err)
 	}
 
-	t.Log("verifying configcentersource name")
-	sourceName := configcentersource.ConfigCenterConfig.GetSourceName()
+	t.Log("verifying configcenter name")
+	sourceName := configcenter.ConfigCenterConfig.GetSourceName()
 	if sourceName != "ConfigCenterSource" {
 		t.Error("config-center name is mismatched")
 	}
 
-	t.Log("verifying configcentersource priority")
-	priority := configcentersource.ConfigCenterConfig.GetPriority()
+	t.Log("verifying configcenter priority")
+	priority := configcenter.ConfigCenterConfig.GetPriority()
 	if priority != 0 {
 		t.Error("config-center priority is mismatched")
 	}
 
 	t.Log("concenter source cleanup")
-	configcentersource.ConfigCenterConfig.Cleanup()
+	configcenter.ConfigCenterConfig.Cleanup()
 
 }
 
 func Test_DynamicConfigHandler(t *testing.T) {
 	testsource := &Testingsource{}
-
-	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
-	memDiscovery.ConfigurationInit(testsource.GetConfigServer())
-	ccs := configcentersource.NewConfigCenterSource(memDiscovery, testsource.GetDimensionInfo(), nil,
+	opts := ccclient.Options{
+		DimensionInfo: testsource.GetDimensionInfo(),
+		TenantName:    "default",
+	}
+	cc, err := ccclient.NewClient("config_center", opts)
+	assert.NoError(t, err)
+	ccs := configcenter.NewConfigCenterSource(cc, testsource.GetDimensionInfo(), nil,
 		"default", 1, 1, false, "", "", "")
 
 	dynamicconfig := new(TestDynamicConfigHandler)
@@ -157,13 +162,14 @@ func Test_DynamicConfigHandler(t *testing.T) {
 }
 
 func Test_OnReceive(t *testing.T) {
-	gopath := os.Getenv("GOPATH")
-	os.Setenv("CHASSIS_HOME", gopath+"/src/code.huawei.com/cse/go-chassis-examples/discovery/server/")
 	testSource := &Testingsource{}
-
-	memDiscovery := configcenterclient.NewConfiCenterInit(nil, "default", false, "v3", false, "")
-	memDiscovery.ConfigurationInit(testSource.GetInvalidConfigServer())
-	ccs := configcentersource.NewConfigCenterSource(memDiscovery, testSource.GetDimensionInfo(), nil,
+	opts := ccclient.Options{
+		DimensionInfo: testSource.GetDimensionInfo(),
+		TenantName:    "default",
+	}
+	cc, err := ccclient.NewClient("config_center", opts)
+	assert.NoError(t, err)
+	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), nil,
 		"default", 0, 1, false, "", "", "")
 
 	_, er := ccs.GetConfigurations()
@@ -173,17 +179,16 @@ func Test_OnReceive(t *testing.T) {
 
 	dynamicconfig := new(TestDynamicConfigHandler)
 
-	configCenterEvent := new(configcentersource.ConfigCenterEvent)
+	configCenterEvent := new(configcenter.ConfigCenterEvent)
 	configCenterEvent.Action = "test"
 	check := make(map[string]interface{})
 	check["refreshMode"] = 7
 	data, _ := json.Marshal(&check)
 	configCenterEvent.Value = string(data)
 
-	data1, _ := json.Marshal(&configCenterEvent)
-	configCenterEventHandler := new(configcentersource.ConfigCenterEventHandler)
-	configCenterEventHandler.ConfigSource = configcentersource.ConfigCenterConfig
+	configCenterEventHandler := new(configcenter.ConfigCenterEventHandler)
+	configCenterEventHandler.ConfigSource = configcenter.ConfigCenterConfig
 	configCenterEventHandler.Callback = dynamicconfig
 
-	configCenterEventHandler.OnReceive(data1)
+	configCenterEventHandler.OnReceive(check)
 }
