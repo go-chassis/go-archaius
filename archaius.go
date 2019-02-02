@@ -10,7 +10,7 @@ import (
 
 	"errors"
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-archaius/sources/configcenter-source"
+	"github.com/go-chassis/go-archaius/sources/configcenter"
 	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-archaius/sources/memory-source"
 	"github.com/go-mesh/openlogging"
@@ -126,7 +126,7 @@ func InitConfigCenter(ci ConfigCenterInfo) error {
 	onceConfigCenter.Do(func() {
 		var err error
 
-		configCenterSource, err := configcentersource.InitConfigCenter(ci.URL,
+		configCenterSource, err := configcenter.InitConfigCenter(ci.URL,
 			ci.DimensionInfo, ci.TenantName, ci.EnableSSL,
 			ci.TLSConfig, ci.RefreshMode, ci.RefreshInterval,
 			ci.Autodiscovery, ci.ClientType, ci.Version, ci.RefreshPort,

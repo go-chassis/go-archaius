@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-//Package configcentersource created on 2017/6/22.
-package configcentersource
+//Package configcenter created on 2017/6/22.
+package configcenter
 
 import (
 	"crypto/tls"
@@ -24,17 +24,11 @@ import (
 	"time"
 
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-cc-client/configcenter-client"
 
-	"fmt"
 	"github.com/go-chassis/go-cc-client"
-	"github.com/go-chassis/go-cc-client/serializers"
 	"github.com/go-mesh/openlogging"
-	"github.com/gorilla/websocket"
-	"net/url"
 	"os"
 	"reflect"
-	"strings"
 )
 
 const (
@@ -59,7 +53,7 @@ var (
 
 //Handler handles configs from config center
 type Handler struct {
-	MemberDiscovery              configcenterclient.MemberDiscovery
+	cc                           ccclient.ConfigClient
 	dynamicConfigHandler         *DynamicConfigHandler
 	dimensionsInfo               string
 	dimensionInfoMap             map[string]string
@@ -82,12 +76,12 @@ type Handler struct {
 var ConfigCenterConfig *Handler
 
 //NewConfigCenterSource initializes all components of configuration center
-func NewConfigCenterSource(memberDiscovery configcenterclient.MemberDiscovery, dimInfo string, tlsConfig *tls.Config, tenantName string,
+func NewConfigCenterSource(cc ccclient.ConfigClient, dimInfo string, tlsConfig *tls.Config, tenantName string,
 	refreshMode, refreshInterval int, enableSSL bool, version, refreshPort, env string) core.ConfigSource {
 
 	if ConfigCenterConfig == nil {
 		ConfigCenterConfig = new(Handler)
-		ConfigCenterConfig.MemberDiscovery = memberDiscovery
+		ConfigCenterConfig.cc = cc
 		ConfigCenterConfig.dimensionsInfo = dimInfo
 		ConfigCenterConfig.initSuccess = true
 		ConfigCenterConfig.TLSClientConfig = tlsConfig
@@ -122,7 +116,6 @@ func NewConfigCenterSource(memberDiscovery configcenterclient.MemberDiscovery, d
 
 //Update the Base PATH and HEADERS Based on the version of Configcenter used.
 func updateAPIPath(apiVersion string) {
-
 	//Check for the env Name in Container to get Domain Name
 	//Default value is  "default"
 	projectID, isExsist := os.LookupEnv("cse.config.client.tenantName")
@@ -144,12 +137,6 @@ func updateAPIPath(apiVersion string) {
 
 //GetConfigAPI is map
 type GetConfigAPI map[string]map[string]interface{}
-
-//CreateConfigAPI creates a configuration API
-type CreateConfigAPI struct {
-	DimensionInfo string                 `json:"dimensionsInfo"`
-	Items         map[string]interface{} `json:"items"`
-}
 
 // ensure to implement config source
 var _ core.ConfigSource = &Handler{}
@@ -220,7 +207,7 @@ func (cfgSrcHandler *Handler) refreshConfigurations(dimensionInfo string) error 
 	)
 
 	if dimensionInfo == "" {
-		config, err = client.DefaultClient.PullConfigs(cfgSrcHandler.dimensionsInfo, "", "", "")
+		config, err = cfgSrcHandler.cc.PullConfigs(cfgSrcHandler.dimensionsInfo, "", "", "")
 		if err != nil {
 			openlogging.GetLogger().Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
@@ -234,7 +221,7 @@ func (cfgSrcHandler *Handler) refreshConfigurations(dimensionInfo string) error 
 				diInfo = dimensionInfo
 			}
 		}
-		configByDI, err = client.DefaultClient.PullConfigsByDI(dimensionInfo, diInfo)
+		configByDI, err = cfgSrcHandler.cc.PullConfigsByDI(dimensionInfo, diInfo)
 		if err != nil {
 			openlogging.GetLogger().Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
@@ -496,257 +483,26 @@ func (cfgSrcHandler *Handler) constructEvent(eventType string, key string, value
 	return newEvent
 }
 
-//DynamicConfigHandler is a struct
-type DynamicConfigHandler struct {
-	dimensionsInfo  string
-	EventHandler    *ConfigCenterEventHandler
-	dynamicLock     sync.Mutex
-	wsDialer        *websocket.Dialer
-	wsConnection    *websocket.Conn
-	memberDiscovery configcenterclient.MemberDiscovery
-}
-
-func newDynConfigHandlerSource(cfgSrc *Handler, callback core.DynamicConfigCallback) (*DynamicConfigHandler, error) {
-	eventHandler := newConfigCenterEventHandler(cfgSrc, callback)
-	dynCfgHandler := new(DynamicConfigHandler)
-	dynCfgHandler.EventHandler = eventHandler
-	dynCfgHandler.dimensionsInfo = cfgSrc.dimensionsInfo
-	dynCfgHandler.wsDialer = &websocket.Dialer{
-		TLSClientConfig:  cfgSrc.TLSClientConfig,
-		HandshakeTimeout: defaultTimeout,
-	}
-	dynCfgHandler.memberDiscovery = cfgSrc.MemberDiscovery
-	return dynCfgHandler, nil
-}
-
-func (dynHandler *DynamicConfigHandler) getWebSocketURL(refreshPort string) (*url.URL, error) {
-
-	var defaultTLS bool
-	var parsedEndPoint []string
-	var host string
-
-	configCenterEntryPointList, err := dynHandler.memberDiscovery.GetConfigServer()
-	if err != nil {
-		openlogging.GetLogger().Error("error in member discovery:" + err.Error())
-		return nil, err
-	}
-	activeEndPointList, err := dynHandler.memberDiscovery.GetWorkingConfigCenterIP(configCenterEntryPointList)
-	if err != nil {
-		openlogging.GetLogger().Error("failed to get ip list:" + err.Error())
-	}
-	for _, server := range activeEndPointList {
-		parsedEndPoint = strings.Split(server, `://`)
-		hostArr := strings.Split(parsedEndPoint[1], `:`)
-		port := refreshPort
-		if port == "" {
-			port = "30104"
-		}
-		host = hostArr[0] + ":" + port
-		if host == "" {
-			host = "localhost"
-		}
-	}
-
-	if dynHandler.wsDialer.TLSClientConfig != nil {
-		defaultTLS = true
-	}
-	if host == "" {
-		err := errors.New("host must be a URL or a host:port pair")
-		openlogging.GetLogger().Error("empty host for watch action:" + err.Error())
-		return nil, err
-	}
-	hostURL, err := url.Parse(host)
-	if err != nil || hostURL.Scheme == "" || hostURL.Host == "" {
-		scheme := "ws://"
-		if defaultTLS {
-			scheme = "wss://"
-		}
-		hostURL, err = url.Parse(scheme + host)
-		if err != nil {
-			return nil, err
-		}
-		if hostURL.Path != "" && hostURL.Path != "/" {
-			return nil, fmt.Errorf("host must be a URL or a host:port pair: %q", host)
-		}
-	}
-	return hostURL, nil
-}
-
-func (dynHandler *DynamicConfigHandler) startDynamicConfigHandler(refreshPort string) error {
-	parsedDimensionInfo := strings.Replace(dynHandler.dimensionsInfo, "#", "%23", -1)
-	refreshConfigPath := ConfigRefreshPath + `?` + dimensionsInfo + `=` + parsedDimensionInfo
-	if dynHandler != nil && dynHandler.wsDialer != nil {
-		/*-----------------
-		1. Decide on the URL
-		2. Create WebSocket Connection
-		3. Call KeepAlive in seperate thread
-		3. Generate events on Recieve Data
-		*/
-		baseURL, err := dynHandler.getWebSocketURL(refreshPort)
-		if err != nil {
-			error := errors.New("error in getting default server info")
-			return error
-		}
-		url := baseURL.String() + refreshConfigPath
-		dynHandler.dynamicLock.Lock()
-		dynHandler.wsConnection, _, err = dynHandler.wsDialer.Dial(url, nil)
-		if err != nil {
-			dynHandler.dynamicLock.Unlock()
-			return fmt.Errorf("watching config-center dial catch an exception error:%s", err.Error())
-		}
-		dynHandler.dynamicLock.Unlock()
-		keepAlive(dynHandler.wsConnection, 15*time.Second)
-		go func() error {
-			for {
-				messageType, message, err := dynHandler.wsConnection.ReadMessage()
-				if err != nil {
-					break
-				}
-				if messageType == websocket.TextMessage {
-					dynHandler.EventHandler.OnReceive(message)
-				}
-			}
-			err = dynHandler.wsConnection.Close()
-			if err != nil {
-				return fmt.Errorf("CC watch Conn close failed error:%s", err.Error())
-			}
-			return nil
-		}()
-	}
-	return nil
-}
-
-func keepAlive(c *websocket.Conn, timeout time.Duration) {
-	lastResponse := time.Now()
-	c.SetPongHandler(func(msg string) error {
-		lastResponse = time.Now()
-		return nil
-	})
-	go func() {
-		for {
-			err := c.WriteMessage(websocket.PingMessage, []byte("keepalive"))
-			if err != nil {
-				return
-			}
-			time.Sleep(timeout / 2)
-			if time.Now().Sub(lastResponse) > timeout {
-				c.Close()
-				return
-			}
-		}
-	}()
-}
-
-//Cleanup cleans particular dynamic configuration Handler up
-func (dynHandler *DynamicConfigHandler) Cleanup() error {
-	dynHandler.dynamicLock.Lock()
-	defer dynHandler.dynamicLock.Unlock()
-	if dynHandler.wsConnection != nil {
-		dynHandler.wsConnection.Close()
-	}
-	dynHandler.wsConnection = nil
-	return nil
-}
-
-//ConfigCenterEventHandler handles a event of a configuration center
-type ConfigCenterEventHandler struct {
-	ConfigSource *Handler
-	Callback     core.DynamicConfigCallback
-}
-
-//ConfigCenterEvent stores info about an configuration center event
-type ConfigCenterEvent struct {
-	Action string `json:"action"`
-	Value  string `json:"value"`
-}
-
-func newConfigCenterEventHandler(cfgSrc *Handler, callback core.DynamicConfigCallback) *ConfigCenterEventHandler {
-	eventHandler := new(ConfigCenterEventHandler)
-	eventHandler.ConfigSource = cfgSrc
-	eventHandler.Callback = callback
-	return eventHandler
-}
-
-//OnConnect is a method
-func (*ConfigCenterEventHandler) OnConnect() {
-	return
-}
-
-//OnConnectionClose is a method
-func (*ConfigCenterEventHandler) OnConnectionClose() {
-	return
-}
-
-//OnReceive initializes all necessary components for a configuration center
-func (eventHandler *ConfigCenterEventHandler) OnReceive(actionData []byte) {
-	configCenterEvent := new(ConfigCenterEvent)
-	err := serializers.Decode(serializers.JsonEncoder, actionData, &configCenterEvent)
-	if err != nil {
-		openlogging.GetLogger().Errorf(fmt.Sprintf("error in unmarshalling data on event receive with error %s", err.Error()))
-		return
-	}
-
-	sourceConfig := make(map[string]interface{})
-	err = serializers.Decode(serializers.JsonEncoder, []byte(configCenterEvent.Value), &sourceConfig)
-	if err != nil {
-		openlogging.GetLogger().Errorf(fmt.Sprintf("error in unmarshalling config values %s", err.Error()))
-		return
-	}
-
-	events, err := eventHandler.ConfigSource.populateEvents(sourceConfig)
-	if err != nil {
-		openlogging.GetLogger().Error("error in generating event:" + err.Error())
-		return
-	}
-
-	openlogging.GetLogger().Debugf("event On Receive", events)
-	for _, event := range events {
-		eventHandler.Callback.OnEvent(event)
-	}
-
-	return
-}
-
 //InitConfigCenter is a function which initializes the memberDiscovery of go-cc-client
 func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bool, tlsConfig *tls.Config, refreshMode int,
 	refreshInterval int, autoDiscovery bool, clientType, apiVersion, refreshPort, environment string) (core.ConfigSource, error) {
-	memDiscovery := configcenterclient.NewConfiCenterInit(tlsConfig, tenantName, enableSSL, apiVersion, autoDiscovery, environment)
-
-	configCenters := strings.Split(ccEndpoint, ",")
-	cCenters := make([]string, 0)
-	for _, value := range configCenters {
-		value = strings.Replace(value, " ", "", -1)
-		cCenters = append(cCenters, value)
+	opts := ccclient.Options{
+		DimensionInfo: dimensionInfo,
+		ServerURI:     ccEndpoint,
+		TenantName:    tenantName,
+		EnableSSL:     enableSSL,
+		TLSConfig:     tlsConfig,
+		RefreshPort:   refreshPort,
+		AutoDiscovery: autoDiscovery,
+		APIVersion:    apiVersion,
+		Env:           environment,
 	}
-
-	memDiscovery.ConfigurationInit(cCenters)
-
-	if enabledAutoDiscovery(autoDiscovery) {
-		refreshError := memDiscovery.RefreshMembers()
-		if refreshError != nil {
-			openlogging.GetLogger().Error(ConfigServerMemRefreshError + refreshError.Error())
-			return nil, errors.New(ConfigServerMemRefreshError)
-		}
-	}
-
-	configCenterSource := NewConfigCenterSource(
-		memDiscovery, dimensionInfo, tlsConfig, tenantName, refreshMode,
-		refreshInterval, enableSSL, apiVersion, refreshPort, environment)
-
-	configcenterclient.MemberDiscoveryService = memDiscovery
-	if err := installPlugin(clientType); err != nil {
+	cc, err := ccclient.NewClient(clientType, opts)
+	if err != nil {
 		return nil, err
 	}
+	configCenterSource := NewConfigCenterSource(cc, dimensionInfo, tlsConfig, tenantName, refreshMode,
+		refreshInterval, enableSSL, apiVersion, refreshPort, environment)
+
 	return configCenterSource, nil
-}
-
-func installPlugin(clientType string) error {
-	return client.Enable(clientType)
-}
-
-func enabledAutoDiscovery(autoDiscovery bool) bool {
-	if autoDiscovery {
-		return true
-	}
-	return false
 }
