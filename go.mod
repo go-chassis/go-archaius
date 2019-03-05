@@ -1,11 +1,13 @@
 module github.com/go-chassis/go-archaius
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.4.7
-	github.com/go-chassis/go-cc-client v0.3.0
-	github.com/go-chassis/go-chassis v1.2.2 // indirect
-	github.com/go-mesh/openlogging v0.0.0-20181122085847-3daf3ad8ed35
+	github.com/go-chassis/foundation v0.0.0-20190203091418-304855ea28bf // indirect
+	github.com/go-chassis/go-cc-client v0.5.0
+	github.com/go-mesh/openlogging v0.0.0-20181205082104-3d418c478b2d
 	github.com/gorilla/websocket v1.4.0
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/cast v1.2.0
 	github.com/stretchr/testify v1.2.2
 	gopkg.in/yaml.v2 v2.2.1
