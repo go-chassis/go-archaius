@@ -1,6 +1,8 @@
 ### go-archaius
 [![Build Status](https://travis-ci.org/go-chassis/go-archaius.svg?branch=master)](https://travis-ci.org/ServiceComb/go-archaius)
 
+![](arch.png)
+
 This is a dynamic configuration management tool for Go-Chassis which helps in configuration
 management for micro-services developed using Go-Chassis. 
 
@@ -33,16 +35,30 @@ You can register event listener by key(exactly match or pattern match), to watch
 
  
 
+### Example: Manage local configurations 
+Complete [example](https://github.com/go-chassis/go-archaius/tree/master/examples/file)
 
-### Refresh Mechanism
-Go-Archaius client support 2 types of refresh mechanism:
-1. Web-Socket Based - In this client makes an web socket connection with
-the config server and keeps getting an events whenever any data changes.
+### Example: Manage runtime configurations by Remote Config Server
+import a config client implementation
+```go
+import _ "github.com/go-chassis/go-cc-client/configcenter"
 ```
-refreshMode: 0
+give config center information to init config center source
+```go
+	ci := archaius.ConfigCenterInfo{
+	//input your config center source config
+	}
+	//create config client 
+	cc:=ccclient.NewClient("config_center",ccclient.Options{
+    		ServerURI:"the address of config server endpoint",
+    	})
+	//manage local and remote key value at same time
+	err = archaius.Init(
+		archaius.WithRequiredFiles([]string{filename1}),
+		archaius.WithOptionalFiles([]string{filename2}),
+		archaius.WithConfigCenterSource(ci, cc),
+	)
 ```
-2. Pull Configuration - In this type client keeps polling the configuration from
-the config server at regular intervals.
-```
-refreshMode: 1
-```
+
+To check config server that archaius supports, 
+access https://github.com/go-chassis/go-cc-client

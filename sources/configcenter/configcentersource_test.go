@@ -67,8 +67,8 @@ func TestGetConfigurationsForInvalidCCIP(t *testing.T) {
 	}
 	cc, err := ccclient.NewClient("config_center", opts)
 	assert.NoError(t, err)
-	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), nil,
-		"default", 1, 1, false, "", "", "")
+	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), 1,
+		1)
 
 	_, er := ccs.GetConfigurations()
 	if er != nil {
@@ -87,8 +87,7 @@ func TestGetConfigurationsWithCCIP(t *testing.T) {
 	}
 	cc, err := ccclient.NewClient("config_center", opts)
 	assert.NoError(t, err)
-	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), nil,
-		"default", 1, 1, false, "", "", "")
+	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), 1, 1)
 
 	t.Log("Accessing concenter source configurations")
 	time.Sleep(2 * time.Second)
@@ -144,8 +143,7 @@ func Test_DynamicConfigHandler(t *testing.T) {
 	}
 	cc, err := ccclient.NewClient("config_center", opts)
 	assert.NoError(t, err)
-	ccs := configcenter.NewConfigCenterSource(cc, testsource.GetDimensionInfo(), nil,
-		"default", 1, 1, false, "", "", "")
+	ccs := configcenter.NewConfigCenterSource(cc, testsource.GetDimensionInfo(), 1, 1)
 
 	dynamicconfig := new(TestDynamicConfigHandler)
 
@@ -169,8 +167,7 @@ func Test_OnReceive(t *testing.T) {
 	}
 	cc, err := ccclient.NewClient("config_center", opts)
 	assert.NoError(t, err)
-	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), nil,
-		"default", 0, 1, false, "", "", "")
+	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), 1, 1)
 
 	_, er := ccs.GetConfigurations()
 	if er != nil {

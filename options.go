@@ -3,6 +3,7 @@ package archaius
 import (
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-archaius/sources/file-source"
+	"github.com/go-chassis/go-cc-client"
 )
 
 //Options hold options
@@ -11,6 +12,7 @@ type Options struct {
 	OptionalFiles    []string
 	FileHandler      filesource.FileHandler
 	ConfigCenterInfo ConfigCenterInfo
+	ConfigClient     ccclient.ConfigClient
 	UseCLISource     bool
 	UseENVSource     bool
 	ExternalSource   core.ConfigSource
@@ -40,14 +42,18 @@ func WithDefaultFileHandler(handler filesource.FileHandler) Option {
 	}
 }
 
-//WithConfigCenter accept the information for initiating a config center client and archaius config source
-func WithConfigCenter(cci ConfigCenterInfo) Option {
+//WithConfigCenterSource accept the information for initiating a config center source,
+//ConfigCenterInfo is required if you want to use config center source
+//client is optional,if client is nil, archaius will create one based on ConfigCenterInfo
+//config client will be injected into config source as a client to interact with a config server
+func WithConfigCenterSource(cci ConfigCenterInfo, ccc ccclient.ConfigClient) Option {
 	return func(options *Options) {
 		options.ConfigCenterInfo = cci
 	}
 }
 
 //WithCommandLineSource enable cmd line source
+//archaius will read command line params as key value
 func WithCommandLineSource() Option {
 	return func(options *Options) {
 		options.UseCLISource = true
@@ -55,6 +61,7 @@ func WithCommandLineSource() Option {
 }
 
 //WithENVSource enable env source
+//archaius will read ENV as key value
 func WithENVSource() Option {
 	return func(options *Options) {
 		options.UseENVSource = true

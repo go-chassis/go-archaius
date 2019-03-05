@@ -18,7 +18,6 @@
 package configcenter
 
 import (
-	"crypto/tls"
 	"errors"
 	"sync"
 	"time"
@@ -27,7 +26,6 @@ import (
 
 	"github.com/go-chassis/go-cc-client"
 	"github.com/go-mesh/openlogging"
-	"os"
 	"reflect"
 )
 
@@ -63,76 +61,27 @@ type Handler struct {
 	initSuccess                  bool
 	connsLock                    sync.Mutex
 	sync.RWMutex
-	TLSClientConfig *tls.Config
-	TenantName      string
 	RefreshMode     int
 	RefreshInterval time.Duration
-	Version         string
-	RefreshPort     string
-	Environment     string
 }
 
 //ConfigCenterConfig is pointer of config center source
 var ConfigCenterConfig *Handler
 
 //NewConfigCenterSource initializes all components of configuration center
-func NewConfigCenterSource(cc ccclient.ConfigClient, dimInfo string, tlsConfig *tls.Config, tenantName string,
-	refreshMode, refreshInterval int, enableSSL bool, version, refreshPort, env string) core.ConfigSource {
+func NewConfigCenterSource(cc ccclient.ConfigClient, dimInfo string,
+	refreshMode, refreshInterval int) core.ConfigSource {
 
 	if ConfigCenterConfig == nil {
 		ConfigCenterConfig = new(Handler)
 		ConfigCenterConfig.cc = cc
 		ConfigCenterConfig.dimensionsInfo = dimInfo
 		ConfigCenterConfig.initSuccess = true
-		ConfigCenterConfig.TLSClientConfig = tlsConfig
-		ConfigCenterConfig.TenantName = tenantName
 		ConfigCenterConfig.RefreshMode = refreshMode
 		ConfigCenterConfig.RefreshInterval = time.Second * time.Duration(refreshInterval)
-		ConfigCenterConfig.Version = version
-		ConfigCenterConfig.RefreshPort = refreshPort
-		ConfigCenterConfig.Environment = env
-
-		//Read the version for yaml file
-		//Set Default api version to V3
-		var apiVersion string
-		switch version {
-		case "v2":
-			apiVersion = "v2"
-		case "V2":
-			apiVersion = "v2"
-		case "v3":
-			apiVersion = "v3"
-		case "V3":
-			apiVersion = "v3"
-		default:
-			apiVersion = "v3"
-		}
-		//Update the API Base Path based on the Version
-		updateAPIPath(apiVersion)
 
 	}
 	return ConfigCenterConfig
-}
-
-//Update the Base PATH and HEADERS Based on the version of Configcenter used.
-func updateAPIPath(apiVersion string) {
-	//Check for the env Name in Container to get Domain Name
-	//Default value is  "default"
-	projectID, isExsist := os.LookupEnv("cse.config.client.tenantName")
-	if !isExsist {
-		projectID = "default"
-	}
-	switch apiVersion {
-	case "v3":
-		ConfigPath = "/v3/" + projectID + getConfigAPI
-		ConfigRefreshPath = "/v3/" + projectID + dynamicConfigAPI
-	case "v2":
-		ConfigPath = "/configuration/v2/items"
-		ConfigRefreshPath = "/configuration/v2/refresh/items"
-	default:
-		ConfigPath = "/v3/" + projectID + getConfigAPI
-		ConfigRefreshPath = "/v3/" + projectID + dynamicConfigAPI
-	}
 }
 
 //GetConfigAPI is map
@@ -369,7 +318,7 @@ func (cfgSrcHandler *Handler) DynamicConfigHandler(callback core.DynamicConfigCa
 		// Pull All the configuration for the first time.
 		cfgSrcHandler.refreshConfigurations("")
 		//Start a web socket connection to recieve change events.
-		dynCfgHandler.startDynamicConfigHandler(cfgSrcHandler.RefreshPort)
+		dynCfgHandler.startDynamicConfigHandler()
 	}
 
 	return nil
@@ -481,28 +430,4 @@ func (cfgSrcHandler *Handler) constructEvent(eventType string, key string, value
 	newEvent.Value = value
 
 	return newEvent
-}
-
-//InitConfigCenter is a function which initializes the memberDiscovery of go-cc-client
-func InitConfigCenter(ccEndpoint, dimensionInfo, tenantName string, enableSSL bool, tlsConfig *tls.Config, refreshMode int,
-	refreshInterval int, autoDiscovery bool, clientType, apiVersion, refreshPort, environment string) (core.ConfigSource, error) {
-	opts := ccclient.Options{
-		DimensionInfo: dimensionInfo,
-		ServerURI:     ccEndpoint,
-		TenantName:    tenantName,
-		EnableSSL:     enableSSL,
-		TLSConfig:     tlsConfig,
-		RefreshPort:   refreshPort,
-		AutoDiscovery: autoDiscovery,
-		APIVersion:    apiVersion,
-		Env:           environment,
-	}
-	cc, err := ccclient.NewClient(clientType, opts)
-	if err != nil {
-		return nil, err
-	}
-	configCenterSource := NewConfigCenterSource(cc, dimensionInfo, tlsConfig, tenantName, refreshMode,
-		refreshInterval, enableSSL, apiVersion, refreshPort, environment)
-
-	return configCenterSource, nil
 }
