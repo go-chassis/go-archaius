@@ -3,6 +3,7 @@ package filesource
 import (
 	"fmt"
 	"gopkg.in/yaml.v2"
+	"path/filepath"
 )
 
 //FileHandler decide how to convert a file content into key values
@@ -46,9 +47,15 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 	return result
 }
 
-//Convert2configMap  converts the yaml file file name as key and the content as value
-func Convert2configMap(p string, content []byte) (map[string]interface{}, error) {
+//UseFileNameAsKeyContentAsValue is a FileHandler, it sets the yaml file name as key and the content as value
+func UseFileNameAsKeyContentAsValue(p string, content []byte) (map[string]interface{}, error) {
+	_, filename := filepath.Split(p)
 	configMap := make(map[string]interface{})
-	configMap[p] = content
+	configMap[filename] = content
 	return configMap, nil
+}
+
+//Convert2configMap is legacy API
+func Convert2configMap(p string, content []byte) (map[string]interface{}, error) {
+	return UseFileNameAsKeyContentAsValue(p, content)
 }
