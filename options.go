@@ -3,7 +3,6 @@ package archaius
 import (
 	"crypto/tls"
 
-	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-cc-client"
 )
@@ -49,7 +48,6 @@ type Options struct {
 	UseCLISource     bool
 	UseENVSource     bool
 	UseMemSource     bool
-	ExternalSource   core.ConfigSource
 }
 
 //Option is a func
