@@ -77,9 +77,9 @@ func TestConfig_RegisterListener(t *testing.T) {
 
 }
 func TestInitConfigCenter(t *testing.T) {
-	err := archaius.InitConfigCenterSource(archaius.ConfigCenterInfo{}, nil)
+	err := archaius.EnableConfigCenterSource(archaius.ConfigCenterInfo{}, nil)
 	assert.Error(t, err)
-	err = archaius.InitConfigCenterSource(archaius.ConfigCenterInfo{
+	err = archaius.EnableConfigCenterSource(archaius.ConfigCenterInfo{
 		ClientType: "fake",
 	}, nil)
 	assert.Error(t, err)
