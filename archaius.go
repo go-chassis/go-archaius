@@ -3,7 +3,6 @@
 package archaius
 
 import (
-	"crypto/tls"
 	"os"
 	"strings"
 	"sync"
@@ -26,37 +25,6 @@ var (
 	onceConfigCenter = sync.Once{}
 	onceExternal     = sync.Once{}
 )
-
-// ConfigCenterInfo has attribute for config center source initialization
-type ConfigCenterInfo struct {
-	//required.
-	//Key value can be in different namespace, we call it dimension.
-	//although key is same but in different dimension, the value is different.
-	//you must specify it, so that the config center source will just pull this dimension's key value
-	DimensionInfo string
-
-	//archaius config center source support 2 types of refresh mechanism:
-	//0: Web-Socket Based -  client makes an web socket connection with
-	//the config server and keeps getting an events whenever any data changes.
-	//1: Pull Configuration interval- In this type client keeps polling the configuration from
-	//the config server at regular intervals.
-	RefreshMode int
-
-	//Pull Configuration interval, unit is second
-	RefreshInterval int
-
-	//Configurations for config client implementation
-	//if you alread create a client, don't need to set those config
-	URL           string
-	TenantName    string
-	EnableSSL     bool
-	TLSConfig     *tls.Config
-	AutoDiscovery bool
-	ClientType    string
-	Version       string
-	RefreshPort   string
-	Environment   string
-}
 
 func initFileSource(o *Options) (core.ConfigSource, error) {
 	files := make([]string, 0)
@@ -111,7 +79,7 @@ func Init(opts ...Option) error {
 			return
 		}
 		if o.ConfigCenterInfo != (ConfigCenterInfo{}) {
-			if err := InitConfigCenterSource(o.ConfigCenterInfo, o.ConfigClient); err != nil {
+			if err := EnableConfigCenterSource(o.ConfigCenterInfo, o.ConfigClient); err != nil {
 				errG = err
 				return
 			}
@@ -133,55 +101,10 @@ func Init(opts ...Option) error {
 	return errG
 }
 
-//InitConfigCenterSource create a config center source singleton
-//A config center source pull remote config server key values into local memory
-//so that you can use GetXXX to get value easily
-func InitConfigCenterSource(ci ConfigCenterInfo, cc ccclient.ConfigClient) error {
-	var errG error
-	if ci == (ConfigCenterInfo{}) {
-		return errors.New("ConfigCenterInfo can not be empty")
-	}
-	onceConfigCenter.Do(func() {
-		var err error
-		if cc == nil {
-			opts := ccclient.Options{
-				DimensionInfo: ci.DimensionInfo,
-				ServerURI:     ci.URL,
-				TenantName:    ci.TenantName,
-				EnableSSL:     ci.EnableSSL,
-				TLSConfig:     ci.TLSConfig,
-				RefreshPort:   ci.RefreshPort,
-				AutoDiscovery: ci.AutoDiscovery,
-				Env:           ci.Environment,
-			}
-			cc, err = ccclient.NewClient(ci.ClientType, opts)
-			if err != nil {
-				errG = err
-				return
-			}
-		}
-		configCenterSource := configcenter.NewConfigCenterSource(cc,
-			ci.DimensionInfo, ci.RefreshMode,
-			ci.RefreshInterval)
-		err = factory.AddSource(configCenterSource)
-		if err != nil {
-			errG = err
-			return
-		}
-
-		eventHandler := EventListener{
-			Name:    "EventHandler",
-			Factory: factory,
-		}
-
-		factory.RegisterListener(eventHandler, "a*")
-	})
-
-	return errG
-}
-
-// InitExternal create any config singleton
-func InitExternal(opts ...Option) error {
+//Mock accept only one custom config source, add it into archaius runtime.
+//it almost like Init(), but will not load any other config source
+//it is used in UT or AT scenario
+func Mock(opts ...Option) error {
 	var errG error
 	onceExternal.Do(func() {
 		var err error
@@ -212,6 +135,53 @@ func InitExternal(opts ...Option) error {
 
 		factory.RegisterListener(eventHandler, "a*")
 
+	})
+
+	return errG
+}
+
+//EnableConfigCenterSource create a config center source singleton
+//A config center source pull remote config server key values into local memory
+//so that you can use GetXXX to get value easily
+func EnableConfigCenterSource(ci ConfigCenterInfo, cc ccclient.ConfigClient) error {
+	var errG error
+	if ci == (ConfigCenterInfo{}) {
+		return errors.New("ConfigCenterInfo can not be empty")
+	}
+	onceConfigCenter.Do(func() {
+		var err error
+		if cc == nil {
+			opts := ccclient.Options{
+				DimensionInfo: ci.DefaultDimensionInfo,
+				ServerURI:     ci.URL,
+				TenantName:    ci.TenantName,
+				EnableSSL:     ci.EnableSSL,
+				TLSConfig:     ci.TLSConfig,
+				RefreshPort:   ci.RefreshPort,
+				AutoDiscovery: ci.AutoDiscovery,
+				Env:           ci.Environment,
+			}
+			cc, err = ccclient.NewClient(ci.ClientType, opts)
+			if err != nil {
+				errG = err
+				return
+			}
+		}
+		configCenterSource := configcenter.NewConfigCenterSource(cc,
+			ci.DefaultDimensionInfo, ci.RefreshMode,
+			ci.RefreshInterval)
+		err = factory.AddSource(configCenterSource)
+		if err != nil {
+			errG = err
+			return
+		}
+
+		eventHandler := EventListener{
+			Name:    "EventHandler",
+			Factory: factory,
+		}
+
+		factory.RegisterListener(eventHandler, "a*")
 	})
 
 	return errG
@@ -285,7 +255,7 @@ func GetConfigs() map[string]interface{} {
 	return factory.GetConfigurations()
 }
 
-// GetStringByDI is for to get the value of configuration key based on dimension info
+// GetStringByDI get the value of configuration key in other dimension
 func GetStringByDI(dimensionInfo, key string, defaultValue string) string {
 	result, err := factory.GetValueByDI(dimensionInfo, key).ToString()
 	if err != nil {
@@ -294,7 +264,7 @@ func GetStringByDI(dimensionInfo, key string, defaultValue string) string {
 	return result
 }
 
-// GetConfigsByDI is for to get the all configurations received dimensionInfo
+// GetConfigsByDI get the all configurations in other dimension
 func GetConfigsByDI(dimensionInfo string) map[string]interface{} {
 	return factory.GetConfigurationsByDimensionInfo(dimensionInfo)
 }
@@ -327,13 +297,13 @@ func AddFile(file string, opts ...FileOption) error {
 	return factory.Refresh(fs.GetSourceName())
 }
 
-//AddKeyValue is for to add the configuration key, value pairs into the configfactory at run time
-// it is just affect the local configs
+//AddKeyValue add the configuration key, value pairs into memory source at runtime
+//it is just affect the local configs
 func AddKeyValue(key string, value interface{}) error {
 	return ms.AddKeyValue(key, value)
 }
 
-// DeleteKeyValue is for to delete the configuration key, value pairs into the configfactory at run time
+// DeleteKeyValue delete the configuration key, value pairs in memory source
 func DeleteKeyValue(key string, value interface{}) error {
 	return ms.DeleteKeyValue(key, value)
 }

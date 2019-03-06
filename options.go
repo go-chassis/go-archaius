@@ -1,10 +1,43 @@
 package archaius
 
 import (
+	"crypto/tls"
+
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-cc-client"
 )
+
+// ConfigCenterInfo has attribute for config center source initialization
+type ConfigCenterInfo struct {
+	//required.
+	//Key value can be in different namespace, we call it dimension.
+	//although key is same but in different dimension, the value is different.
+	//you must specify the default dimension, so that the config center source will just pull this dimension's key value
+	DefaultDimensionInfo string
+
+	//archaius config center source support 2 types of refresh mechanism:
+	//0: Web-Socket Based -  client makes an web socket connection with
+	//the config server and keeps getting an events whenever any data changes.
+	//1: Pull Configuration interval- In this type client keeps polling the configuration from
+	//the config server at regular intervals.
+	RefreshMode int
+
+	//Pull Configuration interval, unit is second
+	RefreshInterval int
+
+	//Configurations for config client implementation
+	//if you alread create a client, don't need to set those config
+	URL           string
+	TenantName    string
+	EnableSSL     bool
+	TLSConfig     *tls.Config
+	AutoDiscovery bool
+	ClientType    string
+	Version       string
+	RefreshPort   string
+	Environment   string
+}
 
 //Options hold options
 type Options struct {
