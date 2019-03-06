@@ -10,8 +10,8 @@ The main objective of go archaius is to pull and sync the configuration from con
 
 ### Why use go-archaius
 it is hard to manage configurations in a distributed system. 
-archaius is able to put all configuration is distributed system together and manage them.
-To make it simple to get a exact config you want in distributed system.
+archaius is able to put all configuration in distributed system together and manage them.
+To make it simple to get the exact config you want in distributed system.
 It also keeps watching configuration changes, and fire change event if value changes. 
 so that you can easily implement a service 
 which has hot-reconfiguration features. 
