@@ -24,14 +24,10 @@ func newDynConfigHandlerSource(cfgSrc *Handler, callback core.DynamicConfigCallb
 	dynCfgHandler := new(DynamicConfigHandler)
 	dynCfgHandler.EventHandler = eventHandler
 	dynCfgHandler.dimensionsInfo = cfgSrc.dimensionsInfo
-	dynCfgHandler.wsDialer = &websocket.Dialer{
-		TLSClientConfig:  cfgSrc.TLSClientConfig,
-		HandshakeTimeout: defaultTimeout,
-	}
 	dynCfgHandler.cc = cfgSrc.cc
 	return dynCfgHandler, nil
 }
-func (dynHandler *DynamicConfigHandler) startDynamicConfigHandler(refreshPort string) error {
+func (dynHandler *DynamicConfigHandler) startDynamicConfigHandler() error {
 	err := dynHandler.cc.Watch(
 		func(kv map[string]interface{}) {
 			dynHandler.EventHandler.OnReceive(kv)

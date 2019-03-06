@@ -48,8 +48,7 @@ number: 1
 
 	err = archaius.Init(
 		archaius.WithRequiredFiles([]string{filename1}),
-		archaius.WithOptionalFiles([]string{filename2}),
-	)
+		archaius.WithOptionalFiles([]string{filename2}))
 	assert.NoError(t, err)
 
 }
@@ -78,10 +77,10 @@ func TestConfig_RegisterListener(t *testing.T) {
 
 }
 func TestInitConfigCenter(t *testing.T) {
-	err := archaius.InitConfigCenter(archaius.ConfigCenterInfo{})
+	err := archaius.InitConfigCenterSource(archaius.ConfigCenterInfo{}, nil)
 	assert.Error(t, err)
-	err = archaius.InitConfigCenter(archaius.ConfigCenterInfo{
+	err = archaius.InitConfigCenterSource(archaius.ConfigCenterInfo{
 		ClientType: "fake",
-	})
+	}, nil)
 	assert.Error(t, err)
 }
