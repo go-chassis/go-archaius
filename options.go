@@ -48,6 +48,7 @@ type Options struct {
 	ConfigClient     ccclient.ConfigClient
 	UseCLISource     bool
 	UseENVSource     bool
+	UseMemSource     bool
 	ExternalSource   core.ConfigSource
 }
 
@@ -61,7 +62,7 @@ func WithRequiredFiles(f []string) Option {
 	}
 }
 
-//WithOptionalFiles tell archaius to manage files, if not exist will not return error
+//WithOptionalFiles tell archaius to manage files, if not exist will NOT return error
 func WithOptionalFiles(f []string) Option {
 	return func(options *Options) {
 		options.OptionalFiles = f
@@ -69,6 +70,7 @@ func WithOptionalFiles(f []string) Option {
 }
 
 //WithDefaultFileHandler let user custom handler
+//you can decide how to convert file into kv pairs
 func WithDefaultFileHandler(handler filesource.FileHandler) Option {
 	return func(options *Options) {
 		options.FileHandler = handler
@@ -87,6 +89,7 @@ func WithConfigCenterSource(cci ConfigCenterInfo, ccc ccclient.ConfigClient) Opt
 
 //WithCommandLineSource enable cmd line source
 //archaius will read command line params as key value
+//TODO make option work
 func WithCommandLineSource() Option {
 	return func(options *Options) {
 		options.UseCLISource = true
@@ -95,23 +98,18 @@ func WithCommandLineSource() Option {
 
 //WithENVSource enable env source
 //archaius will read ENV as key value
+//TODO make option work
 func WithENVSource() Option {
 	return func(options *Options) {
 		options.UseENVSource = true
 	}
 }
 
-//WithExternalSource accept the information for initiating a External source
-func WithExternalSource(e core.ConfigSource) Option {
-	return func(options *Options) {
-		options.ExternalSource = e
-	}
-}
-
 //WithMemorySource accept the information for initiating a Memory source
-func WithMemorySource(e core.ConfigSource) Option {
+//TODO make option work
+func WithMemorySource() Option {
 	return func(options *Options) {
-		options.ExternalSource = e
+		options.UseMemSource = true
 	}
 }
 
