@@ -102,16 +102,12 @@ func Init(opts ...Option) error {
 }
 
 //Mock accept only one custom config source, add it into archaius runtime.
-//it almost like Init(), but will not load any other config source
+//it almost like Init(), but will not load any config sources you give
 //it is used in UT or AT scenario
-func Mock(opts ...Option) error {
+func Mock(sources ...core.ConfigSource) error {
 	var errG error
 	onceExternal.Do(func() {
 		var err error
-		o := &Options{}
-		for _, opt := range opts {
-			opt(o)
-		}
 
 		factory, err = NewConfigFactory()
 		if err != nil {
@@ -121,11 +117,12 @@ func Mock(opts ...Option) error {
 
 		factory.DeInit()
 		factory.Init()
-
-		err = factory.AddSource(o.ExternalSource)
-		if err != nil {
-			errG = err
-			return
+		for _, s := range sources {
+			err = factory.AddSource(s)
+			if err != nil {
+				errG = err
+				return
+			}
 		}
 
 		eventHandler := EventListener{
