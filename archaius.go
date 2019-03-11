@@ -9,7 +9,9 @@ import (
 
 	"errors"
 	"github.com/go-chassis/go-archaius/core"
+	"github.com/go-chassis/go-archaius/sources/commandline-source"
 	"github.com/go-chassis/go-archaius/sources/configcenter"
+	"github.com/go-chassis/go-archaius/sources/enviromentvariable-source"
 	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-archaius/sources/memory-source"
 	"github.com/go-chassis/go-cc-client"
@@ -23,7 +25,6 @@ var (
 
 	once             = sync.Once{}
 	onceConfigCenter = sync.Once{}
-	onceExternal     = sync.Once{}
 )
 
 func initFileSource(o *Options) (core.ConfigSource, error) {
@@ -89,6 +90,21 @@ func Init(opts ...Option) error {
 			errG = err
 			return
 		}
+
+		// build-in config sources
+		if o.UseMemSource {
+			ms = memoryconfigsource.NewMemoryConfigurationSource()
+			factory.AddSource(ms)
+		}
+		if o.UseCLISource {
+			cmdSource := commandlinesource.NewCommandlineConfigSource()
+			factory.AddSource(cmdSource)
+		}
+		if o.UseENVSource {
+			envSource := envconfigsource.NewEnvConfigurationSource()
+			factory.AddSource(envSource)
+		}
+
 		eventHandler := EventListener{
 			Name:    "EventHandler",
 			Factory: factory,
@@ -101,14 +117,12 @@ func Init(opts ...Option) error {
 	return errG
 }
 
-//Mock accept only one custom config source, add it into archaius runtime.
-//it almost like Init(), but will not load any config sources you give
-//it is used in UT or AT scenario
-func Mock(sources ...core.ConfigSource) error {
+//CustomInit accept is able to accept a list of config source, add it into archaius runtime.
+//it almost like Init(), but you can fully control config sources you inject to archaius
+func CustomInit(sources ...core.ConfigSource) error {
 	var errG error
-	onceExternal.Do(func() {
+	once.Do(func() {
 		var err error
-
 		factory, err = NewConfigFactory()
 		if err != nil {
 			errG = err

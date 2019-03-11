@@ -63,6 +63,7 @@ type Handler struct {
 	sync.RWMutex
 	RefreshMode     int
 	RefreshInterval time.Duration
+	priority        int
 }
 
 //ConfigCenterConfig is pointer of config center source
@@ -74,6 +75,7 @@ func NewConfigCenterSource(cc ccclient.ConfigClient, dimInfo string,
 
 	if ConfigCenterConfig == nil {
 		ConfigCenterConfig = new(Handler)
+		ConfigCenterConfig.priority = configCenterSourcePriority
 		ConfigCenterConfig.cc = cc
 		ConfigCenterConfig.dimensionsInfo = dimInfo
 		ConfigCenterConfig.initSuccess = true
@@ -297,8 +299,13 @@ func (*Handler) GetSourceName() string {
 }
 
 //GetPriority returns priority of a configuration
-func (*Handler) GetPriority() int {
-	return configCenterSourcePriority
+func (cfgSrcHandler *Handler) GetPriority() int {
+	return cfgSrcHandler.priority
+}
+
+//SetPriority custom priority
+func (cfgSrcHandler *Handler) SetPriority(priority int) {
+	cfgSrcHandler.priority = priority
 }
 
 //DynamicConfigHandler dynamically handles a configuration

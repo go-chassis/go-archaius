@@ -11,6 +11,7 @@ type TestingSource struct {
 	Configuration  map[string]interface{}
 	changeCallback core.DynamicConfigCallback
 	sync.Mutex
+	priority int
 }
 
 var _ core.ConfigSource = &TestingSource{}
@@ -91,8 +92,13 @@ func (test *TestingSource) GetConfigurations() (map[string]interface{}, error) {
 }
 
 //GetPriority returns priority of the test configuration
-func (*TestingSource) GetPriority() int {
+func (test *TestingSource) GetPriority() int {
 	return 0
+}
+
+//SetPriority custom priority
+func (test *TestingSource) SetPriority(priority int) {
+	//No need to implement
 }
 
 //Cleanup cleans a particular test configuration up

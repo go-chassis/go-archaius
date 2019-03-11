@@ -87,7 +87,6 @@ func WithConfigCenterSource(cci ConfigCenterInfo, ccc ccclient.ConfigClient) Opt
 
 //WithCommandLineSource enable cmd line source
 //archaius will read command line params as key value
-//TODO make option work
 func WithCommandLineSource() Option {
 	return func(options *Options) {
 		options.UseCLISource = true
@@ -96,7 +95,6 @@ func WithCommandLineSource() Option {
 
 //WithENVSource enable env source
 //archaius will read ENV as key value
-//TODO make option work
 func WithENVSource() Option {
 	return func(options *Options) {
 		options.UseENVSource = true
@@ -104,7 +102,6 @@ func WithENVSource() Option {
 }
 
 //WithMemorySource accept the information for initiating a Memory source
-//TODO make option work
 func WithMemorySource() Option {
 	return func(options *Options) {
 		options.UseMemSource = true

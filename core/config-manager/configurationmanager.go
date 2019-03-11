@@ -26,6 +26,7 @@ import (
 	"reflect"
 	"sync"
 
+	"fmt"
 	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-mesh/openlogging"
@@ -109,11 +110,11 @@ func (configMgr *ConfigurationManager) AddSource(source core.ConfigSource, prior
 
 	err := configMgr.pullSourceConfigs(sourceName)
 	if err != nil {
-		openlogging.GetLogger().Errorf("fail to load configuration of %s source: %s", sourceName, err)
-		errorMsg := "fail to load configuration of " + sourceName + " source"
-		return errors.New(errorMsg)
+		err = fmt.Errorf("fail to load configuration of %s source: %s", sourceName, err)
+		openlogging.Error(err.Error())
+		return err
 	}
-
+	openlogging.Info("invoke dynamic handler:" + source.GetSourceName())
 	go source.DynamicConfigHandler(configMgr)
 
 	return nil
