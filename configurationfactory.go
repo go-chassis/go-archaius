@@ -29,9 +29,6 @@ import (
 	"github.com/go-chassis/go-archaius/core/cast"
 	"github.com/go-chassis/go-archaius/core/config-manager"
 	"github.com/go-chassis/go-archaius/core/event-system"
-	"github.com/go-chassis/go-archaius/sources/commandline-source"
-	"github.com/go-chassis/go-archaius/sources/enviromentvariable-source"
-	"github.com/go-chassis/go-archaius/sources/memory-source"
 	"github.com/go-mesh/openlogging"
 )
 
@@ -90,17 +87,6 @@ func NewConfigFactory() (ConfigurationFactory, error) {
 	arc.dispatcher = eventsystem.NewDispatcher()
 	arc.configMgr = configmanager.NewConfigurationManager(arc.dispatcher)
 
-	// Default config source init
-	// 1. Command line source
-	cmdSource := commandlinesource.NewCommandlineConfigSource()
-	arc.configMgr.AddSource(cmdSource, cmdSource.GetPriority())
-
-	// Environment variable source
-	envSource := envconfigsource.NewEnvConfigurationSource()
-	arc.configMgr.AddSource(envSource, envSource.GetPriority())
-	// External variable source
-	ms = memoryconfigsource.NewMemoryConfigurationSource()
-	arc.configMgr.AddSource(ms, ms.GetPriority())
 	openlogging.GetLogger().Debug("ConfigurationFactory Initiated")
 	return arc, nil
 }
@@ -168,7 +154,11 @@ func (arc *ConfigFactory) GetConfigurationByKeyAndDimensionInfo(dimensionInfo, k
 
 // AddSource return all values of different sources
 func (arc *ConfigFactory) AddSource(source core.ConfigSource) error {
+	if source == nil {
+		return errors.New("source can not be nil")
+	}
 	if arc.initSuccess == false {
+		openlogging.Warn("Plz call factory.Init() first, failed to add source: " + source.GetSourceName())
 		return nil
 	}
 

@@ -66,6 +66,7 @@ type fileSource struct {
 	fileHandlers   map[string]FileHandler
 	watchPool      *watch
 	filelock       sync.Mutex
+	priority       int
 	sync.RWMutex
 }
 
@@ -105,6 +106,7 @@ type FileSource interface {
 func NewFileSource() FileSource {
 	if fileConfigSource == nil {
 		fileConfigSource = new(fileSource)
+		fileConfigSource.priority = fileSourcePriority
 		fileConfigSource.files = make([]file, 0)
 		fileConfigSource.fileHandlers = make(map[string]FileHandler)
 	}
@@ -311,10 +313,14 @@ func (*fileSource) GetSourceName() string {
 	return FileConfigSourceConst
 }
 
-func (*fileSource) GetPriority() int {
-	return fileSourcePriority
+func (fSource *fileSource) GetPriority() int {
+	return fSource.priority
 }
 
+//SetPriority custom priority
+func (fSource *fileSource) SetPriority(priority int) {
+	fSource.priority = priority
+}
 func (fSource *fileSource) DynamicConfigHandler(callback core.DynamicConfigCallback) error {
 	if callback == nil {
 		return errors.New("call back can not be nil")
