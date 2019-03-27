@@ -4,7 +4,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-chassis/foundation v0.0.0-20190203091418-304855ea28bf // indirect
-	github.com/go-chassis/go-cc-client v0.5.0
+	github.com/go-chassis/go-chassis-config v0.6.0
 	github.com/go-mesh/openlogging v0.0.0-20181205082104-3d418c478b2d
 	github.com/gorilla/websocket v1.4.0
 	github.com/pmezard/go-difflib v1.0.0 // indirect

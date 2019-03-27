@@ -14,7 +14,7 @@ import (
 	"github.com/go-chassis/go-archaius/sources/enviromentvariable-source"
 	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-archaius/sources/memory-source"
-	"github.com/go-chassis/go-cc-client"
+	"github.com/go-chassis/go-chassis-config"
 	"github.com/go-mesh/openlogging"
 )
 
@@ -154,7 +154,7 @@ func CustomInit(sources ...core.ConfigSource) error {
 //EnableConfigCenterSource create a config center source singleton
 //A config center source pull remote config server key values into local memory
 //so that you can use GetXXX to get value easily
-func EnableConfigCenterSource(ci ConfigCenterInfo, cc ccclient.ConfigClient) error {
+func EnableConfigCenterSource(ci ConfigCenterInfo, cc config.Client) error {
 	var errG error
 	if ci == (ConfigCenterInfo{}) {
 		return errors.New("ConfigCenterInfo can not be empty")
@@ -162,7 +162,7 @@ func EnableConfigCenterSource(ci ConfigCenterInfo, cc ccclient.ConfigClient) err
 	onceConfigCenter.Do(func() {
 		var err error
 		if cc == nil {
-			opts := ccclient.Options{
+			opts := config.Options{
 				DimensionInfo: ci.DefaultDimensionInfo,
 				ServerURI:     ci.URL,
 				TenantName:    ci.TenantName,
@@ -172,7 +172,7 @@ func EnableConfigCenterSource(ci ConfigCenterInfo, cc ccclient.ConfigClient) err
 				AutoDiscovery: ci.AutoDiscovery,
 				Env:           ci.Environment,
 			}
-			cc, err = ccclient.NewClient(ci.ClientType, opts)
+			cc, err = config.NewClient(ci.ClientType, opts)
 			if err != nil {
 				errG = err
 				return

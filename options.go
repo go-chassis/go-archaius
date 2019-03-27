@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 
 	"github.com/go-chassis/go-archaius/sources/file-source"
-	"github.com/go-chassis/go-cc-client"
+	"github.com/go-chassis/go-chassis-config"
 )
 
 // ConfigCenterInfo has attribute for config center source initialization
@@ -44,7 +44,7 @@ type Options struct {
 	OptionalFiles    []string
 	FileHandler      filesource.FileHandler
 	ConfigCenterInfo ConfigCenterInfo
-	ConfigClient     ccclient.ConfigClient
+	ConfigClient     config.Client
 	UseCLISource     bool
 	UseENVSource     bool
 	UseMemSource     bool
@@ -79,9 +79,10 @@ func WithDefaultFileHandler(handler filesource.FileHandler) Option {
 //ConfigCenterInfo is required if you want to use config center source
 //client is optional,if client is nil, archaius will create one based on ConfigCenterInfo
 //config client will be injected into config source as a client to interact with a config server
-func WithConfigCenterSource(cci ConfigCenterInfo, ccc ccclient.ConfigClient) Option {
+func WithConfigCenterSource(cci ConfigCenterInfo, c config.Client) Option {
 	return func(options *Options) {
 		options.ConfigCenterInfo = cci
+		options.ConfigClient = c
 	}
 }
 
