@@ -19,14 +19,13 @@ package configcenter
 
 import (
 	"errors"
+	"reflect"
 	"sync"
 	"time"
 
 	"github.com/go-chassis/go-archaius/core"
-
-	"github.com/go-chassis/go-cc-client"
+	"github.com/go-chassis/go-chassis-config"
 	"github.com/go-mesh/openlogging"
-	"reflect"
 )
 
 const (
@@ -51,7 +50,7 @@ var (
 
 //Handler handles configs from config center
 type Handler struct {
-	cc                           ccclient.ConfigClient
+	cc                           config.Client
 	dynamicConfigHandler         *DynamicConfigHandler
 	dimensionsInfo               string
 	dimensionInfoMap             map[string]string
@@ -70,7 +69,7 @@ type Handler struct {
 var ConfigCenterConfig *Handler
 
 //NewConfigCenterSource initializes all components of configuration center
-func NewConfigCenterSource(cc ccclient.ConfigClient, dimInfo string,
+func NewConfigCenterSource(cc config.Client, dimInfo string,
 	refreshMode, refreshInterval int) core.ConfigSource {
 
 	if ConfigCenterConfig == nil {

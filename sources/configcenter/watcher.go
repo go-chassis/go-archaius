@@ -2,16 +2,15 @@ package configcenter
 
 import (
 	"github.com/go-chassis/go-archaius/core"
-	"github.com/go-chassis/go-cc-client"
+	"github.com/go-chassis/go-chassis-config"
 	"github.com/go-mesh/openlogging"
 	"github.com/gorilla/websocket"
-
 	"sync"
 )
 
 //DynamicConfigHandler is a struct
 type DynamicConfigHandler struct {
-	cc             ccclient.ConfigClient
+	cc             config.Client
 	dimensionsInfo string
 	EventHandler   *ConfigCenterEventHandler
 	dynamicLock    sync.Mutex

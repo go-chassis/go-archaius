@@ -1,8 +1,7 @@
 package configcenter_test
 
 import (
-	"github.com/go-chassis/go-cc-client"
-	_ "github.com/go-chassis/go-cc-client/configcenter"
+	_ "github.com/go-chassis/go-chassis-config/configcenter"
 
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/core"
@@ -11,6 +10,7 @@ import (
 
 	"encoding/json"
 	"errors"
+	"github.com/go-chassis/go-chassis-config"
 	"math/rand"
 	"testing"
 	"time"
@@ -61,11 +61,11 @@ func TestGetConfigurationsForInvalidCCIP(t *testing.T) {
 	testSource := &Testingsource{}
 
 	t.Log("Test configcenter.go")
-	opts := ccclient.Options{
+	opts := config.Options{
 		DimensionInfo: testSource.GetDimensionInfo(),
 		TenantName:    "default",
 	}
-	cc, err := ccclient.NewClient("config_center", opts)
+	cc, err := config.NewClient("config_center", opts)
 	assert.NoError(t, err)
 	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), 1,
 		1)
@@ -81,11 +81,11 @@ func TestGetConfigurationsForInvalidCCIP(t *testing.T) {
 
 func TestGetConfigurationsWithCCIP(t *testing.T) {
 	testSource := &Testingsource{}
-	opts := ccclient.Options{
+	opts := config.Options{
 		DimensionInfo: testSource.GetDimensionInfo(),
 		TenantName:    "default",
 	}
-	cc, err := ccclient.NewClient("config_center", opts)
+	cc, err := config.NewClient("config_center", opts)
 	assert.NoError(t, err)
 	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), 1, 1)
 
@@ -137,11 +137,11 @@ func TestGetConfigurationsWithCCIP(t *testing.T) {
 
 func Test_DynamicConfigHandler(t *testing.T) {
 	testsource := &Testingsource{}
-	opts := ccclient.Options{
+	opts := config.Options{
 		DimensionInfo: testsource.GetDimensionInfo(),
 		TenantName:    "default",
 	}
-	cc, err := ccclient.NewClient("config_center", opts)
+	cc, err := config.NewClient("config_center", opts)
 	assert.NoError(t, err)
 	ccs := configcenter.NewConfigCenterSource(cc, testsource.GetDimensionInfo(), 1, 1)
 
@@ -153,7 +153,7 @@ func Test_DynamicConfigHandler(t *testing.T) {
 	time.Sleep(4 * time.Second)
 
 	if dynamicconfig.EventName == "" {
-		err := errors.New("Failed to get the event if key is created or updated or deleted")
+		err := errors.New("failed to get the event if key is created or updated or deleted")
 		assert.Error(t, err)
 	}
 
@@ -161,11 +161,11 @@ func Test_DynamicConfigHandler(t *testing.T) {
 
 func Test_OnReceive(t *testing.T) {
 	testSource := &Testingsource{}
-	opts := ccclient.Options{
+	opts := config.Options{
 		DimensionInfo: testSource.GetDimensionInfo(),
 		TenantName:    "default",
 	}
-	cc, err := ccclient.NewClient("config_center", opts)
+	cc, err := config.NewClient("config_center", opts)
 	assert.NoError(t, err)
 	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), 1, 1)
 
