@@ -328,3 +328,10 @@ func AddSource(source core.ConfigSource) error {
 func GetConfigFactory() ConfigurationFactory {
 	return factory
 }
+
+//Clean will call config manager CleanUp Method,
+//it deletes all sources which means all of key value is deleted.
+//after you call Clean, you can init archaius again
+func Clean() error {
+	return factory.DeInit()
+}
