@@ -84,3 +84,9 @@ func TestInitConfigCenter(t *testing.T) {
 	}, nil)
 	assert.Error(t, err)
 }
+func TestClean(t *testing.T) {
+	err := archaius.Clean()
+	assert.NoError(t, err)
+	s := archaius.Get("age")
+	assert.Equal(t, nil, s)
+}
