@@ -89,4 +89,9 @@ func TestClean(t *testing.T) {
 	assert.NoError(t, err)
 	s := archaius.Get("age")
 	assert.Equal(t, nil, s)
+
+	err = archaius.Init(
+		archaius.WithOptionalFiles([]string{filename2}))
+	s = archaius.Get("addr")
+	assert.Equal(t, 14, s)
 }
