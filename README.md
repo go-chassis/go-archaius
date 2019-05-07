@@ -1,5 +1,5 @@
 ### go-archaius
-[![Build Status](https://travis-ci.org/go-chassis/go-archaius.svg?branch=master)](https://travis-ci.org/ServiceComb/go-archaius)
+[![Build Status](https://travis-ci.org/go-chassis/go-archaius.svg?branch=master)](https://travis-ci.org/go-chassis/go-archaius)
 
 ![](arch.png)
 
