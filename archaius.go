@@ -131,14 +131,6 @@ func CustomInit(sources ...core.ConfigSource) error {
 			return err
 		}
 	}
-
-	eventHandler := EventListener{
-		Name:    "EventHandler",
-		Factory: factory,
-	}
-
-	factory.RegisterListener(eventHandler, "a*")
-
 	return err
 }
 
@@ -150,7 +142,7 @@ func EnableConfigCenterSource(ci ConfigCenterInfo, cc config.Client) error {
 		return errors.New("ConfigCenterInfo can not be empty")
 	}
 	if configServerRunning {
-		openlogging.Debug("can not init config server again, call Clean first")
+		openlogging.Warn("can not init config server again, call Clean first")
 		return nil
 	}
 
@@ -178,13 +170,6 @@ func EnableConfigCenterSource(ci ConfigCenterInfo, cc config.Client) error {
 	if err != nil {
 		return err
 	}
-
-	eventHandler := EventListener{
-		Name:    "EventHandler",
-		Factory: factory,
-	}
-
-	factory.RegisterListener(eventHandler, "a*")
 	configServerRunning = true
 	return nil
 }
@@ -198,7 +183,7 @@ type EventListener struct {
 // Event is invoked while generating events at run time
 func (e EventListener) Event(event *core.Event) {
 	value := e.Factory.GetConfigurationByKey(event.Key)
-	openlogging.GetLogger().Infof("config value after change %s | %s", event.Key, value)
+	openlogging.GetLogger().Debugf("config value after change %s | %s", event.Key, value)
 }
 
 // Get is for to get the value of configuration key
