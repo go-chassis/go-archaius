@@ -34,19 +34,26 @@ import (
 )
 
 const (
+	//ConfigMapConfigSourceConst is a variable of type string
 	ConfigMapConfigSourceConst = "ConfigMapSource"
 	configMapSourcePriority    = 4
-	DefaultFilePriority        = 0
+	//DefaultConfigMapPriority as default priority
+	DefaultConfigMapPriority = 0
 )
 
+//ConfigMapFileSourceTypes is a string
 type ConfigMapFileSourceTypes string
 
 const (
-	RegularFile     ConfigMapFileSourceTypes = "RegularFile"
-	Directory       ConfigMapFileSourceTypes = "Directory"
+	//RegularFile as regular file
+	RegularFile ConfigMapFileSourceTypes = "RegularFile"
+	//Directory is directory
+	Directory ConfigMapFileSourceTypes = "Directory"
+	//InvalidFileType type InvalidType
 	InvalidFileType ConfigMapFileSourceTypes = "InvalidType"
 )
 
+//ConfigInfo is s struct
 type ConfigInfo struct {
 	FilePath string
 	Value    interface{}
@@ -79,6 +86,7 @@ var _ ConfigMapSource = &configMapSource{}
 
 var configMapConfigSource *configMapSource
 
+//ConfigMapSource is interface
 type ConfigMapSource interface {
 	core.ConfigSource
 	AddFile(filePath string, priority uint32, handler FileHandler) error
@@ -429,7 +437,7 @@ func (wth *watch) watchFile() {
 				}
 			}
 
-			var fileHandler FileHandler = nil
+			var fileHandler FileHandler
 			for path, handler := range wth.configMapSource.fileHandlers {
 				if strings.Contains(event.Name, path) {
 					fileHandler = handler
