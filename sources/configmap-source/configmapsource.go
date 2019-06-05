@@ -28,6 +28,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-chassis/go-archaius/core"
+	"github.com/go-chassis/go-archaius/sources/utils"
 	"github.com/go-mesh/openlogging"
 	"strings"
 	"time"
@@ -62,9 +63,9 @@ type ConfigInfo struct {
 type configMapSource struct {
 	Configurations map[string]*ConfigInfo
 	files          []file
-	fileHandlers   map[string]FileHandler
+	fileHandlers   map[string]utils.FileHandler
 	watchPool      *watch
-	filelock       sync.Mutex
+	fileLock       sync.Mutex
 	priority       int
 	sync.RWMutex
 }
@@ -89,7 +90,7 @@ var configMapConfigSource *configMapSource
 //ConfigMapSource is interface
 type ConfigMapSource interface {
 	core.ConfigSource
-	AddFile(filePath string, priority uint32, handler FileHandler) error
+	AddFile(filePath string, priority uint32, handler utils.FileHandler) error
 }
 
 //NewConfigMapSource creates a source which can handler recurse directory
@@ -98,80 +99,78 @@ func NewConfigMapSource() ConfigMapSource {
 		configMapConfigSource = new(configMapSource)
 		configMapConfigSource.priority = configMapSourcePriority
 		configMapConfigSource.files = make([]file, 0)
-		configMapConfigSource.fileHandlers = make(map[string]FileHandler)
+		configMapConfigSource.fileHandlers = make(map[string]utils.FileHandler)
 	}
 
 	return configMapConfigSource
 }
 
-func (cmSource *configMapSource) AddFile(p string, priority uint32, handle FileHandler) error {
-	path, err := filepath.Abs(p)
+func (cmSource *configMapSource) AddFile(p string, priority uint32, handle utils.FileHandler) error {
+
+	path, err := cmSource.getFilePath(p)
 	if err != nil {
 		return err
 	}
-
-	fs, err := os.Open(path)
-	if os.IsNotExist(err) {
-		return fmt.Errorf("[%s] file not exist", path)
-	}
-	defer fs.Close()
 
 	if cmSource.isFileSrcExist(path) {
 		return nil
 	}
 	cmSource.fileHandlers[path] = handle
-	fileType := fileType(fs)
-	switch fileType {
-	case Directory:
-		err := cmSource.addDirRecursion(path, priority, handle)
-		if err != nil {
-			openlogging.GetLogger().Errorf("Failed to handle directory [%s] %s", path, err)
-			return err
-		}
-	case RegularFile:
-		err := cmSource.handleFile(fs, priority, handle)
-		if err != nil {
-			openlogging.GetLogger().Errorf("Failed to handle file [%s] [%s]", path, err)
-			return err
-		}
-	case InvalidFileType:
-		openlogging.GetLogger().Errorf("File type of [%s] not supported: %s", path, err)
-		return fmt.Errorf("file type of [%s] not supported", path)
-	}
 
-	if cmSource.watchPool != nil {
-		cmSource.watchPool.AddWatchFile(path)
-	}
+	err = filepath.Walk(p,
+		func(p string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			path, err = filepath.Abs(p)
+			if err != nil {
+				return err
+			}
+
+			fs, err := os.Open(path)
+			if os.IsNotExist(err) {
+				return fmt.Errorf("[%s] file not exist", path)
+			}
+			defer fs.Close()
+
+			getFileType := getFileType(fs)
+			switch getFileType {
+			case Directory:
+				if cmSource.watchPool != nil {
+					cmSource.watchPool.AddWatchFile(path)
+				}
+			case RegularFile:
+				err := cmSource.handleFile(fs, priority, handle)
+				if cmSource.watchPool != nil {
+					cmSource.watchPool.AddWatchFile(path)
+				}
+				if err != nil {
+					openlogging.GetLogger().Errorf("Failed to handle file [%s] [%s]", path, err)
+					return err
+				}
+			case InvalidFileType:
+				openlogging.GetLogger().Errorf("File type of [%s] not supported: %s", path, err)
+				return fmt.Errorf("file type of [%s] not supported", path)
+			}
+
+			return nil
+		})
 
 	return nil
 }
 
-func (cmSource *configMapSource) addDirRecursion(path string, priority uint32, handle FileHandler) error {
+func (cmSource *configMapSource) getFilePath(filePath string) (string, error) {
+	path, err := filepath.Abs(filePath)
+	if err != nil {
+		return path, err
+	}
 
 	fs, err := os.Open(path)
 	if os.IsNotExist(err) {
-		return fmt.Errorf("[%s] file not exist", path)
+		return path, fmt.Errorf("[%s] file not exist", path)
 	}
-
-	filesInfo, err := fs.Readdir(-1)
-	if err != nil {
-		return errors.New("failed to read Directory contents")
-	}
-
-	for _, fileInfo := range filesInfo {
-		filePath := filepath.Join(fs.Name(), fileInfo.Name())
-		fileMode := fileInfo.Mode()
-		if fileMode.IsDir() {
-			cmSource.addDirRecursion(filePath, priority, handle)
-		} else if fileMode.IsRegular() {
-			err := cmSource.AddFile(filePath, priority, handle)
-			if err != nil {
-				openlogging.GetLogger().Errorf("Failed to add directory to the filesource")
-			}
-		}
-	}
-	fs.Close()
-	return nil
+	defer fs.Close()
+	return path, nil
 }
 
 func (cmSource *configMapSource) isFileSrcExist(filePath string) bool {
@@ -185,7 +184,7 @@ func (cmSource *configMapSource) isFileSrcExist(filePath string) bool {
 	return exist
 }
 
-func fileType(fs *os.File) ConfigMapFileSourceTypes {
+func getFileType(fs *os.File) ConfigMapFileSourceTypes {
 	fileInfo, err := fs.Stat()
 	if err != nil {
 		return InvalidFileType
@@ -202,35 +201,7 @@ func fileType(fs *os.File) ConfigMapFileSourceTypes {
 	return InvalidFileType
 }
 
-func (cmSource *configMapSource) handleDirectory(dir *os.File, priority uint32, handle FileHandler) error {
-
-	filesInfo, err := dir.Readdir(-1)
-	if err != nil {
-		return errors.New("failed to read Directory contents")
-	}
-
-	for _, fileInfo := range filesInfo {
-		filePath := filepath.Join(dir.Name(), fileInfo.Name())
-
-		fs, err := os.Open(filePath)
-		if err != nil {
-			openlogging.GetLogger().Errorf("error in file open for %s file", err.Error())
-			continue
-		}
-
-		err = cmSource.handleFile(fs, priority, handle)
-		if err != nil {
-			openlogging.GetLogger().Errorf("error processing %s file source handler with error : %s ", fs.Name(),
-				err.Error())
-		}
-		fs.Close()
-
-	}
-
-	return nil
-}
-
-func (cmSource *configMapSource) handleFile(file *os.File, priority uint32, handle FileHandler) error {
+func (cmSource *configMapSource) handleFile(file *os.File, priority uint32, handle utils.FileHandler) error {
 	Content, err := ioutil.ReadFile(file.Name())
 	if err != nil {
 		return err
@@ -239,7 +210,7 @@ func (cmSource *configMapSource) handleFile(file *os.File, priority uint32, hand
 	if handle != nil {
 		config, err = handle(file.Name(), Content)
 	} else {
-		config, err = Convert2JavaProps(file.Name(), Content)
+		config, err = utils.Convert2JavaProps(file.Name(), Content)
 	}
 	if err != nil {
 		return fmt.Errorf("failed to pull configurations from [%s] file, %s", file.Name(), err)
@@ -336,6 +307,7 @@ func (cmSource *configMapSource) GetPriority() int {
 func (cmSource *configMapSource) SetPriority(priority int) {
 	cmSource.priority = priority
 }
+
 func (cmSource *configMapSource) DynamicConfigHandler(callback core.DynamicConfigCallback) error {
 	if callback == nil {
 		return errors.New("call back can not be nil")
@@ -429,22 +401,44 @@ func (wth *watch) watchFile() {
 			if event.Op == fsnotify.Create {
 				time.Sleep(time.Millisecond)
 			}
+			if wth.configMapSource.isFileSrcExist(event.Name) {
 
-			var priority uint32 = configMapSourcePriority
-			for _, file := range wth.configMapSource.files {
-				if strings.Contains(event.Name, file.filePath) {
-					priority = file.priority
+				handle := wth.configMapSource.fileHandlers[event.Name]
+				if handle == nil {
+					handle = utils.Convert2JavaProps
 				}
-			}
-
-			var fileHandler FileHandler
-			for path, handler := range wth.configMapSource.fileHandlers {
-				if strings.Contains(event.Name, path) {
-					fileHandler = handler
+				content, err := ioutil.ReadFile(event.Name)
+				if err != nil {
+					openlogging.GetLogger().Error("read file error " + err.Error())
+					continue
 				}
-			}
-			wth.configMapSource.AddFile(event.Name, priority, fileHandler)
 
+				newConf, err := handle(event.Name, content)
+				if err != nil {
+					openlogging.GetLogger().Error("convert error " + err.Error())
+					continue
+				}
+				events := wth.configMapSource.compareUpdate(newConf, event.Name)
+				//openlogging.GetLogger().Debugf("Event generated events %s", events)
+				for _, e := range events {
+					wth.callback.OnEvent(e)
+				}
+			} else {
+				var priority uint32 = configMapSourcePriority
+				for _, file := range wth.configMapSource.files {
+					if strings.Contains(event.Name, file.filePath) {
+						priority = file.priority
+					}
+				}
+
+				var fileHandler utils.FileHandler
+				for path, handler := range wth.configMapSource.fileHandlers {
+					if strings.Contains(event.Name, path) {
+						fileHandler = handler
+					}
+				}
+				wth.configMapSource.AddFile(event.Name, priority, fileHandler)
+			}
 		case err := <-wth.watcher.Errors:
 			openlogging.GetLogger().Debugf("watch file error:", err)
 			return
@@ -560,8 +554,8 @@ func (cmSource *configMapSource) addOrCreateConf(fileConfs map[string]*ConfigInf
 
 func (cmSource *configMapSource) Cleanup() error {
 
-	cmSource.filelock.Lock()
-	defer cmSource.filelock.Unlock()
+	cmSource.fileLock.Lock()
+	defer cmSource.fileLock.Unlock()
 
 	if configMapConfigSource == nil || cmSource == nil {
 		return nil

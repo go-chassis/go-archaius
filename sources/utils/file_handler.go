@@ -1,4 +1,4 @@
-package configmapource
+package utils
 
 import (
 	"fmt"

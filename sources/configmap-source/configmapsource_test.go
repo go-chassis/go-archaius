@@ -119,18 +119,23 @@ func TestDynamicConfigurations(t *testing.T) {
 	check(err)
 
 	cmSource := NewConfigMapSource()
+	cmSource.AddFile(filename1, 0, nil)
+	cmSource.AddFile(filename2, 1, nil)
+	cmSource.AddFile(filename3, 2, nil)
 
 	dynHandler := new(TestDynamicConfigHandler)
 	cmSource.DynamicConfigHandler(dynHandler)
 	time.Sleep(1 * time.Second)
 
-	cmSource.AddFile(filename1, 0, nil)
-	cmSource.AddFile(filename2, 1, nil)
-	cmSource.AddFile(filename3, 2, nil)
+	t.Log("generate event by inserting some value into file")
+	yamlContent1 = "\nyamlkeytest13: test13\n"
+	_, err = io.WriteString(f1, yamlContent1)
+	check(err)
+	time.Sleep(10 * time.Millisecond)
 
 	t.Log("Verifying the key of highest priority file(filename1)")
-	configkey, err := cmSource.GetConfigurationByKey("yamlkeytest11")
-	if configkey != "test11" {
+	configkey, err := cmSource.GetConfigurationByKey("yamlkeytest13")
+	if configkey != "test13" {
 		t.Error("Failed to get the latest event key value pair")
 	}
 
@@ -144,6 +149,30 @@ func TestDynamicConfigurations(t *testing.T) {
 	configkey, _ = cmSource.GetConfigurationByKey("yamlkeytest123")
 	if configkey != "test1231" {
 		t.Error("Failed to get the latest event key value pair")
+	}
+
+	//generating the key from highest priority file(filename1)
+	yamlContent1 = "\nyamlkeytest123: test12311\n"
+	_, err = io.WriteString(f1, yamlContent1)
+	check(err)
+	time.Sleep(10 * time.Millisecond)
+
+	//Verifying the of highest priority file(filename1)
+	configkey, err = cmSource.GetConfigurationByKey("yamlkeytest123")
+	if configkey != "test12311" {
+		t.Error("filesource updating the key from lowest priority file")
+	}
+
+	t.Log("generating the key from lowest priority file(filename3)")
+	yamlContent3 = "\nyamlkeytest123: test12333\n"
+	_, err = io.WriteString(f3, yamlContent3)
+	check(err)
+	time.Sleep(10 * time.Millisecond)
+
+	t.Log("verifying the key of lowest priority file(filename3)")
+	configkey, err = cmSource.GetConfigurationByKey("yamlkeytest123")
+	if configkey == "test12333" {
+		t.Error("filesource updating the key from lowest priority file")
 	}
 
 	t.Log("adding new files after dynhandler is inited")
@@ -175,9 +204,14 @@ func TestDynamicConfigurations(t *testing.T) {
 	assert.NotEqual(t, "test455", configkey)
 	assert.Equal(t, "test454", configkey)
 
+	data, err := cmSource.GetConfigurationByKeyAndDimensionInfo("data@default#0.1", "hello")
+	if data != nil || err != nil {
+		t.Error("Failed to get configuration by dimension info and key")
+	}
+
 	t.Log("filesource cleanup")
-	filesourcecleanup := cmSource.Cleanup()
-	if filesourcecleanup != nil {
+	configsourcecleanup := cmSource.Cleanup()
+	if configsourcecleanup != nil {
 		t.Error("filesource cleanup is Failed")
 	}
 }
@@ -300,8 +334,8 @@ func TestConfigMapSource2(t *testing.T) {
 		t.Error("Failed to the configmapsource keyvalue pair")
 	}
 
-	filesourcecleanup := cmSource.Cleanup()
-	if filesourcecleanup != nil {
+	configsourcecleanup := cmSource.Cleanup()
+	if configsourcecleanup != nil {
 		t.Error("configmapsource cleanup is Failed")
 	}
 
