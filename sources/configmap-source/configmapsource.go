@@ -401,48 +401,53 @@ func (wth *watch) watchFile() {
 			if event.Op == fsnotify.Create {
 				time.Sleep(time.Millisecond)
 			}
-			if wth.configMapSource.isFileSrcExist(event.Name) {
 
-				handle := wth.configMapSource.fileHandlers[event.Name]
-				if handle == nil {
-					handle = utils.Convert2JavaProps
-				}
-				content, err := ioutil.ReadFile(event.Name)
-				if err != nil {
-					openlogging.GetLogger().Error("read file error " + err.Error())
-					continue
-				}
+			wth.configMapSource.updateFile(wth, event)
 
-				newConf, err := handle(event.Name, content)
-				if err != nil {
-					openlogging.GetLogger().Error("convert error " + err.Error())
-					continue
-				}
-				events := wth.configMapSource.compareUpdate(newConf, event.Name)
-				//openlogging.GetLogger().Debugf("Event generated events %s", events)
-				for _, e := range events {
-					wth.callback.OnEvent(e)
-				}
-			} else {
-				var priority uint32 = configMapSourcePriority
-				for _, file := range wth.configMapSource.files {
-					if strings.Contains(event.Name, file.filePath) {
-						priority = file.priority
-					}
-				}
-
-				var fileHandler utils.FileHandler
-				for path, handler := range wth.configMapSource.fileHandlers {
-					if strings.Contains(event.Name, path) {
-						fileHandler = handler
-					}
-				}
-				wth.configMapSource.AddFile(event.Name, priority, fileHandler)
-			}
 		case err := <-wth.watcher.Errors:
 			openlogging.GetLogger().Debugf("watch file error:", err)
 			return
 		}
+	}
+}
+
+func (cmSource *configMapSource) updateFile(wth *watch, event fsnotify.Event) {
+	if wth.configMapSource.isFileSrcExist(event.Name) {
+		handle := wth.configMapSource.fileHandlers[event.Name]
+		if handle == nil {
+			handle = utils.Convert2JavaProps
+		}
+		content, err := ioutil.ReadFile(event.Name)
+		if err != nil {
+			openlogging.GetLogger().Error("read file error " + err.Error())
+			return
+		}
+
+		newConf, err := handle(event.Name, content)
+		if err != nil {
+			openlogging.GetLogger().Error("convert error " + err.Error())
+			return
+		}
+		events := wth.configMapSource.compareUpdate(newConf, event.Name)
+		//openlogging.GetLogger().Debugf("Event generated events %s", events)
+		for _, e := range events {
+			wth.callback.OnEvent(e)
+		}
+	} else {
+		var priority uint32 = configMapSourcePriority
+		for _, file := range wth.configMapSource.files {
+			if strings.Contains(event.Name, file.filePath) {
+				priority = file.priority
+			}
+		}
+
+		var fileHandler utils.FileHandler
+		for path, handler := range wth.configMapSource.fileHandlers {
+			if strings.Contains(event.Name, path) {
+				fileHandler = handler
+			}
+		}
+		wth.configMapSource.AddFile(event.Name, priority, fileHandler)
 	}
 
 }
