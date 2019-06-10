@@ -2,8 +2,8 @@ package archaius
 
 import (
 	"crypto/tls"
+	"github.com/go-chassis/go-archaius/sources/utils"
 
-	"github.com/go-chassis/go-archaius/sources/file-source"
 	"github.com/go-chassis/go-chassis-config"
 )
 
@@ -42,7 +42,7 @@ type ConfigCenterInfo struct {
 type Options struct {
 	RequiredFiles    []string
 	OptionalFiles    []string
-	FileHandler      filesource.FileHandler
+	FileHandler      utils.FileHandler
 	ConfigCenterInfo ConfigCenterInfo
 	ConfigClient     config.Client
 	UseCLISource     bool
@@ -69,7 +69,7 @@ func WithOptionalFiles(f []string) Option {
 
 //WithDefaultFileHandler let user custom handler
 //you can decide how to convert file into kv pairs
-func WithDefaultFileHandler(handler filesource.FileHandler) Option {
+func WithDefaultFileHandler(handler utils.FileHandler) Option {
 	return func(options *Options) {
 		options.FileHandler = handler
 	}
@@ -111,14 +111,14 @@ func WithMemorySource() Option {
 
 //FileOptions for AddFile func
 type FileOptions struct {
-	Handler filesource.FileHandler
+	Handler utils.FileHandler
 }
 
 //FileOption is a func
 type FileOption func(options *FileOptions)
 
 //WithFileHandler use custom handler
-func WithFileHandler(h filesource.FileHandler) FileOption {
+func WithFileHandler(h utils.FileHandler) FileOption {
 	return func(options *FileOptions) {
 		options.Handler = h
 	}

@@ -1,4 +1,4 @@
-package filesource
+package utils
 
 import (
 	"fmt"
