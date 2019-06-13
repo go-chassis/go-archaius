@@ -1,0 +1,4 @@
+cred:
+  db:
+    user: admin
+    pwd:
