@@ -21,6 +21,7 @@ package envconfigsource
 
 import (
 	"github.com/go-chassis/go-archaius/core"
+	"gopkg.in/go-playground/assert.v1"
 	"os"
 	"testing"
 )
@@ -34,13 +35,23 @@ func populatEnvConfiguration() {
 	os.Setenv("testenvkey1", "envkey1")
 	os.Setenv("testenvkey2", "envkey2")
 	os.Setenv("testenvkey3", "a=b=c")
+
 }
 
 func TestEnvConfigurationSource(t *testing.T) {
 
 	populatEnvConfiguration()
 	envsource := NewEnvConfigurationSource()
-
+	t.Run("set env with underscore, use dot to get ", func(t *testing.T) {
+		os.Setenv("a_b_c_d", "asd")
+		envsource := NewEnvConfigurationSource()
+		v, err := envsource.GetConfigurationByKey("a.b.c.d")
+		assert.Equal(t, nil, err)
+		assert.Equal(t, "asd", v)
+		v, err = envsource.GetConfigurationByKey("a_b_c_d")
+		assert.Equal(t, nil, err)
+		assert.Equal(t, "asd", v)
+	})
 	t.Log("Test envconfigurationsource.go")
 
 	t.Log("verifying envsource configurations by GetConfigurations method")
