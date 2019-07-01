@@ -149,22 +149,24 @@ func EnableConfigCenterSource(ci ConfigCenterInfo, cc config.Client) error {
 	var err error
 	if cc == nil {
 		opts := config.Options{
-			DimensionInfo: ci.DefaultDimensionInfo,
 			ServerURI:     ci.URL,
 			TenantName:    ci.TenantName,
 			EnableSSL:     ci.EnableSSL,
 			TLSConfig:     ci.TLSConfig,
 			RefreshPort:   ci.RefreshPort,
 			AutoDiscovery: ci.AutoDiscovery,
-			Env:           ci.Environment,
+
+			Version:     ci.Version,
+			ServiceName: ci.Service,
+			App:         ci.App,
+			Env:         ci.Environment,
 		}
 		cc, err = config.NewClient(ci.ClientType, opts)
 		if err != nil {
 			return err
 		}
 	}
-	configCenterSource := configcenter.NewConfigCenterSource(cc,
-		ci.DefaultDimensionInfo, ci.RefreshMode,
+	configCenterSource := configcenter.NewConfigCenterSource(cc, ci.RefreshMode,
 		ci.RefreshInterval)
 	err = factory.AddSource(configCenterSource)
 	if err != nil {

@@ -12,9 +12,10 @@ type ConfigCenterInfo struct {
 	//required.
 	//Key value can be in different namespace, we call it dimension.
 	//although key is same but in different dimension, the value is different.
-	//you must specify the default dimension, so that the config center source will just pull this dimension's key value
-	DefaultDimensionInfo string
-
+	//you must specify the service,app and version, so that the config center source will just pull this unique key value
+	Service string
+	App     string
+	Version string
 	//archaius config center source support 2 types of refresh mechanism:
 	//0: Web-Socket Based -  client makes an web socket connection with
 	//the config server and keeps getting an events whenever any data changes.
@@ -26,14 +27,14 @@ type ConfigCenterInfo struct {
 	RefreshInterval int
 
 	//Configurations for config client implementation
-	//if you alread create a client, don't need to set those config
+	//if you already create a client, don't need to set those config
 	URL           string
 	TenantName    string
 	EnableSSL     bool
 	TLSConfig     *tls.Config
 	AutoDiscovery bool
 	ClientType    string
-	Version       string
+	APIVersion    string
 	RefreshPort   string
 	Environment   string
 }

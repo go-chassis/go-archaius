@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-chassis/go-chassis-config"
-	"math/rand"
 	"testing"
 	"time"
 )
@@ -34,19 +33,6 @@ func (ccenter *TestDynamicConfigHandler) OnEvent(event *core.Event) {
 	ccenter.EventValue = event.Value
 }
 
-func (*Testingsource) GetDimensionInfo() string {
-	rand.Seed(time.Now().UTC().UnixNano())
-	const chars = "abcdefghijklmnopqrstuvwxyz"
-	result := make([]byte, 5)
-
-	for i := 0; i < 5; i++ {
-		result[i] = chars[rand.Intn(len(chars))]
-	}
-
-	dimensioninfo := string(result)
-	return dimensioninfo
-}
-
 func (*Testingsource) GetConfigServer() []string {
 	configserver := []string{`http://10.18.206.218:30103`}
 
@@ -58,16 +44,16 @@ func (*Testingsource) GetInvalidConfigServer() []string {
 }
 
 func TestGetConfigurationsForInvalidCCIP(t *testing.T) {
-	testSource := &Testingsource{}
 
 	t.Log("Test configcenter.go")
 	opts := config.Options{
-		DimensionInfo: testSource.GetDimensionInfo(),
-		TenantName:    "default",
+		ServiceName: "cart",
+		App:         "default",
+		TenantName:  "default",
 	}
 	cc, err := config.NewClient("config_center", opts)
 	assert.NoError(t, err)
-	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), 1,
+	ccs := configcenter.NewConfigCenterSource(cc, 1,
 		1)
 
 	_, er := ccs.GetConfigurations()
@@ -80,14 +66,14 @@ func TestGetConfigurationsForInvalidCCIP(t *testing.T) {
 }
 
 func TestGetConfigurationsWithCCIP(t *testing.T) {
-	testSource := &Testingsource{}
 	opts := config.Options{
-		DimensionInfo: testSource.GetDimensionInfo(),
-		TenantName:    "default",
+		ServiceName: "cart",
+		App:         "default",
+		TenantName:  "default",
 	}
 	cc, err := config.NewClient("config_center", opts)
 	assert.NoError(t, err)
-	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), 1, 1)
+	ccs := configcenter.NewConfigCenterSource(cc, 1, 1)
 
 	t.Log("Accessing concenter source configurations")
 	time.Sleep(2 * time.Second)
@@ -136,14 +122,14 @@ func TestGetConfigurationsWithCCIP(t *testing.T) {
 }
 
 func Test_DynamicConfigHandler(t *testing.T) {
-	testsource := &Testingsource{}
 	opts := config.Options{
-		DimensionInfo: testsource.GetDimensionInfo(),
-		TenantName:    "default",
+		ServiceName: "cart",
+		App:         "default",
+		TenantName:  "default",
 	}
 	cc, err := config.NewClient("config_center", opts)
 	assert.NoError(t, err)
-	ccs := configcenter.NewConfigCenterSource(cc, testsource.GetDimensionInfo(), 1, 1)
+	ccs := configcenter.NewConfigCenterSource(cc, 1, 1)
 
 	dynamicconfig := new(TestDynamicConfigHandler)
 
@@ -160,14 +146,14 @@ func Test_DynamicConfigHandler(t *testing.T) {
 }
 
 func Test_OnReceive(t *testing.T) {
-	testSource := &Testingsource{}
 	opts := config.Options{
-		DimensionInfo: testSource.GetDimensionInfo(),
-		TenantName:    "default",
+		ServiceName: "cart",
+		App:         "default",
+		TenantName:  "default",
 	}
 	cc, err := config.NewClient("config_center", opts)
 	assert.NoError(t, err)
-	ccs := configcenter.NewConfigCenterSource(cc, testSource.GetDimensionInfo(), 1, 1)
+	ccs := configcenter.NewConfigCenterSource(cc, 1, 1)
 
 	_, er := ccs.GetConfigurations()
 	if er != nil {

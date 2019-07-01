@@ -29,16 +29,9 @@ import (
 )
 
 const (
-	defaultTimeout = 10 * time.Second
 	//ConfigCenterSourceConst variable of type string
 	ConfigCenterSourceConst    = "ConfigCenterSource"
 	configCenterSourcePriority = 0
-	dimensionsInfo             = "dimensionsInfo"
-	dynamicConfigAPI           = `/configuration/refresh/items`
-	getConfigAPI               = `/configuration/items`
-	defaultContentType         = "application/json"
-	//ConfigServerMemRefreshError is error message
-	ConfigServerMemRefreshError = "error in poulating config server member"
 )
 
 var (
@@ -50,9 +43,12 @@ var (
 
 //Handler handles configs from config center
 type Handler struct {
+	Service                      string
+	Version                      string
+	App                          string
+	Env                          string
 	cc                           config.Client
 	dynamicConfigHandler         *DynamicConfigHandler
-	dimensionsInfo               string
 	dimensionInfoMap             map[string]string
 	Configurations               map[string]interface{}
 	dimensionsInfoConfiguration  map[string]map[string]interface{}
@@ -69,14 +65,13 @@ type Handler struct {
 var ConfigCenterConfig *Handler
 
 //NewConfigCenterSource initializes all components of configuration center
-func NewConfigCenterSource(cc config.Client, dimInfo string,
+func NewConfigCenterSource(cc config.Client,
 	refreshMode, refreshInterval int) core.ConfigSource {
 
 	if ConfigCenterConfig == nil {
 		ConfigCenterConfig = new(Handler)
 		ConfigCenterConfig.priority = configCenterSourcePriority
 		ConfigCenterConfig.cc = cc
-		ConfigCenterConfig.dimensionsInfo = dimInfo
 		ConfigCenterConfig.initSuccess = true
 		ConfigCenterConfig.RefreshMode = refreshMode
 		ConfigCenterConfig.RefreshInterval = time.Second * time.Duration(refreshInterval)
@@ -157,7 +152,8 @@ func (cfgSrcHandler *Handler) refreshConfigurations(dimensionInfo string) error 
 	)
 
 	if dimensionInfo == "" {
-		config, err = cfgSrcHandler.cc.PullConfigs(cfgSrcHandler.dimensionsInfo, "", "", "")
+		config, err = cfgSrcHandler.cc.PullConfigs(cfgSrcHandler.Service,
+			cfgSrcHandler.Version, cfgSrcHandler.App, cfgSrcHandler.Env)
 		if err != nil {
 			openlogging.GetLogger().Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
@@ -165,13 +161,7 @@ func (cfgSrcHandler *Handler) refreshConfigurations(dimensionInfo string) error 
 		//Populate the events based on the changed value between current config and newly received Config
 		events, err = cfgSrcHandler.populateEvents(config)
 	} else {
-		var diInfo string
-		for _, value := range cfgSrcHandler.dimensionInfoMap {
-			if value == dimensionInfo {
-				diInfo = dimensionInfo
-			}
-		}
-		configByDI, err = cfgSrcHandler.cc.PullConfigsByDI(dimensionInfo, diInfo)
+		configByDI, err = cfgSrcHandler.cc.PullConfigsByDI(dimensionInfo)
 		if err != nil {
 			openlogging.GetLogger().Warnf("Failed to pull configurations from config center server", err) //Warn
 			return err
@@ -194,13 +184,13 @@ func (cfgSrcHandler *Handler) refreshConfigurations(dimensionInfo string) error 
 	}
 
 	cfgSrcHandler.Lock()
-	cfgSrcHandler.updatedimensionsInfoConfigurations(dimensionInfo, configByDI, config)
+	cfgSrcHandler.updateDimensionsInfoConfigurations(dimensionInfo, configByDI, config)
 	cfgSrcHandler.Unlock()
 
 	return nil
 }
 
-func (cfgSrcHandler *Handler) updatedimensionsInfoConfigurations(dimensionInfo string,
+func (cfgSrcHandler *Handler) updateDimensionsInfoConfigurations(dimensionInfo string,
 	configByDI map[string]map[string]interface{}, config map[string]interface{}) {
 
 	if dimensionInfo == "" {
@@ -323,7 +313,7 @@ func (cfgSrcHandler *Handler) DynamicConfigHandler(callback core.DynamicConfigCa
 	if cfgSrcHandler.RefreshMode == 0 {
 		// Pull All the configuration for the first time.
 		cfgSrcHandler.refreshConfigurations("")
-		//Start a web socket connection to recieve change events.
+		//Start a web socket connection to receive change events.
 		dynCfgHandler.startDynamicConfigHandler()
 	}
 
