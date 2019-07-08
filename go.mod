@@ -3,7 +3,7 @@ module github.com/go-chassis/go-archaius
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.4.7
-	github.com/go-chassis/go-chassis-config v0.7.1-0.20190701112316-2f79c0f7e065
+	github.com/go-chassis/go-chassis-config v0.8.0
 	github.com/go-mesh/openlogging v1.0.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/pkg/errors v0.8.1 // indirect
