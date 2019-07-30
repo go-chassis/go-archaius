@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/sources/file-source"
+	"github.com/go-chassis/go-archaius/sources/utils"
 	"github.com/go-mesh/openlogging"
 	"log"
 )
@@ -23,7 +23,7 @@ func main() {
 	log.Println(archaius.Get("age"))
 	log.Println(archaius.Get("name"))
 
-	err = archaius.AddFile("f3.yaml", archaius.WithFileHandler(filesource.UseFileNameAsKeyContentAsValue))
+	err = archaius.AddFile("f3.yaml", archaius.WithFileHandler(utils.FileHandler(utils.UseFileNameAsKeyContentAsValue)))
 	if err != nil {
 		log.Panicln(err)
 	}
