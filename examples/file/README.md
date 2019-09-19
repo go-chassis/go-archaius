@@ -1,3 +1,5 @@
+this demo shows howto use file handler to convert a file to key value map
+
 main.go call archaius init to manage f1.yaml
 then add new file f2.yaml, it will consider yaml key as key, yaml value as value
 then add new file f3.yaml, it will consider file name as key and content as value
