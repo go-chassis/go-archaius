@@ -1,20 +1,20 @@
 package archaius_test
 
 import (
+	"github.com/go-chassis/go-archaius/event"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/core"
 	"github.com/go-mesh/openlogging"
 	"github.com/stretchr/testify/assert"
 )
 
 type EListener struct{}
 
-func (e EListener) Event(event *core.Event) {
+func (e EListener) Event(event *event.Event) {
 	openlogging.GetLogger().Infof("config value after change ", event.Key, " | ", event.Value)
 }
 
@@ -77,9 +77,9 @@ func TestConfig_RegisterListener(t *testing.T) {
 
 }
 func TestInitConfigCenter(t *testing.T) {
-	err := archaius.EnableConfigCenterSource(archaius.ConfigCenterInfo{}, nil)
+	err := archaius.EnableRemoteSource(&archaius.RemoteInfo{}, nil)
 	assert.Error(t, err)
-	err = archaius.EnableConfigCenterSource(archaius.ConfigCenterInfo{
+	err = archaius.EnableRemoteSource(&archaius.RemoteInfo{
 		ClientType: "fake",
 	}, nil)
 	assert.Error(t, err)
