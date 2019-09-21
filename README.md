@@ -1,6 +1,6 @@
 ### go-archaius
 [![Build Status](https://travis-ci.org/go-chassis/go-archaius.svg?branch=master)](https://travis-ci.org/go-chassis/go-archaius)
-
+[![Coverage Status](https://coveralls.io/repos/github/go-chassis/go-archaius/badge.svg)](https://coveralls.io/github/go-chassis/go-archaius)
 ![](arch.png)
 
 This is a light weight configuration management framework 
