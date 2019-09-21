@@ -60,8 +60,8 @@ func NewManager() *Manager {
 // Cleanup close and cleanup config manager channel
 func (m *Manager) Cleanup() error {
 	// cleanup all dynamic handler
-	m.sourceMapMux.Lock()
-	defer m.sourceMapMux.Unlock()
+	m.sourceMapMux.RLock()
+	defer m.sourceMapMux.RUnlock()
 	for _, s := range m.Sources {
 		err := s.Cleanup()
 		if err != nil {
@@ -73,8 +73,8 @@ func (m *Manager) Cleanup() error {
 
 //Set call set of all sources
 func (m *Manager) Set(k string, v interface{}) error {
-	m.sourceMapMux.Lock()
-	defer m.sourceMapMux.Unlock()
+	m.sourceMapMux.RLock()
+	defer m.sourceMapMux.RLock()
 	var err error
 	for _, s := range m.Sources {
 		err = s.Set(k, v)
@@ -87,8 +87,8 @@ func (m *Manager) Set(k string, v interface{}) error {
 
 //Delete call Delete of all sources
 func (m *Manager) Delete(k string) error {
-	m.sourceMapMux.Lock()
-	defer m.sourceMapMux.Unlock()
+	m.sourceMapMux.RLock()
+	defer m.sourceMapMux.RUnlock()
 	var err error
 	for _, s := range m.Sources {
 		err = s.Delete(k)
@@ -127,10 +127,8 @@ func (m *Manager) AddSource(source ConfigSource, priority int) error {
 		openlogging.GetLogger().Error("nil or invalid source supplied: " + err.Error())
 		return err
 	}
-
-	m.sourceMapMux.Lock()
 	sourceName := source.GetSourceName()
-
+	m.sourceMapMux.Lock()
 	_, ok := m.Sources[sourceName]
 	if ok {
 		err := errors.New("duplicate source supplied")
@@ -155,9 +153,9 @@ func (m *Manager) AddSource(source ConfigSource, priority int) error {
 }
 
 func (m *Manager) pullSourceConfigs(source string) error {
-	m.sourceMapMux.Lock()
+	m.sourceMapMux.RLock()
 	configSource, ok := m.Sources[source]
-	m.sourceMapMux.Unlock()
+	m.sourceMapMux.RUnlock()
 	if !ok {
 		err := errors.New("invalid source or source not added")
 		openlogging.GetLogger().Error("invalid source or source not added: " + err.Error())
@@ -223,9 +221,9 @@ func (m *Manager) Refresh(sourceName string) error {
 }
 
 func (m *Manager) configValueBySource(configKey, sourceName string) interface{} {
-	m.sourceMapMux.Lock()
+	m.sourceMapMux.RLock()
 	source, ok := m.Sources[sourceName]
-	m.sourceMapMux.Unlock()
+	m.sourceMapMux.RUnlock()
 	if !ok {
 		return nil
 	}
@@ -245,9 +243,9 @@ func (m *Manager) configValueBySource(configKey, sourceName string) interface{} 
 }
 
 func (m *Manager) addDimensionInfo(labels map[string]string) error {
-	m.sourceMapMux.Lock()
+	m.sourceMapMux.RLock()
 	source, ok := m.Sources["ConfigCenterSource"]
-	m.sourceMapMux.Unlock()
+	m.sourceMapMux.RUnlock()
 	if !ok {
 		openlogging.GetLogger().Errorf("source does not exist")
 		return errors.New("source does not exist")
@@ -290,9 +288,9 @@ func (m *Manager) updateConfigurationMap(source ConfigSource, configs map[string
 			continue
 		}
 
-		m.sourceMapMux.Lock()
+		m.sourceMapMux.RLock()
 		currentSource, ok := m.Sources[sourceName]
-		m.sourceMapMux.Unlock()
+		m.sourceMapMux.RUnlock()
 		if !ok {
 			m.ConfigurationMap[key] = source.GetSourceName()
 			continue
@@ -317,9 +315,9 @@ func (m *Manager) updateConfigurationMapByDI(source ConfigSource, configs map[st
 			continue
 		}
 
-		m.sourceMapMux.Lock()
+		m.sourceMapMux.RLock()
 		currentSource, ok := m.Sources[sourceName]
-		m.sourceMapMux.Unlock()
+		m.sourceMapMux.RUnlock()
 		if !ok {
 			m.ConfigurationMap[key] = source.GetSourceName()
 			continue
@@ -395,7 +393,7 @@ func (m *Manager) OnEvent(event *event.Event) {
 
 func (m *Manager) findNextBestSource(key string, sourceName string) ConfigSource {
 	var rSource ConfigSource
-	m.sourceMapMux.Lock()
+	m.sourceMapMux.RLock()
 	for _, source := range m.Sources {
 		if source.GetSourceName() == sourceName {
 			continue
@@ -412,16 +410,16 @@ func (m *Manager) findNextBestSource(key string, sourceName string) ConfigSource
 			rSource = source
 		}
 	}
-	m.sourceMapMux.Unlock()
+	m.sourceMapMux.RUnlock()
 
 	return rSource
 }
 
 func (m *Manager) getHighPrioritySource(srcNameA, srcNameB string) ConfigSource {
-	m.sourceMapMux.Lock()
+	m.sourceMapMux.RLock()
 	sourceA, okA := m.Sources[srcNameA]
 	sourceB, okB := m.Sources[srcNameB]
-	m.sourceMapMux.Unlock()
+	m.sourceMapMux.RUnlock()
 
 	if !okA && !okB {
 		return nil
