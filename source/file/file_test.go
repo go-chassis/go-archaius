@@ -124,4 +124,11 @@ others:
 		assert.NoError(t, err)
 		assert.Equal(t, 13, age)
 	})
+
+	t.Run("clean up", func(t *testing.T) {
+		err := fSource.Cleanup()
+		assert.NoError(t, err)
+		age, err := fSource.GetConfigurationByKey("age")
+		assert.Equal(t, nil, age)
+	})
 }

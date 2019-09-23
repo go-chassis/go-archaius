@@ -247,8 +247,8 @@ func (m *Manager) getMapKeys(configValue map[string]interface{}, prefix string, 
 		}
 	} else {
 		for key := range configValue {
-			isPrifix, index := checkPrefix(key, prefix)
-			if !isPrifix {
+			isPrefix, index := checkPrefix(key, prefix)
+			if !isPrefix {
 				continue
 			}
 
@@ -575,7 +575,7 @@ func ToRvalueType(confValue interface{}, convertType reflect.Type) (returnValue 
 		}
 		returnValue.SetBool(returnBool)
 	default:
-		err = errors.New("canot convert type")
+		err = errors.New("can not convert type")
 	}
 
 	return returnValue, err
