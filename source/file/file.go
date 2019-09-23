@@ -561,21 +561,12 @@ func (fSource *Source) Cleanup() error {
 	fSource.filelock.Lock()
 	defer fSource.filelock.Unlock()
 
-	if fSource == nil {
-		return nil
-	}
-
 	if fSource.watchPool != nil && fSource.watchPool.watcher != nil {
 		fSource.watchPool.watcher.Close()
 	}
 
-	if fSource.watchPool != nil {
-		fSource.watchPool.fileSource = nil
-		fSource.watchPool.callback = nil
-		fSource.watchPool = nil
-	}
-	fSource.Configurations = nil
 	fSource.files = make([]file, 0)
+	fSource.Configurations = make(map[string]*ConfigInfo, 0)
 	return nil
 }
 
