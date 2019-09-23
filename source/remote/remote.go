@@ -37,13 +37,6 @@ const (
 	ModeInterval               = 1
 )
 
-var (
-	//ConfigPath is a variable of type string
-	ConfigPath = ""
-	//ConfigRefreshPath is a variable of type string
-	ConfigRefreshPath = ""
-)
-
 //Source handles configs from config center
 type Source struct {
 	cc config.Client
@@ -101,7 +94,7 @@ func (rs *Source) refreshConfigurationsPeriodically() {
 	ticker := time.Tick(rs.RefreshInterval)
 	for range ticker {
 		err := rs.refreshConfigurations()
-		if err == nil {
+		if err != nil {
 			openlogging.Error("can not pull configs: " + err.Error())
 		}
 	}
@@ -135,8 +128,8 @@ func (rs *Source) refreshConfigurations() error {
 	//Generate OnEvent Callback based on the events created
 	if rs.eh != nil {
 		openlogging.GetLogger().Debugf("event on receive %+v", events)
-		for _, event := range events {
-			rs.eh.OnEvent(event)
+		for _, e := range events {
+			rs.eh.OnEvent(e)
 		}
 	}
 
@@ -184,7 +177,7 @@ func (rs *Source) Watch(callback source.EventHandler) error {
 		// Pull All the configuration for the first time.
 		rs.refreshConfigurations()
 		//Start watch and receive change events.
-		rs.cc.Watch(
+		err := rs.cc.Watch(
 			func(kv map[string]interface{}) {
 				events, err := rs.populateEvents(kv)
 				if err != nil {
@@ -193,8 +186,8 @@ func (rs *Source) Watch(callback source.EventHandler) error {
 				}
 
 				openlogging.GetLogger().Debugf("event On Receive", events)
-				for _, event := range events {
-					callback.OnEvent(event)
+				for _, e := range events {
+					callback.OnEvent(e)
 				}
 
 				return
@@ -203,6 +196,9 @@ func (rs *Source) Watch(callback source.EventHandler) error {
 				openlogging.Error(err.Error())
 			}, nil,
 		)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -247,56 +243,6 @@ func (rs *Source) populateEvents(updatedConfig map[string]interface{}) ([]*event
 
 	// update with latest config
 	rs.Configurations = newConfig
-
-	return events, nil
-}
-
-func (rs *Source) setKeyValueByDI(updatedConfig map[string]map[string]interface{}, dimensionInfo string) ([]*event.Event, error) {
-	events := make([]*event.Event, 0)
-	newConfigForDI := make(map[string]map[string]interface{})
-	rs.Lock()
-	defer rs.Unlock()
-
-	currentConfig := rs.dimensionsInfoConfiguration
-
-	// generate create and update event
-	for key, value := range updatedConfig {
-		if key == dimensionInfo {
-			newConfigForDI[key] = value
-			for k, v := range value {
-				if len(currentConfig) == 0 {
-					events = append(events, rs.constructEvent(event.Create, k, v))
-				}
-				for diKey, val := range currentConfig {
-					if diKey == dimensionInfo {
-						currentValue, ok := val[k]
-						if !ok { // if new configuration introduced
-							events = append(events, rs.constructEvent(event.Create, k, v))
-						} else if currentValue != v {
-							events = append(events, rs.constructEvent(event.Update, k, v))
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// generate delete event
-	for key, value := range currentConfig {
-		if key == dimensionInfo {
-			for k, v := range value {
-				for _, val := range newConfigForDI {
-					_, ok := val[k]
-					if !ok {
-						events = append(events, rs.constructEvent(event.Delete, k, v))
-					}
-				}
-			}
-		}
-	}
-
-	// update with latest config
-	rs.dimensionsInfoConfiguration = newConfigForDI
 
 	return events, nil
 }
