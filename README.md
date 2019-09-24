@@ -52,6 +52,38 @@ currently we have 2 file handler implementation
 
 #### archaius API
 developer usually only use API to interact with archaius, check [API](archaius.go)
+to init archaius 
+```go
+archaius.Init()
+```
+then you init archaius you can decide what kind of source should be enable, 
+required file list check file existing and add them into file source, if not existing, init fails
+below add env and mem source 
+```go
+	err = archaius.Init(
+		archaius.WithRequiredFiles([]string{filename1}),
+		archaius.WithOptionalFiles([]string{filename2}),
+		archaius.WithENVSource(),
+		archaius.WithMemorySource())
+```
+
+### Put value into archaius
+Notice, key value will be only put into memory source, it could be overwritten by remote config
+```go
+archaius.Set("interval", 30)
+archaius.Set("ttl", "30s")
+archaius.Set("enable", false)
+```
+
+### Read config files
+```go
+archaius.AddFile("/etc/component/xxx.yaml")
+
+```
+by default archaius only support yaml files, but you can extend file handler to handle other file 
+```go
+archaius.AddFile("/etc/component/xxx.txt", archaius.WithFileHandler(util.FileHandler(util.UseFileNameAsKeyContentAsValue))
+```
 
 ### Example: Manage local configurations 
 Complete [example](https://github.com/go-chassis/go-archaius/tree/master/examples/file)
@@ -59,12 +91,12 @@ Complete [example](https://github.com/go-chassis/go-archaius/tree/master/example
 ### Example: Manage key value change events
 Complete [example](https://github.com/go-chassis/go-archaius/tree/master/examples/event)
 
-### Example: Manage runtime configurations by remote config server
+### enable remote source
 import a config client implementation
 ```go
-import _ "github.com/go-chassis/go-cc-client/servicecomb"
+import _ "github.com/go-chassis/go-chassis-config/servicecomb"
 ```
-give config client to init config center source
+set config client to init config center source
 ```go
 	ci := archaius.RemoteInfo{
 	//input your remote source config
