@@ -56,11 +56,11 @@ to init archaius
 ```go
 archaius.Init()
 ```
-then you init archaius you can decide what kind of source should be enable, 
-required file list check file existing and add them into file source, if not existing, init fails
-below add env and mem source 
+when you init archaius you can decide what kind of source should be enable, 
+required file slice was given, archaius checks file existing and add them into file source, if not exist, init fails
+below example also add env and mem source 
 ```go
-	err = archaius.Init(
+	err := archaius.Init(
 		archaius.WithRequiredFiles([]string{filename1}),
 		archaius.WithOptionalFiles([]string{filename2}),
 		archaius.WithENVSource(),
@@ -76,22 +76,34 @@ archaius.Set("enable", false)
 ```
 
 ### Read config files
+if you have a yaml config
+```yaml
+some:
+  config: 1
+ttl: 30s
+```
+after adding file
 ```go
 archaius.AddFile("/etc/component/xxx.yaml")
-
 ```
-by default archaius only support yaml files, but you can extend file handler to handle other file 
+you can get value 
+```
+ttl := archaius.GetString("ttl", "60s")
+i := archaius.GetInt("some.config", "")
+```
+
+by default archaius only support yaml files, but you can extend file handler to handle other file,
+for example we only consider file name as a key, content is the value
 ```go
-archaius.AddFile("/etc/component/xxx.txt", archaius.WithFileHandler(util.FileHandler(util.UseFileNameAsKeyContentAsValue))
+archaius.AddFile("xxx.txt", archaius.WithFileHandler(util.FileHandler(util.UseFileNameAsKeyContentAsValue))
+```
+```
+you can get value 
+```
+v := archaius.GetString("/etc/component/xxx.txt", "")
 ```
 
-### Example: Manage local configurations 
-Complete [example](https://github.com/go-chassis/go-archaius/tree/master/examples/file)
-
-### Example: Manage key value change events
-Complete [example](https://github.com/go-chassis/go-archaius/tree/master/examples/event)
-
-### enable remote source
+### Enable remote source
 import a config client implementation
 ```go
 import _ "github.com/go-chassis/go-chassis-config/servicecomb"
@@ -115,3 +127,10 @@ set config client to init config center source
 
 To check config server that archaius supports, 
 access https://github.com/go-chassis/go-chassis-config
+
+### Example: Manage local configurations 
+Complete [example](https://github.com/go-chassis/go-archaius/tree/master/examples/file)
+
+### Example: Manage key value change events
+Complete [example](https://github.com/go-chassis/go-archaius/tree/master/examples/event)
+
