@@ -51,14 +51,15 @@ check [FileHandler](source/util/file_handler.go),
 currently we have 2 file handler implementation
 
 #### archaius API
-developer usually only use API to interact with archaius, check [API](archaius.go)
-to init archaius 
+developer usually only use API to interact with archaius, check [API](archaius.go).
+
+To init archaius 
 ```go
 archaius.Init()
 ```
 when you init archaius you can decide what kind of source should be enable, 
-required file slice was given, archaius checks file existing and add them into file source, if not exist, init fails
-below example also add env and mem source 
+required file slice was given, archaius checks file existing and add them into file source, if not exist, init fails, 
+below example also enables env and mem sources.
 ```go
 	err := archaius.Init(
 		archaius.WithRequiredFiles([]string{filename1}),
@@ -86,20 +87,22 @@ after adding file
 ```go
 archaius.AddFile("/etc/component/xxx.yaml")
 ```
+
 you can get value 
-```
+
+```go
 ttl := archaius.GetString("ttl", "60s")
 i := archaius.GetInt("some.config", "")
 ```
 
-by default archaius only support yaml files, but you can extend file handler to handle other file,
-for example we only consider file name as a key, content is the value
+by default archaius only support yaml files, but you can extend file handler to handle file in other format,
+for example we only consider file name as a key, content is the value.
 ```go
 archaius.AddFile("xxx.txt", archaius.WithFileHandler(util.FileHandler(util.UseFileNameAsKeyContentAsValue))
 ```
-```
+
 you can get value 
-```
+```go
 v := archaius.GetString("/etc/component/xxx.txt", "")
 ```
 
