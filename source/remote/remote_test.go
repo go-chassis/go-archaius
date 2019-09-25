@@ -102,5 +102,13 @@ func TestNewConfigCenterSource(t *testing.T) {
 	eh := new(EventHandler)
 
 	_ = ccs.Watch(eh)
+	_, _ = cc.PushConfigs(map[string]interface{}{
+		"some.enable": true,
+		"some":        "new",
+	}, nil)
 
+	time.Sleep(2 * time.Second)
+	configs, err = ccs.GetConfigurations()
+	assert.NoError(t, err)
+	assert.Equal(t, "new", configs["some"])
 }

@@ -24,7 +24,7 @@ type RemoteInfo struct {
 	//Pull Configuration interval, unit is second
 	RefreshInterval int
 
-	//Configurations for config client implementation
+	//currentConfig for config client implementation
 	//if you already create a client, don't need to set those config
 	URL           string
 	TenantName    string
