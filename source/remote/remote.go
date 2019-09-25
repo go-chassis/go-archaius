@@ -46,7 +46,7 @@ type Source struct {
 	dimensions []map[string]string
 
 	sync.RWMutex
-	Configurations map[string]interface{}
+	currentConfig map[string]interface{}
 
 	dimensionsInfoConfiguration  map[string]map[string]interface{}
 	dimensionsInfoConfigurations []map[string]map[string]interface{}
@@ -82,7 +82,7 @@ func (rs *Source) GetConfigurations() (map[string]interface{}, error) {
 	}
 
 	rs.Lock()
-	for key, value := range rs.Configurations {
+	for key, value := range rs.currentConfig {
 		configMap[key] = value
 	}
 	rs.Unlock()
@@ -115,19 +115,18 @@ func (rs *Source) refreshConfigurations() error {
 	openlogging.Debug("pull configs", openlogging.WithTags(openlogging.Tags{
 		"config": config,
 	}))
-	rs.Lock()
-	rs.Configurations = config
-	rs.Unlock()
 	//Populate the events based on the changed value between current config and newly received Config
 	events, err = rs.populateEvents(config)
 	if err != nil {
 		openlogging.GetLogger().Warnf("error in generating event", err)
 		return err
 	}
-
+	rs.Lock()
+	rs.currentConfig = config
+	rs.Unlock()
 	//Generate OnEvent Callback based on the events created
 	if rs.eh != nil {
-		openlogging.GetLogger().Debugf("event on receive %+v", events)
+		openlogging.GetLogger().Debugf("event on receive %s", events)
 		for _, e := range events {
 			rs.eh.OnEvent(e)
 		}
@@ -139,7 +138,7 @@ func (rs *Source) refreshConfigurations() error {
 //GetConfigurationByKey gets required configuration for a particular key
 func (rs *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	rs.Lock()
-	configSrcVal, ok := rs.Configurations[key]
+	configSrcVal, ok := rs.currentConfig[key]
 	rs.Unlock()
 	if ok {
 		return configSrcVal, nil
@@ -209,23 +208,19 @@ func (rs *Source) Cleanup() error {
 	rs.connsLock.Lock()
 	defer rs.connsLock.Unlock()
 
-	rs.Configurations = nil
+	rs.currentConfig = nil
 
 	return nil
 }
 
 func (rs *Source) populateEvents(updatedConfig map[string]interface{}) ([]*event.Event, error) {
 	events := make([]*event.Event, 0)
-	newConfig := make(map[string]interface{})
 	rs.Lock()
 	defer rs.Unlock()
 
-	currentConfig := rs.Configurations
-
 	// generate create and update event
 	for key, value := range updatedConfig {
-		newConfig[key] = value
-		currentValue, ok := currentConfig[key]
+		currentValue, ok := rs.currentConfig[key]
 		if !ok { // if new configuration introduced
 			events = append(events, rs.constructEvent(event.Create, key, value))
 		} else if !reflect.DeepEqual(currentValue, value) {
@@ -234,15 +229,12 @@ func (rs *Source) populateEvents(updatedConfig map[string]interface{}) ([]*event
 	}
 
 	// generate delete event
-	for key, value := range currentConfig {
-		_, ok := newConfig[key]
+	for key, value := range rs.currentConfig {
+		_, ok := updatedConfig[key]
 		if !ok { // when old config not present in new config
 			events = append(events, rs.constructEvent(event.Delete, key, value))
 		}
 	}
-
-	// update with latest config
-	rs.Configurations = newConfig
 
 	return events, nil
 }
