@@ -7,17 +7,16 @@ import (
 	"time"
 
 	"errors"
-	"github.com/go-chassis/go-chassis-config"
 	"testing"
 )
 
 type mockClient struct {
-	opts        config.Options
+	opts        remote.Options
 	configsInfo map[string]interface{}
 }
 
 // NewClient init the necessary objects needed for seamless communication to Kie Server
-func NewClient(options config.Options) (config.Client, error) {
+func NewClient(options remote.Options) (remote.Client, error) {
 	kieClient := &mockClient{
 		opts: options,
 		configsInfo: map[string]interface{}{
@@ -27,7 +26,7 @@ func NewClient(options config.Options) (config.Client, error) {
 	return kieClient, nil
 }
 func init() {
-	config.InstallConfigClientPlugin("mock-client", NewClient)
+	remote.InstallConfigClientPlugin("mock-client", NewClient)
 }
 
 // PullConfigs is used for pull config from servicecomb-kie
@@ -65,7 +64,7 @@ func (c *mockClient) Watch(f func(map[string]interface{}), errHandler func(err e
 }
 
 //Options.
-func (c *mockClient) Options() config.Options {
+func (c *mockClient) Options() remote.Options {
 	return c.opts
 }
 
@@ -82,7 +81,7 @@ func (ccenter *EventHandler) OnEvent(event *event.Event) {
 }
 
 func TestNewConfigCenterSource(t *testing.T) {
-	opts := config.Options{
+	opts := remote.Options{
 		Labels: map[string]string{
 			"app":         "default",
 			"serviceName": "cart",
@@ -90,7 +89,7 @@ func TestNewConfigCenterSource(t *testing.T) {
 		TenantName: "default",
 		ServerURI:  "http://",
 	}
-	cc, err := config.NewClient("mock-client", opts)
+	cc, err := remote.NewClient("mock-client", opts)
 	assert.NoError(t, err)
 	ccs := remote.NewConfigCenterSource(cc, 1,
 		1)

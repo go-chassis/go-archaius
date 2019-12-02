@@ -15,7 +15,6 @@ import (
 	"github.com/go-chassis/go-archaius/source/file"
 	"github.com/go-chassis/go-archaius/source/mem"
 	"github.com/go-chassis/go-archaius/source/remote"
-	"github.com/go-chassis/go-chassis-config"
 	"github.com/go-mesh/openlogging"
 )
 
@@ -119,7 +118,7 @@ func CustomInit(sources ...source.ConfigSource) error {
 //EnableRemoteSource create a remote source singleton
 //A config center source pull remote config server key values into local memory
 //so that you can use GetXXX to get value easily
-func EnableRemoteSource(ci *RemoteInfo, cc config.Client) error {
+func EnableRemoteSource(ci *RemoteInfo, cc remote.Client) error {
 	if ci == nil {
 		return errors.New("RemoteInfo can not be empty")
 	}
@@ -130,7 +129,7 @@ func EnableRemoteSource(ci *RemoteInfo, cc config.Client) error {
 
 	var err error
 	if cc == nil {
-		opts := config.Options{
+		opts := remote.Options{
 			ServerURI:     ci.URL,
 			TenantName:    ci.TenantName,
 			EnableSSL:     ci.EnableSSL,
@@ -139,7 +138,7 @@ func EnableRemoteSource(ci *RemoteInfo, cc config.Client) error {
 			AutoDiscovery: ci.AutoDiscovery,
 			Labels:        ci.DefaultDimension,
 		}
-		cc, err = config.NewClient(ci.ClientType, opts)
+		cc, err = remote.NewClient(ci.ClientType, opts)
 		if err != nil {
 			return err
 		}
