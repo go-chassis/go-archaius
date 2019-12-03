@@ -25,7 +25,6 @@ import (
 
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source"
-	"github.com/go-chassis/go-chassis-config"
 	"github.com/go-mesh/openlogging"
 )
 
@@ -39,7 +38,7 @@ const (
 
 //Source handles configs from config center
 type Source struct {
-	cc config.Client
+	cc Client
 
 	connsLock sync.Mutex
 
@@ -59,7 +58,7 @@ type Source struct {
 }
 
 //NewConfigCenterSource initializes all components of configuration center
-func NewConfigCenterSource(cc config.Client, refreshMode, refreshInterval int) source.ConfigSource {
+func NewConfigCenterSource(cc Client, refreshMode, refreshInterval int) source.ConfigSource {
 	s := new(Source)
 	s.dimensions = []map[string]string{cc.Options().Labels}
 	s.priority = configCenterSourcePriority

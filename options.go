@@ -2,9 +2,8 @@ package archaius
 
 import (
 	"crypto/tls"
+	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/go-chassis/go-archaius/source/util"
-
-	"github.com/go-chassis/go-chassis-config"
 )
 
 // RemoteInfo has attribute for config center source initialization
@@ -42,7 +41,7 @@ type Options struct {
 	OptionalFiles []string
 	FileHandler   util.FileHandler
 	RemoteInfo    *RemoteInfo
-	ConfigClient  config.Client
+	ConfigClient  remote.Client
 	UseCLISource  bool
 	UseENVSource  bool
 	UseMemSource  bool
@@ -77,7 +76,7 @@ func WithDefaultFileHandler(handler util.FileHandler) Option {
 //RemoteInfo is required if you want to use config center source
 //client is optional,if client is nil, archaius will create one based on RemoteInfo
 //config client will be injected into config source as a client to interact with a config server
-func WithRemoteSource(ri *RemoteInfo, c config.Client) Option {
+func WithRemoteSource(ri *RemoteInfo, c remote.Client) Option {
 	return func(options *Options) {
 		options.RemoteInfo = ri
 		options.ConfigClient = c

@@ -1,7 +1,5 @@
-go-chassis Go Archaius
-Copyright 2019-present, tianxiaoliang
-
-This product includes software developed at
+go archaius
+Copyright 2017-2019 Huawei Technologies Co.,Ltd.
 
 ====================================================================
 For core/cast/cast.go (Forked from github.com/spf13/cast)

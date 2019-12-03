@@ -69,7 +69,7 @@ below example also enables env and mem sources.
 ```
 
 ### Put value into archaius
-Notice, key value will be only put into memory source, it could be overwritten by remote config
+Notice, key value will be only put into memory source, it could be overwritten by remote config as the precedence list
 ```go
 archaius.Set("interval", 30)
 archaius.Set("ttl", "30s")
@@ -109,7 +109,7 @@ v := archaius.GetString("/etc/component/xxx.txt", "")
 ### Enable remote source
 import a config client implementation
 ```go
-import _ "github.com/go-chassis/go-chassis-config/servicecomb"
+import _ "github.com/go-chassis/go-archaius/source/remote/configcenter"
 ```
 set config client to init config center source
 ```go
@@ -117,7 +117,7 @@ set config client to init config center source
 	//input your remote source config
 	}
 	//create config client 
-	cc,_:=ccclient.NewClient("servicecomb-kie",ccclient.Options{
+	cc,_:=remote.NewClient("config_center",ccclient.Options{
     		ServerURI:"the address of config server endpoint",
     	})
 	//manage local and remote key value at same time
@@ -128,8 +128,12 @@ set config client to init config center source
 	)
 ```
 
-To check config server that archaius supports, 
-access https://github.com/go-chassis/go-chassis-config
+Supported distributed configuration management service:
+
+| name       | import                                         |description    |
+|----------|----------|:-------------:|
+|config_center      |github.com/go-chassis/go-chassis-config/configcenter |huawei cloud CSE config center https://www.huaweicloud.com/product/cse.html |
+|servicecomb-kie    |github.com/apache/servicecomb-kie/client/adaptor     |apache servicecomb-kie https://github.com/apache/servicecomb-kie |
 
 ### Example: Manage local configurations 
 Complete [example](https://github.com/go-chassis/go-archaius/tree/master/examples/file)
