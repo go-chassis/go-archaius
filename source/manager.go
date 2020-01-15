@@ -121,7 +121,7 @@ func (m *Manager) Unmarshal(obj interface{}) error {
 }
 
 // AddSource adds a source to configurationManager
-func (m *Manager) AddSource(source ConfigSource, priority int) error {
+func (m *Manager) AddSource(source ConfigSource) error {
 	if source == nil || source.GetSourceName() == "" {
 		err := errors.New("nil or invalid source supplied")
 		openlogging.GetLogger().Error("nil or invalid source supplied: " + err.Error())

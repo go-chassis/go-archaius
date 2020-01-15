@@ -71,13 +71,13 @@ func Init(opts ...Option) error {
 	if err != nil {
 		return err
 	}
-	err = manager.AddSource(fs, fs.GetPriority())
+	err = manager.AddSource(fs)
 	if err != nil {
 		return err
 	}
 
 	if o.RemoteInfo != nil {
-		if err := EnableRemoteSource(o.RemoteInfo, o.ConfigClient); err != nil {
+		if err = EnableRemoteSource(o.RemoteInfo, o.ConfigClient); err != nil {
 			return err
 		}
 	}
@@ -85,15 +85,21 @@ func Init(opts ...Option) error {
 	// build-in config sources
 	if o.UseMemSource {
 		ms := mem.NewMemoryConfigurationSource()
-		manager.AddSource(ms, ms.GetPriority())
+		if err = manager.AddSource(ms); err != nil {
+			return err
+		}
 	}
 	if o.UseCLISource {
 		cmdSource := cli.NewCommandlineConfigSource()
-		manager.AddSource(cmdSource, cmdSource.GetPriority())
+		if err = manager.AddSource(cmdSource); err != nil {
+			return err
+		}
 	}
 	if o.UseENVSource {
 		envSource := env.NewEnvConfigurationSource()
-		manager.AddSource(envSource, envSource.GetPriority())
+		if err = manager.AddSource(envSource); err != nil {
+			return err
+		}
 	}
 
 	openlogging.Info("archaius init success")
@@ -107,7 +113,7 @@ func CustomInit(sources ...source.ConfigSource) error {
 	var err error
 	manager = source.NewManager()
 	for _, s := range sources {
-		err = manager.AddSource(s, s.GetPriority())
+		err = manager.AddSource(s)
 		if err != nil {
 			return err
 		}
@@ -145,7 +151,7 @@ func EnableRemoteSource(ci *RemoteInfo, cc remote.Client) error {
 	}
 	configCenterSource := remote.NewConfigCenterSource(cc, ci.RefreshMode,
 		ci.RefreshInterval)
-	err = manager.AddSource(configCenterSource, configCenterSource.GetPriority())
+	err = manager.AddSource(configCenterSource)
 	if err != nil {
 		return err
 	}
@@ -263,7 +269,7 @@ func Delete(key string) error {
 
 //AddSource add source implementation
 func AddSource(source source.ConfigSource) error {
-	return manager.AddSource(source, source.GetPriority())
+	return manager.AddSource(source)
 }
 
 //Clean will call config manager CleanUp Method,
