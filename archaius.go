@@ -3,8 +3,10 @@
 package archaius
 
 import (
-	"errors"
+	agollo "github.com/Shonminh/apollo-client"
 	"github.com/go-chassis/go-archaius/cast"
+	"github.com/go-chassis/go-archaius/source/apollo"
+	"github.com/pkg/errors"
 	"os"
 	"strings"
 
@@ -23,6 +25,7 @@ var (
 	fs                  filesource.FileSource
 	running             = false
 	configServerRunning = false
+	apolloRunning       = false
 )
 
 func initFileSource(o *Options) (source.ConfigSource, error) {
@@ -156,6 +159,34 @@ func EnableRemoteSource(ci *RemoteInfo, cc remote.Client) error {
 		return err
 	}
 	configServerRunning = true
+	return nil
+}
+
+// EnableApolloSource create a apollo source singleton
+func EnableApolloSource(apolloInfo ApolloInfo) error {
+	if apolloRunning {
+		openlogging.Warn("can not init apollo server again, call Clean first")
+		return nil
+	}
+
+	if manager == nil {
+		openlogging.Warn("you must call Init method before call EnableApolloSource")
+		return nil
+	}
+
+	opts := []agollo.Option{agollo.WithApolloAddr(apolloInfo.ApolloAddr), agollo.WithAppId(apolloInfo.AppId),
+		agollo.WithNamespaceName(apolloInfo.NamespaceNameList)}
+	if apolloInfo.Cluster != nil {
+		opts = append(opts, agollo.WithCluster(*apolloInfo.Cluster))
+	}
+	apolloSource, err := apollo.NewApolloSource(opts...)
+	if err != nil {
+		return errors.WithMessage(err, "NewApolloSource")
+	}
+	if err = manager.AddSource(apolloSource); err != nil {
+		return errors.WithMessage(err, "AddSource")
+	}
+	apolloRunning = true
 	return nil
 }
 

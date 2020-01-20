@@ -35,6 +35,18 @@ type RemoteInfo struct {
 	RefreshPort   string
 }
 
+// ApolloInfo has attribute for apollo config center source initialization
+type ApolloInfo struct {
+	// apollo address like: https://meta.apollo.com
+	ApolloAddr string
+	// namespace list like: namespace1,namespace2
+	NamespaceNameList string
+	// app id
+	AppId string
+	// cluster, default is `default`
+	Cluster *string
+}
+
 //Options hold options
 type Options struct {
 	RequiredFiles []string
