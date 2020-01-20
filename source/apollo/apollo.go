@@ -115,7 +115,7 @@ func (as *Source) UpdateCallback(apolloEvent *apollo.ChangeEvent) error {
 				EventSource: apolloSourceName,
 				EventType:   eventType,
 				Key:         c.Key,
-				Value:       nil,
+				Value:       c.NewValue,
 			}
 			as.eventHandler.OnEvent(e)
 		}
@@ -123,7 +123,7 @@ func (as *Source) UpdateCallback(apolloEvent *apollo.ChangeEvent) error {
 	return nil
 }
 
-func transformEventType(changeType apollo.ConfigChangeType) string  {
+func transformEventType(changeType apollo.ConfigChangeType) string {
 	switch changeType {
 	case apollo.ADDED:
 		return event.Create
