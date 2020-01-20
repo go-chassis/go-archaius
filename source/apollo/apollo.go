@@ -114,7 +114,7 @@ func (as *Source) UpdateCallback(apolloEvent *apollo.ChangeEvent) error {
 			e := &event.Event{
 				EventSource: apolloSourceName,
 				EventType:   eventType,
-				Key:         c.Key,
+				Key:         apolloEvent.Namespace + "." + c.Key, // to make sure key is prefix with namespace
 				Value:       c.NewValue,
 			}
 			as.eventHandler.OnEvent(e)
