@@ -18,7 +18,7 @@ type Listener struct {
 //Event is a method for QPS event listening
 func (e *Listener) Event(event *event.Event) {
 	openlogging.GetLogger().Info(event.Key)
-	openlogging.GetLogger().Infof(fmt.Sprintf("%s", event.Value))
+	openlogging.GetLogger().Infof(fmt.Sprintf("%v", event.Value))
 	openlogging.GetLogger().Info(event.EventType)
 }
 
