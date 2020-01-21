@@ -19,6 +19,7 @@ package remote
 
 import (
 	"errors"
+	"github.com/go-chassis/go-archaius"
 	"reflect"
 	"sync"
 	"time"
@@ -38,7 +39,7 @@ const (
 
 //Source handles configs from config center
 type Source struct {
-	cc Client
+	c Client
 
 	connsLock sync.Mutex
 
@@ -58,14 +59,28 @@ type Source struct {
 }
 
 //NewConfigCenterSource initializes all components of configuration center
-func NewConfigCenterSource(cc Client, refreshMode, refreshInterval int) source.ConfigSource {
+func NewConfigCenterSource(ci *archaius.RemoteInfo) (source.ConfigSource, error) {
+	opts := Options{
+		ServerURI:     ci.URL,
+		TenantName:    ci.TenantName,
+		EnableSSL:     ci.EnableSSL,
+		TLSConfig:     ci.TLSConfig,
+		RefreshPort:   ci.RefreshPort,
+		AutoDiscovery: ci.AutoDiscovery,
+		Labels:        ci.DefaultDimension,
+	}
+	cc, err := NewClient(ci.ClientType, opts)
+	if err != nil {
+		openlogging.Error(err.Error())
+		return nil, err
+	}
 	s := new(Source)
 	s.dimensions = []map[string]string{cc.Options().Labels}
 	s.priority = configCenterSourcePriority
-	s.cc = cc
-	s.RefreshMode = refreshMode
-	s.RefreshInterval = time.Second * time.Duration(refreshInterval)
-	return s
+	s.c = cc
+	s.RefreshMode = ci.RefreshMode
+	s.RefreshInterval = time.Second * time.Duration(ci.RefreshInterval)
+	return s, nil
 }
 
 //GetConfigurations pull config from remote and start refresh configs interval
@@ -106,7 +121,7 @@ func (rs *Source) refreshConfigurations() error {
 		events []*event.Event
 	)
 
-	config, err = rs.cc.PullConfigs(rs.dimensions...)
+	config, err = rs.c.PullConfigs(rs.dimensions...)
 	if err != nil {
 		openlogging.GetLogger().Warnf("Failed to pull configurations from config center server", err) //Warn
 		return err
@@ -175,7 +190,7 @@ func (rs *Source) Watch(callback source.EventHandler) error {
 		// Pull All the configuration for the first time.
 		rs.refreshConfigurations()
 		//Start watch and receive change events.
-		err := rs.cc.Watch(
+		err := rs.c.Watch(
 			func(kv map[string]interface{}) {
 				events, err := rs.populateEvents(kv)
 				if err != nil {
@@ -256,4 +271,7 @@ func (rs *Source) Set(key string, value interface{}) error {
 //Delete no use
 func (rs *Source) Delete(key string) error {
 	return nil
+}
+func init() {
+	archaius.InstallRemoteSource("config-center", NewConfigCenterSource)
 }

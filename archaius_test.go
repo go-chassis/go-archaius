@@ -145,11 +145,7 @@ metadata:
 
 }
 func TestInitConfigCenter(t *testing.T) {
-	err := archaius.EnableRemoteSource(&archaius.RemoteInfo{}, nil)
-	assert.Error(t, err)
-	err = archaius.EnableRemoteSource(&archaius.RemoteInfo{
-		ClientType: "fake",
-	}, nil)
+	err := archaius.EnableRemoteSource("fake", nil)
 	assert.Error(t, err)
 }
 func TestClean(t *testing.T) {
@@ -157,5 +153,4 @@ func TestClean(t *testing.T) {
 	assert.NoError(t, err)
 	s := archaius.Get("age")
 	assert.Equal(t, nil, s)
-
 }
