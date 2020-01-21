@@ -1,13 +1,14 @@
 package remote_test
 
 import (
+	"errors"
+	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source/remote"
+	_ "github.com/go-chassis/go-archaius/source/remote/configcenter"
 	"github.com/stretchr/testify/assert"
-	"time"
-
-	"errors"
 	"testing"
+	"time"
 )
 
 type mockClient struct {
@@ -81,33 +82,19 @@ func (ccenter *EventHandler) OnEvent(event *event.Event) {
 }
 
 func TestNewConfigCenterSource(t *testing.T) {
-	opts := remote.Options{
-		Labels: map[string]string{
+	opts := &archaius.RemoteInfo{
+		DefaultDimension: map[string]string{
 			"app":         "default",
 			"serviceName": "cart",
 		},
 		TenantName: "default",
-		ServerURI:  "http://",
+		URL:        "http://",
+		ClientType: "mock-client",
 	}
-	cc, err := remote.NewClient("mock-client", opts)
+	ccs, err := remote.NewConfigCenterSource(opts)
 	assert.NoError(t, err)
-	ccs := remote.NewConfigCenterSource(cc, 1,
-		1)
-
 	configs, err := ccs.GetConfigurations()
 	assert.NoError(t, err)
 	assert.Equal(t, true, configs["some.enable"])
 
-	eh := new(EventHandler)
-
-	_ = ccs.Watch(eh)
-	_, _ = cc.PushConfigs(map[string]interface{}{
-		"some.enable": true,
-		"some":        "new",
-	}, nil)
-
-	time.Sleep(2 * time.Second)
-	configs, err = ccs.GetConfigurations()
-	assert.NoError(t, err)
-	assert.Equal(t, "new", configs["some"])
 }

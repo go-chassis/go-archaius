@@ -27,9 +27,9 @@ and you can use archaius API to get its value
 
 Here is the precedence list:
 
-0: remote source - use [config client](https://github.com/go-chassis/go-chassis-config) to pull remote config server data into local
+0: remote source - pull remote config server data into local
 
-1: Memory source - after process start, you can set key value in runtime.
+1: Memory source - after init, you can set key value in runtime.
 
 2: Command Line source - read the command lines arguments, while starting the process.
 
@@ -107,24 +107,24 @@ v := archaius.GetString("/etc/component/xxx.txt", "")
 ```
 
 ### Enable remote source
-import a config client implementation
+Before you enable a remote source, you must install a implementation first
 ```go
-import _ "github.com/go-chassis/go-archaius/source/remote/configcenter"
+archaius.InstallRemoteSource("config_center", remote.NewConfigCenterSource)
 ```
-set config client to init config center source
+set remote info to init remote source
 ```go
-	ci := archaius.RemoteInfo{
+	ri := archaius.RemoteInfo{
 	//input your remote source config
 	}
 	//create config client 
-	cc,_:=remote.NewClient("config_center",ccclient.Options{
+	cc,_:=remote.NewClient("config-center",ccclient.Options{
     		ServerURI:"the address of config server endpoint",
     	})
 	//manage local and remote key value at same time
 	err = archaius.Init(
 		archaius.WithRequiredFiles([]string{filename1}),
 		archaius.WithOptionalFiles([]string{filename2}),
-		archaius.WithRemoteSource(ci, cc),
+		archaius.WithRemoteSource("config-center", ri),
 	)
 ```
 
@@ -132,8 +132,7 @@ Supported distributed configuration management service:
 
 | name       | import                                         |description    |
 |----------|----------|:-------------:|
-|config_center      |github.com/go-chassis/go-chassis-config/configcenter |huawei cloud CSE config center https://www.huaweicloud.com/product/cse.html |
-|servicecomb-kie    |github.com/apache/servicecomb-kie/client/adaptor     |apache servicecomb-kie https://github.com/apache/servicecomb-kie |
+|config center      |github.com/go-chassis/go-archaius/configcenter |huawei cloud CSE config center https://www.huaweicloud.com/product/cse.html |
 
 ### Example: Manage local configurations 
 Complete [example](https://github.com/go-chassis/go-archaius/tree/master/examples/file)

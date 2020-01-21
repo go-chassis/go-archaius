@@ -4,17 +4,16 @@ package archaius
 
 import (
 	"errors"
-	"github.com/go-chassis/go-archaius/cast"
 	"os"
 	"strings"
 
+	"github.com/go-chassis/go-archaius/cast"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source"
 	"github.com/go-chassis/go-archaius/source/cli"
 	"github.com/go-chassis/go-archaius/source/env"
 	"github.com/go-chassis/go-archaius/source/file"
 	"github.com/go-chassis/go-archaius/source/mem"
-	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/go-mesh/openlogging"
 )
 
@@ -76,8 +75,8 @@ func Init(opts ...Option) error {
 		return err
 	}
 
-	if o.RemoteInfo != nil {
-		if err = EnableRemoteSource(o.RemoteInfo, o.ConfigClient); err != nil {
+	if o.RemoteSource != "" {
+		if err = EnableRemoteSource(o.RemoteSource, o.RemoteInfo); err != nil {
 			return err
 		}
 	}
@@ -124,7 +123,7 @@ func CustomInit(sources ...source.ConfigSource) error {
 //EnableRemoteSource create a remote source singleton
 //A config center source pull remote config server key values into local memory
 //so that you can use GetXXX to get value easily
-func EnableRemoteSource(ci *RemoteInfo, cc remote.Client) error {
+func EnableRemoteSource(remoteSource string, ci *RemoteInfo) error {
 	if ci == nil {
 		return errors.New("RemoteInfo can not be empty")
 	}
@@ -133,28 +132,15 @@ func EnableRemoteSource(ci *RemoteInfo, cc remote.Client) error {
 		return nil
 	}
 
-	var err error
-	if cc == nil {
-		opts := remote.Options{
-			ServerURI:     ci.URL,
-			TenantName:    ci.TenantName,
-			EnableSSL:     ci.EnableSSL,
-			TLSConfig:     ci.TLSConfig,
-			RefreshPort:   ci.RefreshPort,
-			AutoDiscovery: ci.AutoDiscovery,
-			Labels:        ci.DefaultDimension,
-		}
-		cc, err = remote.NewClient(ci.ClientType, opts)
-		if err != nil {
-			return err
-		}
+	f, ok := newFuncMap[remoteSource]
+	if !ok {
+		return errors.New("don not support remote source: " + remoteSource)
 	}
-	configCenterSource := remote.NewConfigCenterSource(cc, ci.RefreshMode,
-		ci.RefreshInterval)
-	err = manager.AddSource(configCenterSource)
+	s, err := f(ci)
 	if err != nil {
 		return err
 	}
+	err = manager.AddSource(s)
 	configServerRunning = true
 	return nil
 }

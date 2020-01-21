@@ -31,9 +31,9 @@ type Client interface {
 	PullConfigs(labels ...map[string]string) (map[string]interface{}, error)
 	//PullConfig pull one config from remote
 	PullConfig(key, contentType string, labels map[string]string) (interface{}, error)
-	// PushConfigs push config to cc
+	// PushConfigs push config to c
 	PushConfigs(data map[string]interface{}, labels map[string]string) (map[string]interface{}, error)
-	// DeleteConfigsByKeys delete config for cc by keys
+	// DeleteConfigsByKeys delete config for c by keys
 	DeleteConfigsByKeys(keys []string, labels map[string]string) (map[string]interface{}, error)
 	//Watch get kv change results, you can compare them with local kv cache and refresh local cache
 	Watch(f func(map[string]interface{}), errHandler func(err error), labels map[string]string) error
