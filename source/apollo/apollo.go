@@ -8,9 +8,9 @@ import (
 	"sync"
 )
 
+// Source apollo source
 type Source struct {
-	priority      int
-	currentConfig map[string]interface{} // current config
+	priority int
 	sync.RWMutex
 	eventHandler source.EventHandler
 }
@@ -26,6 +26,7 @@ var (
 
 type NamespaceParser func(originalKey string) (namespaceName string)
 
+// NewApolloSource get a apollo source singleton, and pull configs at once after init apollo client.
 func NewApolloSource(opts ...apollo.Option) (source.ConfigSource, error) {
 	as := new(Source)
 	as.priority = defaultApolloSourcePriority
@@ -35,12 +36,7 @@ func NewApolloSource(opts ...apollo.Option) (source.ConfigSource, error) {
 	return as, nil
 }
 
-// get namespace list
-func getNamespaceList() []string {
-	return apollo.GetNamespaceList()
-}
-
-// GetConfigurations pull config from apollo config center and start refresh configs interval.
+// GetConfigurations get config cache map from apollo client.
 func (as *Source) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{}) // 该config的value表示的source
 	as.Lock()
@@ -61,6 +57,7 @@ func (as *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	return value, nil
 }
 
+// Watch register change event handler and start refresh configs interval.
 func (as *Source) Watch(callBack source.EventHandler) error {
 	as.eventHandler = callBack
 	apollo.RegChangeEventHandler(as.UpdateCallback)
@@ -71,19 +68,23 @@ func (as *Source) Watch(callBack source.EventHandler) error {
 	return nil
 }
 
+// GetPriority get priority
 func (as *Source) GetPriority() int {
 	return as.priority
 }
 
+// SetPriority set priority
 func (as *Source) SetPriority(priority int) {
 	as.priority = priority
 }
 
+// Cleanup clean apollo cache from apollo client
 func (as *Source) Cleanup() error {
 	apollo.Cleanup()
 	return nil
 }
 
+// GetSourceName get source name
 func (as *Source) GetSourceName() string {
 	return apolloSourceName
 }
@@ -103,6 +104,7 @@ func (as *Source) Delete(key string) error {
 	return nil
 }
 
+// UpdateCallback callback function when config updates
 func (as *Source) UpdateCallback(apolloEvent *apollo.ChangeEvent) error {
 	if as.eventHandler != nil {
 		for _, c := range apolloEvent.Changes {
@@ -123,6 +125,7 @@ func (as *Source) UpdateCallback(apolloEvent *apollo.ChangeEvent) error {
 	return nil
 }
 
+// transformEventType transform change type
 func transformEventType(changeType apollo.ConfigChangeType) string {
 	switch changeType {
 	case apollo.ADDED:

@@ -174,8 +174,12 @@ func EnableApolloSource(apolloInfo ApolloInfo) error {
 		return nil
 	}
 
-	opts := []agollo.Option{agollo.WithApolloAddr(apolloInfo.ApolloAddr), agollo.WithAppId(apolloInfo.AppId),
-		agollo.WithNamespaceName(apolloInfo.NamespaceNameList)}
+	opts := []agollo.Option{
+		agollo.WithApolloAddr(apolloInfo.ApolloAddr),
+		agollo.WithAppId(apolloInfo.AppId),
+		agollo.WithNamespaceName(apolloInfo.NamespaceNameList),
+		agollo.WithLogFunc(openlogging.GetLogger().Debugf, openlogging.GetLogger().Infof, openlogging.GetLogger().Errorf),
+	}
 	if apolloInfo.Cluster != nil {
 		opts = append(opts, agollo.WithCluster(*apolloInfo.Cluster))
 	}
