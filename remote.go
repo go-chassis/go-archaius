@@ -21,6 +21,13 @@ import "github.com/go-chassis/go-archaius/source"
 
 var newFuncMap = make(map[string]NewRemoteSource)
 
+const (
+	// ApolloSource is for apollo source
+	ApolloSource = "apollo"
+	// ConfigCenterSource is for config center source
+	ConfigCenterSource = "config_center"
+)
+
 //NewRemoteSource create a new remote source
 type NewRemoteSource func(info *RemoteInfo) (source.ConfigSource, error)
 

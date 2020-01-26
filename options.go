@@ -32,18 +32,9 @@ type RemoteInfo struct {
 	ClientType    string
 	APIVersion    string
 	RefreshPort   string
-}
-
-// ApolloInfo has attribute for apollo config center source initialization
-type ApolloInfo struct {
-	// apollo address like: https://meta.apollo.com
-	ApolloAddr string
-	// namespace list like: namespace1,namespace2
-	NamespaceNameList string
-	// app id
-	AppId string
-	// cluster, default is `default`
-	Cluster *string
+	NamespaceList string // apollo namespace list, if you disable apollo, ignore it
+	AppID         string // apollo app id, if you disable apollo, ignore it
+	Cluster       string // apollo cluster, if you disable apollo, ignore it
 }
 
 //Options hold options

@@ -1,6 +1,7 @@
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Shonminh/apollo-client v0.1.0 h1:PpX/KoyVYeHQUBYkPGPBTX4WM7tk7kT90J4oOO3KD3o=
 github.com/Shonminh/apollo-client v0.1.0/go.mod h1:Jk6K99uIGxQm7Uyy1gCQTvM/kc1YLp4Qo9/jtGkEXvI=
+github.com/Shonminh/apollo-client v0.2.0/go.mod h1:Jk6K99uIGxQm7Uyy1gCQTvM/kc1YLp4Qo9/jtGkEXvI=
 github.com/cespare/xxhash v1.1.0 h1:a6HrQnmkObjyL+Gs60czilIUGqrzKutQD6XZog3p+ko=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
 github.com/coocood/freecache v1.0.1 h1:oFyo4msX2c0QIKU+kuMJUwsKamJ+AKc2JJrKcMszJ5M=

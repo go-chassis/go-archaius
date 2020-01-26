@@ -2,8 +2,10 @@ package apollo
 
 import (
 	apollo "github.com/Shonminh/apollo-client"
+	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source"
+	"github.com/go-mesh/openlogging"
 	"github.com/pkg/errors"
 	"sync"
 )
@@ -24,12 +26,25 @@ var (
 	gStartApolloOnce sync.Once
 )
 
-type NamespaceParser func(originalKey string) (namespaceName string)
+// init function
+func init() {
+	archaius.InstallRemoteSource(archaius.ApolloSource, NewApolloSource)
+}
 
 // NewApolloSource get a apollo source singleton, and pull configs at once after init apollo client.
-func NewApolloSource(opts ...apollo.Option) (source.ConfigSource, error) {
+func NewApolloSource(remoteInfo *archaius.RemoteInfo) (source.ConfigSource, error) {
 	as := new(Source)
 	as.priority = defaultApolloSourcePriority
+	opts := []apollo.Option{
+		apollo.WithApolloAddr(remoteInfo.URL),
+		apollo.WithAppId(remoteInfo.AppID),
+		apollo.WithNamespaceName(remoteInfo.NamespaceList),
+		apollo.WithLogFunc(openlogging.GetLogger().Debugf, openlogging.GetLogger().Infof, openlogging.GetLogger().Errorf),
+	}
+
+	if remoteInfo.Cluster != "" {
+		opts = append(opts, apollo.WithCluster(remoteInfo.Cluster))
+	}
 	if err := apollo.Init(opts...); err != nil {
 		return nil, errors.WithMessage(err, "apollo client init failed")
 	}
@@ -89,17 +104,17 @@ func (as *Source) GetSourceName() string {
 	return apolloSourceName
 }
 
-// no use
+// AddDimensionInfo no use
 func (as *Source) AddDimensionInfo(labels map[string]string) error {
 	return nil
 }
 
-// no use
+// Set no use
 func (as *Source) Set(key string, value interface{}) error {
 	return nil
 }
 
-// no use
+// Delete no use
 func (as *Source) Delete(key string) error {
 	return nil
 }
