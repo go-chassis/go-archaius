@@ -1,12 +1,12 @@
 package apollo
 
 import (
+	"errors"
 	apollo "github.com/Shonminh/apollo-client"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source"
 	"github.com/go-mesh/openlogging"
-	"github.com/pkg/errors"
 	"sync"
 )
 
@@ -46,7 +46,7 @@ func NewApolloSource(remoteInfo *archaius.RemoteInfo) (source.ConfigSource, erro
 		opts = append(opts, apollo.WithCluster(remoteInfo.Cluster))
 	}
 	if err := apollo.Init(opts...); err != nil {
-		return nil, errors.WithMessage(err, "apollo client init failed")
+		return nil, errors.New("apollo client init failed, error=" + err.Error())
 	}
 	return as, nil
 }
@@ -67,7 +67,7 @@ func (as *Source) GetConfigurations() (map[string]interface{}, error) {
 func (as *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	value, err := apollo.GetConfigByKey(key)
 	if err != nil {
-		return nil, errors.WithMessage(err, "GetConfigByKey")
+		return nil, errors.New( "GetConfigByKey failed, error=" + err.Error())
 	}
 	return value, nil
 }

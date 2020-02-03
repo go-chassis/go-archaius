@@ -14,4 +14,4 @@ go build apollo.go
 
 ***NOTE***
 
-If you want to see changes, modify config in your apollo web page, and check thw standard out to see events.
+If you want to see changes, modify config in your apollo web page, and check the standard out to see events.

@@ -3,7 +3,7 @@
 package archaius
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 	"os"
 	"strings"
 
