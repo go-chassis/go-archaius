@@ -67,7 +67,7 @@ func (as *Source) GetConfigurations() (map[string]interface{}, error) {
 func (as *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	value, err := apollo.GetConfigByKey(key)
 	if err != nil {
-		return nil, errors.New( "GetConfigByKey failed, error=" + err.Error())
+		return nil, errors.New("GetConfigByKey failed, error=" + err.Error())
 	}
 	return value, nil
 }
