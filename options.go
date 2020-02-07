@@ -32,9 +32,6 @@ type RemoteInfo struct {
 	ClientType    string
 	APIVersion    string
 	RefreshPort   string
-	NamespaceList string // apollo namespace list, if you disable apollo, ignore it
-	AppID         string // apollo app id, if you disable apollo, ignore it
-	Cluster       string // apollo cluster, if you disable apollo, ignore it
 }
 
 //Options hold options

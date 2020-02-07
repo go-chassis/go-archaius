@@ -20,6 +20,12 @@ type Source struct {
 const (
 	defaultApolloSourcePriority = 0 // default priority is 0
 	apolloSourceName            = "ApolloConfigSource"
+	// AppID app id const
+	AppID = "app_id"
+	// NamespaceList namespace list const
+	NamespaceList = "namespace_list"
+	// Cluster cluster const
+	Cluster = "cluster"
 )
 
 var (
@@ -37,13 +43,13 @@ func NewApolloSource(remoteInfo *archaius.RemoteInfo) (source.ConfigSource, erro
 	as.priority = defaultApolloSourcePriority
 	opts := []apollo.Option{
 		apollo.WithApolloAddr(remoteInfo.URL),
-		apollo.WithAppId(remoteInfo.AppID),
-		apollo.WithNamespaceName(remoteInfo.NamespaceList),
+		apollo.WithAppId(remoteInfo.DefaultDimension[AppID]),
+		apollo.WithNamespaceName(remoteInfo.DefaultDimension[NamespaceList]),
 		apollo.WithLogFunc(openlogging.GetLogger().Debugf, openlogging.GetLogger().Infof, openlogging.GetLogger().Errorf),
 	}
 
-	if remoteInfo.Cluster != "" {
-		opts = append(opts, apollo.WithCluster(remoteInfo.Cluster))
+	if remoteInfo.DefaultDimension[Cluster] != "" {
+		opts = append(opts, apollo.WithCluster(remoteInfo.DefaultDimension[Cluster]))
 	}
 	if err := apollo.Init(opts...); err != nil {
 		return nil, errors.New("apollo client init failed, error=" + err.Error())
@@ -53,7 +59,7 @@ func NewApolloSource(remoteInfo *archaius.RemoteInfo) (source.ConfigSource, erro
 
 // GetConfigurations get config cache map from apollo client.
 func (as *Source) GetConfigurations() (map[string]interface{}, error) {
-	configMap := make(map[string]interface{}) // 该config的value表示的source
+	configMap := make(map[string]interface{})
 	as.Lock()
 	apolloCache := apollo.GetConfigCacheMap()
 	for k := range apolloCache {

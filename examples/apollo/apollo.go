@@ -5,6 +5,7 @@ import (
 	agollo "github.com/Shonminh/apollo-client"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
+	"github.com/go-chassis/go-archaius/source/apollo"
 	_ "github.com/go-chassis/go-archaius/source/apollo"
 	"github.com/go-mesh/openlogging"
 	"time"
@@ -24,9 +25,11 @@ func (li *Listener) Event(event *event.Event) {
 func main() {
 
 	err := archaius.Init(archaius.WithRemoteSource(archaius.ApolloSource, &archaius.RemoteInfo{
-		URL:           "http://127.0.0.1:8000",
-		NamespaceList: "demo",
-		AppID:         "demo-apollo",
+		URL: "http://127.0.0.1:8000",
+		DefaultDimension: map[string]string{
+			apollo.AppID:         "demo-apollo",
+			apollo.NamespaceList: "demo",
+		},
 	}))
 	fmt.Println(err)
 	// register listener, key is different from which in apollo web page, it's format is like {namespace}.{apollo_key}
