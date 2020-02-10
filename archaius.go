@@ -141,6 +141,9 @@ func EnableRemoteSource(remoteSource string, ci *RemoteInfo) error {
 		return err
 	}
 	err = manager.AddSource(s)
+	if err != nil {
+		return err
+	}
 	configServerRunning = true
 	return nil
 }
