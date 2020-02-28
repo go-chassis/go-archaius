@@ -95,6 +95,17 @@ ttl := archaius.GetString("ttl", "60s")
 i := archaius.GetInt("some.config", "")
 ```
 
+if you want to read some.config from env
+you can run
+```sh
+export some_config=xxxx
+```
+then you can read it by below code
+```go
+i := archaius.GetInt("some.config", "")
+```
+
+
 by default archaius only support yaml files, but you can extend file handler to handle file in other format,
 for example we only consider file name as a key, content is the value.
 ```go
