@@ -253,16 +253,14 @@ func (m *Manager) configValueBySource(configKey, sourceName string) interface{} 
 
 func (m *Manager) addDimensionInfo(labels map[string]string) error {
 	m.sourceMapMux.RLock()
-	source, ok := m.Sources["ConfigCenterSource"]
-	m.sourceMapMux.RUnlock()
-	if !ok {
-		msg := "source does not exist"
-		openlogging.GetLogger().Errorf(msg)
-		return errors.New(msg)
+	defer m.sourceMapMux.RUnlock()
+	for _, source := range m.Sources {
+		err := source.AddDimensionInfo(labels)
+		if err != nil {
+			return fmt.Errorf("add dimension info for source %s failed", source.GetSourceName())
+		}
 	}
-
-	err := source.AddDimensionInfo(labels)
-	return err
+	return nil
 }
 
 // IsKeyExist check if key exist in cache

@@ -3,6 +3,7 @@ package remote
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/go-mesh/openlogging"
 )
@@ -19,10 +20,18 @@ var (
 
 //const
 const (
-	LabelService     = "serviceName"
+	LabelService     = "service"
 	LabelVersion     = "version"
 	LabelEnvironment = "environment"
 	LabelApp         = "app"
+
+	DefaultInterval = time.Second * 30
+)
+
+//Mode
+const (
+	ModeWatch = iota
+	ModeInterval
 )
 
 //DefaultClient is config server's client

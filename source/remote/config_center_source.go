@@ -18,12 +18,10 @@
 package remote
 
 import (
-	"errors"
-	"github.com/go-chassis/go-archaius"
-	"reflect"
 	"sync"
 	"time"
 
+	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source"
 	"github.com/go-mesh/openlogging"
@@ -31,10 +29,9 @@ import (
 
 // const
 const (
-	//Name variable of type string
-	Name                       = "ConfigCenterSource"
+	//ConfigCenterSourceName variable of type string
+	ConfigCenterSourceName     = "ConfigCenterSource"
 	configCenterSourcePriority = 0
-	ModeInterval               = 1
 )
 
 //Source handles configs from config center
@@ -130,14 +127,14 @@ func (rs *Source) refreshConfigurations() error {
 		"config": config,
 	}))
 	//Populate the events based on the changed value between current config and newly received Config
-	events, err = rs.populateEvents(config)
+	rs.Lock()
+	defer rs.Unlock()
+	events, err = event.PopulateEvents(ConfigCenterSourceName, rs.currentConfig, config)
 	if err != nil {
 		openlogging.GetLogger().Warnf("error in generating event", err)
 		return err
 	}
-	rs.Lock()
 	rs.currentConfig = config
-	rs.Unlock()
 	//Generate OnEvent Callback based on the events created
 	if rs.eh != nil {
 		openlogging.GetLogger().Debugf("event on receive %s", events)
@@ -158,7 +155,7 @@ func (rs *Source) GetConfigurationByKey(key string) (interface{}, error) {
 		return configSrcVal, nil
 	}
 
-	return nil, errors.New("key not exist")
+	return nil, source.ErrKeyNotExist
 }
 
 //AddDimensionInfo adds dimension info for a configuration
@@ -170,7 +167,7 @@ func (rs *Source) AddDimensionInfo(labels map[string]string) error {
 
 //GetSourceName returns name of the configuration
 func (*Source) GetSourceName() string {
-	return Name
+	return ConfigCenterSourceName
 }
 
 //GetPriority returns priority of a configuration
@@ -186,13 +183,15 @@ func (rs *Source) SetPriority(priority int) {
 //Watch dynamically handles a configuration
 func (rs *Source) Watch(callback source.EventHandler) error {
 	rs.eh = callback
-	if rs.RefreshMode == 0 {
+	if rs.RefreshMode == ModeWatch {
 		// Pull All the configuration for the first time.
 		rs.refreshConfigurations()
 		//Start watch and receive change events.
 		err := rs.c.Watch(
 			func(kv map[string]interface{}) {
-				events, err := rs.populateEvents(kv)
+				rs.RLock()
+				defer rs.RUnlock()
+				events, err := event.PopulateEvents(ConfigCenterSourceName, rs.currentConfig, kv)
 				if err != nil {
 					openlogging.GetLogger().Error("error in generating event:" + err.Error())
 					return
@@ -225,42 +224,6 @@ func (rs *Source) Cleanup() error {
 	rs.currentConfig = nil
 
 	return nil
-}
-
-func (rs *Source) populateEvents(updatedConfig map[string]interface{}) ([]*event.Event, error) {
-	events := make([]*event.Event, 0)
-	rs.Lock()
-	defer rs.Unlock()
-
-	// generate create and update event
-	for key, value := range updatedConfig {
-		currentValue, ok := rs.currentConfig[key]
-		if !ok { // if new configuration introduced
-			events = append(events, rs.constructEvent(event.Create, key, value))
-		} else if !reflect.DeepEqual(currentValue, value) {
-			events = append(events, rs.constructEvent(event.Update, key, value))
-		}
-	}
-
-	// generate delete event
-	for key, value := range rs.currentConfig {
-		_, ok := updatedConfig[key]
-		if !ok { // when old config not present in new config
-			events = append(events, rs.constructEvent(event.Delete, key, value))
-		}
-	}
-
-	return events, nil
-}
-
-func (rs *Source) constructEvent(eventType string, key string, value interface{}) *event.Event {
-	newEvent := new(event.Event)
-	newEvent.EventSource = Name
-	newEvent.EventType = eventType
-	newEvent.Key = key
-	newEvent.Value = value
-
-	return newEvent
 }
 
 //Set no use

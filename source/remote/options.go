@@ -12,6 +12,9 @@ type Options struct {
 	APIVersion    string
 	AutoDiscovery bool
 	RefreshPort   string
+	WatchTimeOut  int
+	VerifyPeer    bool
+	ProjectID     string
 
 	Labels map[string]string
 }
