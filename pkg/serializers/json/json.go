@@ -23,6 +23,11 @@ import (
 	"errors"
 )
 
+//errors
+var (
+	ErrInvalidRequest = errors.New("Invalid request ")
+)
+
 //Serializer is a empty struct
 type Serializer struct{}
 
@@ -31,7 +36,7 @@ func (js Serializer) Decode(data []byte, v interface{}) error {
 	var err error
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.New("Invalid request ")
+			err = ErrInvalidRequest
 		}
 
 	}()
@@ -49,7 +54,7 @@ func (js Serializer) Encode(v interface{}) ([]byte, error) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.New("Invalid request ")
+			err = ErrInvalidRequest
 		}
 
 	}()

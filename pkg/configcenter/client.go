@@ -37,6 +37,7 @@ import (
 
 const (
 	defaultTimeout = 10 * time.Second
+	numberSign     = "%23"
 	//StatusUP is a variable of type string
 	StatusUP = "UP"
 	//HeaderContentType is a variable of type string
@@ -213,7 +214,7 @@ func (c *Client) Flatten(dimensionInfo string) (map[string]interface{}, error) {
 //PullGroupByDimension pulls all the configuration from Config-Server group by dimesion Info
 func (c *Client) PullGroupByDimension(dimensionInfo string) (map[string]map[string]interface{}, error) {
 	configAPIRes := make(map[string]map[string]interface{})
-	parsedDimensionInfo := strings.Replace(dimensionInfo, "#", "%23", -1)
+	parsedDimensionInfo := strings.Replace(dimensionInfo, "#", numberSign, -1)
 	restAPI := ConfigPath + "?" + dimensionsInfo + "=" + parsedDimensionInfo
 	err := c.call(http.MethodGet, restAPI, nil, nil, &configAPIRes)
 	if err != nil {
@@ -251,7 +252,7 @@ func (c *Client) DeleteConfig(data *DeleteConfigAPI) (map[string]interface{}, er
 
 //Watch use websocket
 func (c *Client) Watch(f func(map[string]interface{}), errHandler func(err error)) error {
-	parsedDimensionInfo := strings.Replace(c.opts.DefaultDimension, "#", "%23", -1)
+	parsedDimensionInfo := strings.Replace(c.opts.DefaultDimension, "#", numberSign, -1)
 	refreshConfigPath := ConfigRefreshPath + `?` + dimensionsInfo + `=` + parsedDimensionInfo
 	if c.wsDialer != nil {
 		/*-----------------

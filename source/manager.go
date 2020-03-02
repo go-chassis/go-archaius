@@ -32,9 +32,18 @@ import (
 	"github.com/go-mesh/openlogging"
 )
 
+//errors
+var (
+	ErrKeyNotExist = errors.New("key does not exist")
+)
+
+//const
 const (
 	//DefaultPriority gives the default priority
-	DefaultPriority = -1
+	DefaultPriority      = -1
+	fmtInvalidKeyWithErr = "invalid key format for %s key. key registration ignored: %s"
+	fmtInvalidKey        = "invalid key format for %s key"
+	fmtLoadConfigFailed  = "fail to load configuration of %s source: %s"
 )
 
 // Manager manage all sources and config from them
@@ -142,7 +151,7 @@ func (m *Manager) AddSource(source ConfigSource) error {
 
 	err := m.pullSourceConfigs(sourceName)
 	if err != nil {
-		err = fmt.Errorf("fail to load configuration of %s source: %s", sourceName, err)
+		err = fmt.Errorf(fmtLoadConfigFailed, sourceName, err)
 		openlogging.Error(err.Error())
 		return err
 	}
@@ -213,7 +222,7 @@ func (m *Manager) AddDimensionInfo(labels map[string]string) (map[string]string,
 func (m *Manager) Refresh(sourceName string) error {
 	err := m.pullSourceConfigs(sourceName)
 	if err != nil {
-		openlogging.GetLogger().Errorf("fail to load configuration of %s source: %s", sourceName, err)
+		openlogging.GetLogger().Errorf(fmtLoadConfigFailed, sourceName, err)
 		errorMsg := "fail to load configuration of" + sourceName + " source"
 		return errors.New(errorMsg)
 	}
@@ -247,8 +256,9 @@ func (m *Manager) addDimensionInfo(labels map[string]string) error {
 	source, ok := m.Sources["ConfigCenterSource"]
 	m.sourceMapMux.RUnlock()
 	if !ok {
-		openlogging.GetLogger().Errorf("source does not exist")
-		return errors.New("source does not exist")
+		msg := "source does not exist"
+		openlogging.GetLogger().Errorf(msg)
+		return errors.New(msg)
 	}
 
 	err := source.AddDimensionInfo(labels)
@@ -441,8 +451,8 @@ func (m *Manager) RegisterListener(listenerObj event.Listener, keys ...string) e
 	for _, key := range keys {
 		_, err := regexp.Compile(key)
 		if err != nil {
-			openlogging.GetLogger().Error(fmt.Sprintf("invalid key format for %s key. key registration ignored: %s", key, err))
-			return fmt.Errorf("invalid key format for %s key", key)
+			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
+			return fmt.Errorf(fmtInvalidKey, key)
 		}
 	}
 
@@ -454,8 +464,8 @@ func (m *Manager) UnRegisterListener(listenerObj event.Listener, keys ...string)
 	for _, key := range keys {
 		_, err := regexp.Compile(key)
 		if err != nil {
-			openlogging.GetLogger().Error(fmt.Sprintf("invalid key format for %s key. key registration ignored: %s", key, err))
-			return fmt.Errorf("invalid key format for %s key", key)
+			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
+			return fmt.Errorf(fmtInvalidKey, key)
 		}
 	}
 

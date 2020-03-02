@@ -158,7 +158,7 @@ func GetValue(key string) cast.Value {
 	var confValue cast.Value
 	val := manager.GetConfig(key)
 	if val == nil {
-		confValue = cast.NewValue(nil, errors.New("key does not exist"))
+		confValue = cast.NewValue(nil, source.ErrKeyNotExist)
 	} else {
 		confValue = cast.NewValue(val, nil)
 	}

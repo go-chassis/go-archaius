@@ -290,7 +290,7 @@ func (cmSource *configMapSource) GetConfigurationByKey(key string) (interface{},
 		}
 	}
 
-	return nil, errors.New("key does not exist")
+	return nil, source.ErrKeyNotExist
 }
 
 func (*configMapSource) GetSourceName() string {

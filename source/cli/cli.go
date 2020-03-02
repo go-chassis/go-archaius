@@ -18,7 +18,6 @@
 package cli
 
 import (
-	"errors"
 	"os"
 	"strings"
 	"sync"
@@ -89,7 +88,7 @@ func (cli *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	defer cli.Unlock()
 	value, ok := cli.Configurations[key]
 	if !ok {
-		return nil, errors.New("key does not exist")
+		return nil, source.ErrKeyNotExist
 	}
 	return value, nil
 }

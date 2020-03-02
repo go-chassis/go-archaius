@@ -23,8 +23,14 @@ package event
 
 import (
 	"errors"
-	"github.com/go-mesh/openlogging"
 	"regexp"
+
+	"github.com/go-mesh/openlogging"
+)
+
+//errors
+var (
+	ErrNilListener = errors.New("nil listener")
 )
 
 // Event Constant
@@ -63,9 +69,9 @@ func NewDispatcher() *Dispatcher {
 // RegisterListener registers listener for particular configuration
 func (dis *Dispatcher) RegisterListener(listenerObj Listener, keys ...string) error {
 	if listenerObj == nil {
-		err := errors.New("nil listener")
+		err := ErrNilListener
 		openlogging.GetLogger().Error("nil listener supplied:" + err.Error())
-		return errors.New("nil listener")
+		return ErrNilListener
 	}
 
 	for _, key := range keys {
@@ -93,7 +99,7 @@ func (dis *Dispatcher) RegisterListener(listenerObj Listener, keys ...string) er
 // UnRegisterListener un-register listener for a particular configuration
 func (dis *Dispatcher) UnRegisterListener(listenerObj Listener, keys ...string) error {
 	if listenerObj == nil {
-		return errors.New("nil listener")
+		return ErrNilListener
 	}
 
 	for _, key := range keys {

@@ -303,7 +303,7 @@ func (fSource *Source) GetConfigurationByKey(key string) (interface{}, error) {
 		}
 	}
 
-	return nil, errors.New("key does not exist")
+	return nil, source.ErrKeyNotExist
 }
 
 //GetSourceName get name of source

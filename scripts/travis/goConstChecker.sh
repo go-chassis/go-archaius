@@ -1,4 +1,4 @@
-diff -u <(echo -n) <(goconst ./...)
+diff -u <(echo -n) <(goconst -ignore "examples|configmap_source.go" ./...)
 if [ $? == 0 ]; then
 	echo "No goConst problem"
 	exit 0
