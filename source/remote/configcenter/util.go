@@ -21,16 +21,12 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+
+	"github.com/go-chassis/go-archaius/source/remote"
 )
 
 const (
 	maxValue = 256
-)
-
-//errors
-var (
-	ErrAppEmpty       = errors.New("app can not be empty")
-	ErrServiceTooLong = errors.New("exceeded max value for service name")
 )
 
 //GenerateDimension create config center dimension string
@@ -38,7 +34,7 @@ func GenerateDimension(serviceName, version, appName string) (string, error) {
 	if appName != "" {
 		serviceName = serviceName + "@" + appName
 	} else {
-		return "", ErrAppEmpty
+		return "", remote.ErrAppEmpty
 	}
 
 	if version != "" {
@@ -46,7 +42,7 @@ func GenerateDimension(serviceName, version, appName string) (string, error) {
 	}
 
 	if len(serviceName) > maxValue {
-		return "", ErrServiceTooLong
+		return "", remote.ErrServiceTooLong
 	}
 
 	dimeExp := `\A([^\$\%\&\+\(/)\[\]\" "\"])*\z`

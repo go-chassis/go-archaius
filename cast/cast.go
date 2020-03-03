@@ -18,6 +18,11 @@ import (
 	"strconv"
 )
 
+//const
+const (
+	fmtToFloat64Failed = "unable to cast %#v of type %T to float64"
+)
+
 type configValue struct {
 	value interface{}
 	err   error
@@ -257,7 +262,7 @@ func (val *configValue) ToFloat64() (float64, error) {
 		floatData, err := parsingString(dataType, value)
 		return floatData, err
 	default:
-		return 0, fmt.Errorf("unable to cast %#v of type %T to float64", value, value)
+		return 0, fmt.Errorf(fmtToFloat64Failed, value, value)
 	}
 }
 
@@ -266,7 +271,7 @@ func parsingString(dataType string, value interface{}) (float64, error) {
 	if parseError == nil {
 		return parseValue, nil
 	}
-	return 0, fmt.Errorf("unable to cast %#v of type %T to float64", value, value)
+	return 0, fmt.Errorf(fmtToFloat64Failed, value, value)
 }
 
 func indirect(val interface{}) interface{} {

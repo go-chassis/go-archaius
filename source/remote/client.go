@@ -1,12 +1,21 @@
 package remote
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-mesh/openlogging"
 )
 
 var configClientPlugins = make(map[string]func(options Options) (Client, error))
+
+//errors
+var (
+	ErrInvalidEP      = errors.New("invalid endpoint")
+	ErrLabelsNil      = errors.New("labels can not be nil")
+	ErrAppEmpty       = errors.New("app can not be empty")
+	ErrServiceTooLong = errors.New("exceeded max value for service name")
+)
 
 //const
 const (

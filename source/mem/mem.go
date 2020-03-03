@@ -1,7 +1,6 @@
 package mem
 
 import (
-	"errors"
 	"github.com/go-chassis/go-archaius/event"
 	"sync"
 
@@ -71,7 +70,7 @@ func (ms *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	defer ms.Unlock()
 	value, ok := ms.Configurations[key]
 	if !ok {
-		return nil, errors.New("key does not exist")
+		return nil, source.ErrKeyNotExist
 	}
 
 	return value, nil

@@ -18,7 +18,6 @@
 package env
 
 import (
-	"errors"
 	"github.com/go-chassis/go-archaius/source"
 	"os"
 	"strings"
@@ -88,7 +87,7 @@ func (es *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	defer es.Unlock()
 	value, ok := es.Configurations[key]
 	if !ok {
-		return nil, errors.New("key does not exist")
+		return nil, source.ErrKeyNotExist
 	}
 
 	return value, nil

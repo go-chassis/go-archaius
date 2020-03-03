@@ -35,6 +35,9 @@ const (
 	configClientTag  = `yaml`
 	ignoreField      = `ignoredField` // when used -
 	doNotConsiderTag = ``
+	inline           = "inline"
+
+	fmtValueNotMatched = "value types of %s not matched. expect type : %s, config client type : %s"
 )
 
 /*
@@ -202,7 +205,7 @@ func (m *Manager) handleMap(rValueForInline, rValue reflect.Value, tagName strin
 
 	// if assignable then only assign
 	if mapValue.Type() != mapType {
-		return fmt.Errorf("value types of %s not matched. expect type : %s, config client type : %s",
+		return fmt.Errorf(fmtValueNotMatched,
 			tagName, rValue.Kind(), mapValue.Kind())
 	}
 
@@ -216,7 +219,7 @@ func (m *Manager) handleMap(rValueForInline, rValue reflect.Value, tagName strin
 func (m *Manager) getTagList(prefix string, rValues reflect.Value) []string {
 	var tagList []string
 
-	if strings.Contains(prefix, "inline") {
+	if strings.Contains(prefix, inline) {
 		for i := 0; i < rValues.Type().NumField(); i++ {
 			structField := rValues.Type().Field(i)
 			if structField.Tag != `yaml:",inline"` {
@@ -235,7 +238,7 @@ func (m *Manager) getMapKeys(configValue map[string]interface{}, prefix string, 
 		mapKeys, prefixForInline, inlineVal []string
 	)
 
-	if strings.Contains(prefix, "inline") {
+	if strings.Contains(prefix, inline) {
 		pfx, iVal := checkPrefixForInline(prefix, tagList, configValue)
 
 		if len(iVal) != 0 {
@@ -296,7 +299,7 @@ func (m *Manager) populateMap(prefix string, mapType reflect.Type, rValues refle
 
 	prefixForInline, inlineVal, mapKeys := m.getMapKeys(configValue, prefix, tagList)
 
-	if strings.Contains(prefix, "inline") {
+	if strings.Contains(prefix, inline) {
 		return m.setValuesForInline(mapValueType, inlineVal, prefixForInline, rValue)
 	}
 	for _, key := range mapKeys {
@@ -325,7 +328,7 @@ func (m *Manager) populateMap(prefix string, mapType reflect.Type, rValues refle
 			if mapValueType != setVal.Type() {
 				returnCongValue, err := ToRvalueType(setVal.Interface(), mapValueType)
 				if err != nil {
-					return rValue, fmt.Errorf("value types of %s not matched. expect type : %s, config client type : %s",
+					return rValue, fmt.Errorf(fmtValueNotMatched,
 						prefix+key, mapValueType, setVal.String())
 				}
 
@@ -394,7 +397,7 @@ func checkAndReplaceInline(prefix string, tagList []string, configValue map[stri
 		splittedPrefix := strings.Split(prefix, ".")
 		if len(splittedPrefix) != 0 {
 			for i, j := range splittedPrefix {
-				if j == "inline" {
+				if j == inline {
 					indexPrefix = i
 				}
 			}
@@ -447,7 +450,7 @@ func checkAndReplaceInline(prefix string, tagList []string, configValue map[stri
 func checkPrefixForInline(prefix string, tagList []string, configValue map[string]interface{}) ([]string, []string) {
 	var inlineVal, pfxInline []string
 
-	if strings.Contains(prefix, "inline") {
+	if strings.Contains(prefix, inline) {
 		pfxInline, inlineVal = checkAndReplaceInline(prefix, tagList, configValue)
 	}
 
@@ -487,7 +490,7 @@ func (m *Manager) setValue(rValue reflect.Value, keyName string) error {
 	if configRValue.Kind() != rValue.Kind() {
 		returnCongValue, err := ToRvalueType(configRValue.Interface(), rValue.Type())
 		if err != nil {
-			return fmt.Errorf("value types of %s not matched. expect type : %s, config client type : %s",
+			return fmt.Errorf(fmtValueNotMatched,
 				keyName, rValue.Kind(), configRValue.Kind())
 		}
 
