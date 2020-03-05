@@ -25,7 +25,7 @@ const (
 	// ApolloSource is for apollo source
 	ApolloSource = "apollo"
 	// ConfigCenterSource is for config center source
-	ConfigCenterSource = "config_center"
+	ConfigCenterSource = "config-center"
 	// KieSource is for ServiceComb-Kie source
 	KieSource = "kie"
 )

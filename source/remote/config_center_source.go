@@ -236,5 +236,5 @@ func (rs *Source) Delete(key string) error {
 	return nil
 }
 func init() {
-	archaius.InstallRemoteSource("config-center", NewConfigCenterSource)
+	archaius.InstallRemoteSource(archaius.ConfigCenterSource, NewConfigCenterSource)
 }
