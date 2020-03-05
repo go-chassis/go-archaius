@@ -26,6 +26,8 @@ const (
 	ApolloSource = "apollo"
 	// ConfigCenterSource is for config center source
 	ConfigCenterSource = "config_center"
+	// KieSource is for ServiceComb-Kie source
+	KieSource = "kie"
 )
 
 //NewRemoteSource create a new remote source
