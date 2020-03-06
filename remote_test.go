@@ -19,10 +19,10 @@ package archaius_test
 
 import (
 	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/source/remote"
+	"github.com/go-chassis/go-archaius/source/remote/configcenter"
 	"testing"
 )
 
 func TestInstallRemoteSource(t *testing.T) {
-	archaius.InstallRemoteSource("config_center", remote.NewConfigCenterSource)
+	archaius.InstallRemoteSource("config_center", configcenter.NewConfigCenterSource)
 }
