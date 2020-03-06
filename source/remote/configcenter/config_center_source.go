@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-//Package remote created on 2017/6/22.
-package remote
+package configcenter
 
 import (
 	"sync"
@@ -24,6 +23,7 @@ import (
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source"
+	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/go-mesh/openlogging"
 )
 
@@ -36,7 +36,7 @@ const (
 
 //Source handles configs from config center
 type Source struct {
-	c Client
+	c *ConfigCenter
 
 	connsLock sync.Mutex
 
@@ -57,7 +57,7 @@ type Source struct {
 
 //NewConfigCenterSource initializes all components of configuration center
 func NewConfigCenterSource(ci *archaius.RemoteInfo) (source.ConfigSource, error) {
-	opts := Options{
+	opts := remote.Options{
 		ServerURI:     ci.URL,
 		TenantName:    ci.TenantName,
 		EnableSSL:     ci.EnableSSL,
@@ -66,7 +66,7 @@ func NewConfigCenterSource(ci *archaius.RemoteInfo) (source.ConfigSource, error)
 		AutoDiscovery: ci.AutoDiscovery,
 		Labels:        ci.DefaultDimension,
 	}
-	cc, err := NewClient(ci.ClientType, opts)
+	cc, err := NewConfigCenter(opts)
 	if err != nil {
 		openlogging.Error(err.Error())
 		return nil, err
@@ -88,7 +88,7 @@ func (rs *Source) GetConfigurations() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if rs.RefreshMode == ModeInterval {
+	if rs.RefreshMode == remote.ModeInterval {
 		go rs.refreshConfigurationsPeriodically()
 	}
 
@@ -183,7 +183,7 @@ func (rs *Source) SetPriority(priority int) {
 //Watch dynamically handles a configuration
 func (rs *Source) Watch(callback source.EventHandler) error {
 	rs.eh = callback
-	if rs.RefreshMode == ModeWatch {
+	if rs.RefreshMode == remote.ModeWatch {
 		// Pull All the configuration for the first time.
 		rs.refreshConfigurations()
 		//Start watch and receive change events.

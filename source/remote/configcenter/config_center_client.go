@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-// Package configcenter created on 2017/6/20.
 package configcenter
 
 import (
-	"errors"
-	"github.com/go-chassis/go-archaius/pkg/configcenter"
-	"github.com/go-chassis/go-archaius/source/remote"
 	"strings"
 
+	"github.com/go-chassis/go-archaius/pkg/configcenter"
+	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/go-mesh/openlogging"
 	"github.com/gorilla/websocket"
 )
@@ -32,8 +30,6 @@ const (
 	HeaderContentType = "Content-Type"
 	//HeaderUserAgent is a variable of type string
 	HeaderUserAgent = "User-Agent"
-	// Name of the Plugin
-	Name = "config_center"
 )
 
 //ConfigCenter is Implementation
@@ -44,7 +40,7 @@ type ConfigCenter struct {
 }
 
 //NewConfigCenter is a function
-func NewConfigCenter(options remote.Options) (remote.Client, error) {
+func NewConfigCenter(options remote.Options) (*ConfigCenter, error) {
 	if options.ServerURI == "" {
 		return nil, remote.ErrInvalidEP
 	}
@@ -100,78 +96,9 @@ func (c *ConfigCenter) PullConfigs(labels ...map[string]string) (map[string]inte
 	return configurations, nil
 }
 
-// PullConfig is the implementation of ConfigCenter to pull specific configurations from Config-Server
-func (c *ConfigCenter) PullConfig(key, contentType string, labels map[string]string) (interface{}, error) {
-	if len(labels) == 0 {
-		labels = c.opts.Labels
-	}
-	d, err := GenerateDimension(c.opts.Labels[remote.LabelService], c.opts.Labels[remote.LabelVersion], c.opts.Labels[remote.LabelApp])
-	if err != nil {
-		return nil, err
-	}
-	// TODO use the contentType to return the configurations
-	configurations, error := c.c.Flatten(d)
-	if error != nil {
-		return nil, error
-	}
-	configurationsValue, ok := configurations[key]
-	if !ok {
-		openlogging.GetLogger().Error("Error in fetching the configurations for particular value,No Key found : " + key)
-	}
-
-	return configurationsValue, nil
-}
-
-// PushConfigs push configs to ConfigSource cc , success will return { "Result": "Success" }
-func (c *ConfigCenter) PushConfigs(items map[string]interface{}, labels map[string]string) (map[string]interface{}, error) {
-	if len(items) == 0 {
-		em := "data is empty , which data need to send cc"
-		openlogging.GetLogger().Error(em)
-		return nil, errors.New(em)
-	}
-	if len(labels) == 0 {
-		labels = c.opts.Labels
-	}
-	d, err := GenerateDimension(c.opts.Labels[remote.LabelService], c.opts.Labels[remote.LabelVersion], c.opts.Labels[remote.LabelApp])
-	if err != nil {
-		return nil, err
-	}
-	configAPI := &configcenter.CreateConfigAPI{
-		DimensionInfo: d,
-		Items:         items,
-	}
-
-	return c.c.AddConfig(configAPI)
-}
-
-// DeleteConfigsByKeys delete keys
-func (c *ConfigCenter) DeleteConfigsByKeys(keys []string, labels map[string]string) (map[string]interface{}, error) {
-	if len(keys) == 0 {
-		em := "not key need to delete for cc, please check keys"
-		openlogging.GetLogger().Error(em)
-		return nil, errors.New(em)
-	}
-	if len(labels) == 0 {
-		labels = c.opts.Labels
-	}
-	d, err := GenerateDimension(c.opts.Labels[remote.LabelService], c.opts.Labels[remote.LabelVersion], c.opts.Labels[remote.LabelApp])
-	if err != nil {
-		return nil, err
-	}
-	configAPI := &configcenter.DeleteConfigAPI{
-		DimensionInfo: d,
-		Keys:          keys,
-	}
-
-	return c.c.DeleteConfig(configAPI)
-}
-
 //Watch use ws
 func (c *ConfigCenter) Watch(f func(map[string]interface{}), errHandler func(err error), labels map[string]string) error {
 	return c.c.Watch(f, errHandler)
-}
-func init() {
-	remote.InstallConfigClientPlugin(Name, NewConfigCenter)
 }
 
 //Options return options

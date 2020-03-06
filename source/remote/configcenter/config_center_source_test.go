@@ -1,13 +1,14 @@
-package kie
+package configcenter_test
 
 import (
 	"testing"
 
 	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-archaius/source/remote/configcenter"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewKieSource(t *testing.T) {
+func TestNewConfigCenterSource(t *testing.T) {
 	opts := &archaius.RemoteInfo{
 		DefaultDimension: map[string]string{
 			"app":         "default",
@@ -16,6 +17,6 @@ func TestNewKieSource(t *testing.T) {
 		TenantName: "default",
 		URL:        "http://",
 	}
-	_, err := NewKieSource(opts)
+	_, err := configcenter.NewConfigCenterSource(opts)
 	assert.NoError(t, err)
 }

@@ -29,7 +29,6 @@ type RemoteInfo struct {
 	EnableSSL     bool
 	TLSConfig     *tls.Config
 	AutoDiscovery bool
-	ClientType    string
 	APIVersion    string
 	RefreshPort   string
 }
