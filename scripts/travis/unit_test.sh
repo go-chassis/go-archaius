@@ -1,7 +1,9 @@
 #!/bin/sh
-set -e
+set -xe
 
-go get github.com/apache/servicecomb-kie
+mkdir -p $GOPATH/src/github.com/apache
+cd $GOPATH/src/github.com/apache
+git clone https://github.com/apache/servicecomb-kie.git
 cd $GOPATH/src/github.com/apache/servicecomb-kie/build
 bash build_docker.sh
 sudo docker-compose -f $GOPATH/src/github.com/apache/servicecomb-kie/deployments/docker/docker-compose.yaml down
