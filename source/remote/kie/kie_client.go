@@ -23,8 +23,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apache/servicecomb-kie/client"
-	"github.com/apache/servicecomb-kie/pkg/model"
+	client "github.com/go-chassis/go-archaius/pkg/kieclient"
 	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/go-chassis/go-archaius/source/util/queue"
 	"github.com/go-mesh/openlogging"
@@ -205,7 +204,7 @@ func (k *Kie) watchKVDimensionally(f func(map[string]interface{}), errHandler fu
 	}
 }
 
-func (k *Kie) setDimensionConfigs(kv *model.KVResponse, dimension DimensionName) bool {
+func (k *Kie) setDimensionConfigs(kv *client.KVResponse, dimension DimensionName) bool {
 	if k.dimensions[dimension] == nil {
 		return false
 	}

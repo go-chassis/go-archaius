@@ -2,7 +2,6 @@ module github.com/go-chassis/go-archaius
 
 require (
 	github.com/Shonminh/apollo-client v0.2.0
-	github.com/apache/servicecomb-kie v0.1.1-0.20200303014812-959a30975b44
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4
 	github.com/go-mesh/openlogging v1.0.1

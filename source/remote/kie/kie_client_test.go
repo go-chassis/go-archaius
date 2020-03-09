@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/apache/servicecomb-kie/pkg/model"
+	client "github.com/go-chassis/go-archaius/pkg/kieclient"
 	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,8 +27,8 @@ func TestMergeConfig(t *testing.T) {
 			remote.LabelVersion:     "1.0.0",
 		}})
 	for i, dimension := range dimensionPrecedence {
-		k.setDimensionConfigs(&model.KVResponse{
-			Data: []*model.KVDoc{
+		k.setDimensionConfigs(&client.KVResponse{
+			Data: []*client.KVDoc{
 				{
 					Key:   "foo",
 					Value: strconv.Itoa(i + 1),
