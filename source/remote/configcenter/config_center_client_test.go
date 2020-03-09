@@ -10,7 +10,7 @@ import (
 func TestNewConfigCenter(t *testing.T) {
 	c, err := configcenter.NewConfigCenter(remote.Options{
 		ServerURI: "http://",
-		Labels:    map[string]string{"app": "default"}})
+		Labels:    map[string]string{remote.LabelApp: "default"}})
 	assert.NoError(t, err)
-	assert.Equal(t, "default", c.Options().Labels["app"])
+	assert.Equal(t, "default", c.Options().Labels[remote.LabelApp])
 }

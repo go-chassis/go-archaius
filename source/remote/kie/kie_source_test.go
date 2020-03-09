@@ -4,14 +4,15 @@ import (
 	"testing"
 
 	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewKieSource(t *testing.T) {
 	opts := &archaius.RemoteInfo{
 		DefaultDimension: map[string]string{
-			"app":         "default",
-			"serviceName": "cart",
+			remote.LabelApp:     "default",
+			remote.LabelService: "cart",
 		},
 		TenantName: "default",
 		URL:        "http://",
