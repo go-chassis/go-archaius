@@ -12,9 +12,9 @@ import (
 func TestNewKie(t *testing.T) {
 	k, err := NewKie(remote.Options{
 		ServerURI: "http://",
-		Labels:    map[string]string{"app": "default"}})
+		Labels:    map[string]string{remote.LabelApp: "default"}})
 	assert.NoError(t, err)
-	assert.Equal(t, "default", k.Options().Labels["app"])
+	assert.Equal(t, "default", k.Options().Labels[remote.LabelApp])
 }
 
 func TestMergeConfig(t *testing.T) {

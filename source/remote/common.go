@@ -16,10 +16,10 @@ var (
 
 //const
 const (
-	LabelService     = "service"
+	LabelService     = "serviceName"
 	LabelVersion     = "version"
 	LabelEnvironment = "environment"
-	LabelApp         = "app"
+	LabelApp         = "appId"
 
 	DefaultInterval = time.Second * 30
 )
