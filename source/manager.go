@@ -345,7 +345,7 @@ func (m *Manager) updateEvent(e *event.Event) error {
 	if e == nil || e.EventSource == "" || e.Key == "" {
 		return errors.New("nil or invalid event supplied")
 	}
-	openlogging.GetLogger().Debugf("event received %s", e)
+	openlogging.GetLogger().Infof("event received %s", e)
 	switch e.EventType {
 	case event.Create, event.Update:
 		m.configMapMux.Lock()
@@ -360,6 +360,8 @@ func (m *Manager) updateEvent(e *event.Event) error {
 			if prioritySrc != nil && prioritySrc.GetSourceName() == sourceName {
 				// if event generated from less priority source then ignore
 				m.configMapMux.Unlock()
+				openlogging.GetLogger().Infof("the event source %s's priority is less then %s's, ignore",
+					e.EventSource, sourceName)
 				return nil
 			}
 			m.ConfigurationMap[e.Key] = e.EventSource

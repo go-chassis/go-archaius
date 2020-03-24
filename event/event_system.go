@@ -137,7 +137,7 @@ func (dis *Dispatcher) DispatchEvent(event *Event) error {
 		}
 		if matched {
 			for _, listener := range listeners {
-				openlogging.GetLogger().Debugf("event generated for %s", regKey)
+				openlogging.GetLogger().Infof("event generated for %s", regKey)
 				go listener.Event(event)
 			}
 		}
