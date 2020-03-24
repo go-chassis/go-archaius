@@ -78,6 +78,10 @@ func NewKieSource(ci *archaius.RemoteInfo) (source.ConfigSource, error) {
 	} else {
 		ks.RefreshInterval = time.Second * time.Duration(ci.RefreshInterval)
 	}
+	openlogging.Info("new kie source", openlogging.WithTags(
+		openlogging.Tags{
+			"labels": ci.DefaultDimension,
+		}))
 	return ks, nil
 }
 
