@@ -18,6 +18,7 @@ package kieclient
 
 //KVRequest is http request body
 type KVRequest struct {
+	ID        string            `json:"id" yaml:"id"`
 	Key       string            `json:"key" yaml:"key"`
 	Value     string            `json:"value,omitempty" yaml:"value,omitempty"`
 	ValueType string            `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty"` //ini,json,text,yaml,properties
@@ -50,8 +51,8 @@ type KVDoc struct {
 	UpdateRevision int64  `json:"update_revision,omitempty" bson:"update_revision," yaml:"update_revision,omitempty"`
 	Project        string `json:"project,omitempty" yaml:"project,omitempty"`
 	Status         string `json:"status,omitempty" yaml:"status,omitempty"`
-	CreatTime      string `json:"create_time,omitempty" yaml:"create_time,omitempty"`
-	UpdateTime     string `json:"update_time,omitempty" yaml:"update_time,omitempty"`
+	CreatTime      int64  `json:"create_time,omitempty" yaml:"create_time,omitempty"`
+	UpdateTime     int64  `json:"update_time,omitempty" yaml:"update_time,omitempty"`
 
 	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"` //redundant
 	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty"` //redundant

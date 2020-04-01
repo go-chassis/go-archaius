@@ -30,31 +30,34 @@ func TestClient_Put(t *testing.T) {
 		Endpoint: "http://127.0.0.1:30110",
 	})
 	kv := KVRequest{
-		Key:    "app.properties",
-		Labels: map[string]string{"service": "client"},
-		Value:  "timeout: 1s",
+		Key:       "app.properties",
+		Labels:    map[string]string{"service": "client"},
+		Value:     "timeout: 1s",
+		ValueType: "text",
 	}
-	_, err := c.Put(context.TODO(), kv, WithProject("client_test"))
+	result, err := c.Create(context.TODO(), kv, WithProject("client_test"))
 	assert.NoError(t, err)
-
-	kvs, responseRevision, _ := c.Get(context.TODO(),
+	kv.ID = result.ID
+	_, err = c.Put(context.TODO(), kv, WithProject("client_test"))
+	assert.NoError(t, err)
+	kvs, responseRevision, _ := c.List(context.TODO(),
 		WithKey("app.properties"),
 		WithGetProject("client_test"),
 		WithLabels(map[string]string{"service": "client"}))
 	assert.GreaterOrEqual(t, len(kvs.Data), 1)
 
-	_, _, err = c.Get(context.TODO(),
+	_, _, err = c.List(context.TODO(),
 		WithGetProject("client_test"),
 		WithLabels(map[string]string{"service": "client"}),
 		WithRevision(responseRevision))
 	assert.Equal(t, ErrNoChanges, err)
 
-	_, _, err = c.Get(context.TODO(),
+	_, _, err = c.List(context.TODO(),
 		WithGetProject("client_test"),
 		WithLabels(map[string]string{"service": "client"}))
 	assert.Error(t, err)
 
-	_, _, err = c.Get(context.TODO(),
+	_, _, err = c.List(context.TODO(),
 		WithGetProject("client_test"),
 		WithLabels(map[string]string{"service": "client"}),
 		WithRevision(c.CurrentRevision()-1))
@@ -62,7 +65,7 @@ func TestClient_Put(t *testing.T) {
 
 	t.Run("long polling,wait 10s,change value,should return result", func(t *testing.T) {
 		go func() {
-			kvs, _, err = c.Get(context.TODO(),
+			kvs, _, err = c.List(context.TODO(),
 				WithLabels(map[string]string{"service": "client"}),
 				WithGetProject("client_test"),
 				WithWait("10s"))
@@ -70,6 +73,7 @@ func TestClient_Put(t *testing.T) {
 			assert.Equal(t, "timeout: 2s", kvs.Data[0].Value)
 		}()
 		kv := KVRequest{
+			ID:     result.ID,
 			Key:    "app.properties",
 			Labels: map[string]string{"service": "client"},
 			Value:  "timeout: 2s",
@@ -83,10 +87,11 @@ func TestClient_Put(t *testing.T) {
 			Labels: map[string]string{"service": "client", "version": "1.0"},
 			Value:  "timeout: 2s",
 		}
+		kv.ID = result.ID
 		_, err := c.Put(context.TODO(), kv, WithProject("client_test"))
 		assert.NoError(t, err)
 		t.Log(c.CurrentRevision())
-		kvs, _, err = c.Get(context.TODO(),
+		kvs, _, err = c.List(context.TODO(),
 			WithGetProject("client_test"),
 			WithLabels(map[string]string{"service": "client"}),
 			WithExact())
@@ -106,14 +111,14 @@ func TestClient_Delete(t *testing.T) {
 	kvBody.ValueType = "text"
 	kvBody.Labels = make(map[string]string)
 	kvBody.Labels["env"] = "client_test"
-	kv, err := c.Put(context.TODO(), kvBody, WithProject("client_test"))
+	kv, err := c.Create(context.TODO(), kvBody, WithProject("client_test"))
 	assert.NoError(t, err)
-	kvs, _, err := c.Get(context.TODO(),
+	kvs, _, err := c.List(context.TODO(),
 		WithKey("time"),
 		WithGetProject("client_test"),
 		WithLabels(map[string]string{"env": "client_test"}))
 	assert.NoError(t, err)
 	assert.NotNil(t, kvs)
-	err = c.Delete(context.TODO(), kv.ID, "", WithProject("client_test"))
+	err = c.Delete(context.TODO(), kv.ID, WithProject("client_test"))
 	assert.NoError(t, err)
 }
