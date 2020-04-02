@@ -124,7 +124,7 @@ func (k *Kie) PullConfigs(labels ...map[string]string) (map[string]interface{}, 
 	var revisionLock sync.Mutex
 	var validRevisions []int
 	getKVDimensionally := func(i int, errCh chan error) {
-		kv, responseRevision, err := k.c.Get(context.Background(),
+		kv, responseRevision, err := k.c.List(context.Background(),
 			client.WithGetProject(k.opts.ProjectID),
 			client.WithLabels(k.getDimensionLabels(dimensionPrecedence[i])),
 			client.WithExact(),
@@ -179,7 +179,7 @@ func (k *Kie) watchKVDimensionally(f func(map[string]interface{}), errHandler fu
 	wait := fmt.Sprintf("%ds", k.watchTimeOut)
 	revision := -1
 	for {
-		kv, responseRevision, err := k.c.Get(context.Background(),
+		kv, responseRevision, err := k.c.List(context.Background(),
 			client.WithGetProject(k.opts.ProjectID),
 			client.WithLabels(k.getDimensionLabels(dimension)),
 			client.WithExact(),

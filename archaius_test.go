@@ -97,6 +97,9 @@ func TestConfig_Get(t *testing.T) {
 func TestConfig_GetInt(t *testing.T) {
 	s := archaius.GetInt("number", 0)
 	assert.Equal(t, 1, s)
+	s2 := archaius.GetInt64("number", 0)
+	var a int64 = 1
+	assert.Equal(t, a, s2)
 }
 func TestConfig_RegisterListener(t *testing.T) {
 	eventHandler := EListener{}

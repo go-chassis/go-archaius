@@ -203,6 +203,15 @@ func GetInt(key string, defaultValue int) int {
 	return result
 }
 
+// GetInt64 gives the key value in the form of int64
+func GetInt64(key string, defaultValue int64) int64 {
+	result, err := GetValue(key).ToInt64()
+	if err != nil {
+		return defaultValue
+	}
+	return result
+}
+
 // GetString gives the key value in the form of GetString
 func GetString(key string, defaultValue string) string {
 	result, err := GetValue(key).ToString()
