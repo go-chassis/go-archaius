@@ -11,11 +11,11 @@ func ExpandValueEnv(value string) (realValue string) {
 	vLen := len(value)
 	// 3 = ${}
 	if vLen < 3 {
-		return
+		return realValue
 	}
 	// Need start with "${" and end with "}", then return.
 	if value[0] != '$' || value[1] != '{' || value[vLen-1] != '}' {
-		return
+		return realValue
 	}
 
 	key := ""
@@ -37,6 +37,6 @@ func ExpandValueEnv(value string) (realValue string) {
 		realValue = defaultV
 	}
 
-	return
+	return realValue
 }
 
