@@ -50,7 +50,12 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 				))
 				continue
 			}
-			result[prefix+k] = item.Value
+
+			var keyVal = item.Value
+			if val, ok := item.Value.(string); ok {
+				keyVal = ExpandValueEnv(val)
+			}
+			result[prefix+k] = keyVal
 		}
 	}
 

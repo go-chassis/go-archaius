@@ -82,6 +82,8 @@ if you have a yaml config
 some:
   config: 1
 ttl: 30s
+service:
+  name: ${NAME||go-archaius}
 ```
 after adding file
 ```go
@@ -93,7 +95,11 @@ you can get value
 ```go
 ttl := archaius.GetString("ttl", "60s")
 i := archaius.GetInt("some.config", "")
+serviceName := archaius.GetString("service.name", "")
 ```
+note:
+
+For `service.name` config with value of  `${NAME||go-archaius}` is support env syntax. If environment variable `${NAME}` isn't setting, return default value `go-archaius`. It's setted, will get real environment variable value.
 
 if you want to read some.config from env
 you can run
