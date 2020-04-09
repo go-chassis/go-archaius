@@ -294,7 +294,6 @@ func (fSource *Source) GetConfigurationByKey(key string) (interface{}, error) {
 
 	for ckey, confInfo := range fSource.Configurations {
 		if confInfo == nil {
-			confInfo.Value = nil
 			continue
 		}
 
@@ -472,7 +471,6 @@ func (fSource *Source) compareUpdate(configs map[string]interface{}, filePath st
 
 	for key, confInfo := range fSource.Configurations {
 		if confInfo == nil {
-			confInfo.Value = nil
 			continue
 		}
 
