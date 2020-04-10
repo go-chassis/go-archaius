@@ -340,12 +340,25 @@ func (m *Manager) updateConfigurationMapByDI(source ConfigSource, configs map[st
 	return nil
 }
 
+func (m *Manager) updateModuleEvent(es []*event.Event) error {
+	if len (es) ==0 {
+		return errors.New("nil or invalid events supplied")
+	}
+	for i := 0; i < len(es); i++ {
+		m.updateEvent(es[i])
+	}
+
+	m.dispatcher.DispatchModuleEvent(es)
+
+	return nil
+}
+
 func (m *Manager) updateEvent(e *event.Event) error {
 	// refresh all configuration one by one
 	if e == nil || e.EventSource == "" || e.Key == "" {
 		return errors.New("nil or invalid event supplied")
 	}
-	openlogging.GetLogger().Infof("event received %s", e)
+	//openlogging.GetLogger().Infof("event received %s", e)
 	switch e.EventType {
 	case event.Create, event.Update:
 		m.configMapMux.Lock()
@@ -398,6 +411,14 @@ func (m *Manager) OnEvent(event *event.Event) {
 	err := m.updateEvent(event)
 	if err != nil {
 		openlogging.GetLogger().Error("failed in updating event with error: " + err.Error())
+	}
+}
+
+// OnEvent Triggers actions when an events is generated
+func (m *Manager) OnModuleEvent(event []*event.Event) {
+	err := m.updateModuleEvent(event)
+	if err != nil {
+		openlogging.GetLogger().Error("failed in updating events with error: " + err.Error())
 	}
 }
 
@@ -470,4 +491,30 @@ func (m *Manager) UnRegisterListener(listenerObj event.Listener, keys ...string)
 	}
 
 	return m.dispatcher.UnRegisterListener(listenerObj, keys...)
+}
+
+// RegisterModuleListener Function to Register all moduleListener for different key changes
+func (m *Manager) RegisterModuleListener(listenerObj event.ModuleListener, keys ...string) error {
+	for _, key := range keys {
+		_, err := regexp.Compile(key)
+		if err != nil {
+			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
+			return fmt.Errorf(fmtInvalidKey, key)
+		}
+	}
+
+	return m.dispatcher.RegisterModuleListener(listenerObj, keys...)
+}
+
+// RegisterModuleListener remove moduleListener
+func (m *Manager) UnRegisterModuleListener(listenerObj event.ModuleListener, keys ...string) error {
+	for _, key := range keys {
+		_, err := regexp.Compile(key)
+		if err != nil {
+			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
+			return fmt.Errorf(fmtInvalidKey, key)
+		}
+	}
+
+	return m.dispatcher.UnRegisterModuleListener(listenerObj, keys...)
 }

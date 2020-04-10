@@ -17,6 +17,7 @@ github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbt
 github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/Shonminh/apollo-client v0.2.0 h1:rYv5gsKj18XdpR+FagRkRXAYU9Jaw/Gmn2H+8cACDTg=
 github.com/Shonminh/apollo-client v0.2.0/go.mod h1:Jk6K99uIGxQm7Uyy1gCQTvM/kc1YLp4Qo9/jtGkEXvI=
+github.com/Shonminh/apollo-client v0.3.0/go.mod h1:Jk6K99uIGxQm7Uyy1gCQTvM/kc1YLp4Qo9/jtGkEXvI=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/apache/servicecomb-kie v0.1.1-0.20200303014812-959a30975b44 h1:3lNzWF0NcBcW8OlKxOld85gvV5TAE8yrWmwgDZ/9RPQ=

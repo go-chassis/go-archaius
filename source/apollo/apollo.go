@@ -15,6 +15,7 @@ type Source struct {
 	priority int
 	sync.RWMutex
 	eventHandler source.EventHandler
+	ignoreNamespace bool
 }
 
 const (
@@ -26,6 +27,10 @@ const (
 	NamespaceList = "namespace_list"
 	// Cluster cluster const
 	Cluster = "cluster"
+	// ignore namespace
+	IgnoreNameSpace = "ignoreNameSpace"
+
+	Ignore = "true"
 )
 
 var (
@@ -46,6 +51,11 @@ func NewApolloSource(remoteInfo *archaius.RemoteInfo) (source.ConfigSource, erro
 		apollo.WithAppId(remoteInfo.DefaultDimension[AppID]),
 		apollo.WithNamespaceName(remoteInfo.DefaultDimension[NamespaceList]),
 		apollo.WithLogFunc(openlogging.GetLogger().Debugf, openlogging.GetLogger().Infof, openlogging.GetLogger().Errorf),
+	}
+
+	if remoteInfo.DefaultDimension[IgnoreNameSpace] == Ignore {
+		as.ignoreNamespace = true  // ignore key
+		opts = append(opts, apollo.IgnoreNameSpace())
 	}
 
 	if remoteInfo.DefaultDimension[Cluster] != "" {
@@ -128,20 +138,25 @@ func (as *Source) Delete(key string) error {
 // UpdateCallback callback function when config updates
 func (as *Source) UpdateCallback(apolloEvent *apollo.ChangeEvent) error {
 	if as.eventHandler != nil {
-		for _, c := range apolloEvent.Changes {
+		var es = make([]*event.Event, len(apolloEvent.Changes))
+		for i, c := range apolloEvent.Changes {
 			eventType := transformEventType(c.ChangeType)
 			if eventType == "" {
 				continue
 			}
-
 			e := &event.Event{
 				EventSource: apolloSourceName,
 				EventType:   eventType,
 				Key:         apolloEvent.Namespace + "." + c.Key, // to make sure key is prefix with namespace
 				Value:       c.NewValue,
 			}
+			if as.ignoreNamespace {
+				e.Key = c.Key
+			}
 			as.eventHandler.OnEvent(e)
+			es[i] = e
 		}
+		as.eventHandler.OnModuleEvent(es)
 	}
 	return nil
 }

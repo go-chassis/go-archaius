@@ -235,6 +235,7 @@ func (fSource *Source) handleFile(file *os.File, priority uint32, handle util.Fi
 		for _, e := range events {
 			fSource.watchPool.callback.OnEvent(e)
 		}
+		fSource.watchPool.callback.OnModuleEvent(events)
 	}
 
 	return nil
@@ -437,6 +438,7 @@ func (wth *watch) watchFile() {
 			for _, e := range events {
 				wth.callback.OnEvent(e)
 			}
+			wth.callback.OnModuleEvent(events)
 
 		case err := <-wth.watcher.Errors:
 			openlogging.GetLogger().Debugf("watch file error:", err)
