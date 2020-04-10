@@ -144,6 +144,7 @@ func (as *Source) UpdateCallback(apolloEvent *apollo.ChangeEvent) error {
 			if eventType == "" {
 				continue
 			}
+
 			e := &event.Event{
 				EventSource: apolloSourceName,
 				EventType:   eventType,
@@ -153,6 +154,7 @@ func (as *Source) UpdateCallback(apolloEvent *apollo.ChangeEvent) error {
 			if as.ignoreNamespace {
 				e.Key = c.Key
 			}
+
 			as.eventHandler.OnEvent(e)
 			es[i] = e
 		}

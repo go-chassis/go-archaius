@@ -157,7 +157,7 @@ func (dis *Dispatcher) DispatchEvent(event *Event) error {
 func (dis *Dispatcher) RegisterModuleListener(listenerObj ModuleListener, modulePrefixs ...string) error {
 	if listenerObj == nil {
 		err := ErrNilListener
-		openlogging.GetLogger().Error("nil listener supplied:" + err.Error())
+		openlogging.GetLogger().Error("nil moduleListener supplied:" + err.Error())
 		return ErrNilListener
 	}
 
@@ -210,13 +210,13 @@ func (dis *Dispatcher) UnRegisterModuleListener(listenerObj ModuleListener, modu
 	return nil
 }
 
-// DispatchModuleEvent sends the action trigger for a particular event on a configuration
+// DispatchModuleEvent finds the registered function for callback according to the prefix of key in events
 func (dis *Dispatcher) DispatchModuleEvent(events []*Event) error {
-	if events == nil {
+	if events == nil || len(events) == 0 {
 		return errors.New("empty events provided")
 	}
 
-	// 1. Event key with the same subscription prefix is placed in the same slice
+	// 1. According to the key in the event, events with the same prefix are placed in the same slice
 	eventsList := dis.parseEvents(events)
 
 	// 2. Events with the same prefix will only be callback once.
@@ -251,7 +251,8 @@ func (dis *Dispatcher) parseEvents(events []*Event) map[string][]*Event {
 	return eventList
 }
 
-// find first prefix from event.key
+// Find first prefix from event.key
+// Ignore the case where namespace and module key(prefix) have the same name
 func (dis *Dispatcher) findFirstRegisterPrefix(eventKey string) string {
 	keyArr := strings.Split(eventKey, ".")
 	for _, key := range keyArr {
