@@ -14,7 +14,7 @@ import (
 type Source struct {
 	priority int
 	sync.RWMutex
-	eventHandler source.EventHandler
+	eventHandler    source.EventHandler
 	ignoreNamespace bool
 }
 
@@ -54,7 +54,7 @@ func NewApolloSource(remoteInfo *archaius.RemoteInfo) (source.ConfigSource, erro
 	}
 
 	if remoteInfo.DefaultDimension[IgnoreNameSpace] == Ignore {
-		as.ignoreNamespace = true  // ignore key
+		as.ignoreNamespace = true // ignore key
 		opts = append(opts, apollo.IgnoreNameSpace())
 	}
 

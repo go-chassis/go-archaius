@@ -39,4 +39,3 @@ func ExpandValueEnv(value string) (realValue string) {
 
 	return
 }
-

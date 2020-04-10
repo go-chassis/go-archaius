@@ -341,7 +341,7 @@ func (m *Manager) updateConfigurationMapByDI(source ConfigSource, configs map[st
 }
 
 func (m *Manager) updateModuleEvent(es []*event.Event) error {
-	if es == nil || len (es) == 0 {
+	if es == nil || len(es) == 0 {
 		return errors.New("nil or invalid events supplied")
 	}
 
