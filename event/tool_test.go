@@ -1,6 +1,7 @@
 package event_test
 
 import (
+	"fmt"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -20,6 +21,9 @@ func TestPopulateEvents(t *testing.T) {
 			"k3": "v3",
 		})
 	assert.NoError(t, err)
+	for _, eve := range events {
+		fmt.Printf("%+v\n", eve)
+	}
 	assert.Equal(t, []*event.Event{
 		{
 			EventSource: "test",
