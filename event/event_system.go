@@ -154,14 +154,14 @@ func (dis *Dispatcher) DispatchEvent(event *Event) error {
 }
 
 // RegisterModuleListener registers moduleListener for particular configuration
-func (dis *Dispatcher) RegisterModuleListener(listenerObj ModuleListener, modulePrefixs ...string) error {
+func (dis *Dispatcher) RegisterModuleListener(listenerObj ModuleListener, modulePrefixes ...string) error {
 	if listenerObj == nil {
 		err := ErrNilListener
 		openlogging.GetLogger().Error("nil moduleListener supplied:" + err.Error())
 		return ErrNilListener
 	}
 
-	for _, prefix := range modulePrefixs {
+	for _, prefix := range modulePrefixes {
 		moduleListeners, ok := dis.moduleListeners[prefix]
 		if !ok {
 			moduleListeners = make([]ModuleListener, 0)
@@ -184,12 +184,12 @@ func (dis *Dispatcher) RegisterModuleListener(listenerObj ModuleListener, module
 }
 
 // UnRegisterModuleListener un-register moduleListener for a particular configuration
-func (dis *Dispatcher) UnRegisterModuleListener(listenerObj ModuleListener, modulePrefixs ...string) error {
+func (dis *Dispatcher) UnRegisterModuleListener(listenerObj ModuleListener, modulePrefixes ...string) error {
 	if listenerObj == nil {
 		return ErrNilListener
 	}
 
-	for _, prefix := range modulePrefixs {
+	for _, prefix := range modulePrefixes {
 		listenerList, ok := dis.moduleListeners[prefix]
 		if !ok {
 			continue

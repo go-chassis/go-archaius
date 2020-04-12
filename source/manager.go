@@ -492,25 +492,25 @@ func (m *Manager) UnRegisterListener(listenerObj event.Listener, keys ...string)
 }
 
 // RegisterModuleListener Function to Register all moduleListener for different key(prefix) changes
-func (m *Manager) RegisterModuleListener(listenerObj event.ModuleListener, prefixs ...string) error {
-	for _, prefix := range prefixs {
+func (m *Manager) RegisterModuleListener(listenerObj event.ModuleListener, prefixes ...string) error {
+	for _, prefix := range prefixes {
 		if prefix == "" {
 			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKey, prefix))
 			return fmt.Errorf(fmtInvalidKey, prefix)
 		}
 	}
 
-	return m.dispatcher.RegisterModuleListener(listenerObj, prefixs...)
+	return m.dispatcher.RegisterModuleListener(listenerObj, prefixes...)
 }
 
 // UnRegisterModuleListener remove moduleListener
-func (m *Manager) UnRegisterModuleListener(listenerObj event.ModuleListener, prefixs ...string) error {
-	for _, prefix := range prefixs {
+func (m *Manager) UnRegisterModuleListener(listenerObj event.ModuleListener, prefixes ...string) error {
+	for _, prefix := range prefixes {
 		if prefix == "" {
 			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKey, prefix))
 			return fmt.Errorf(fmtInvalidKey, prefix)
 		}
 	}
 
-	return m.dispatcher.UnRegisterModuleListener(listenerObj, prefixs...)
+	return m.dispatcher.UnRegisterModuleListener(listenerObj, prefixes...)
 }
