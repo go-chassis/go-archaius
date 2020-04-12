@@ -20,6 +20,7 @@
 package filesource_test
 
 import (
+	"fmt"
 	"github.com/go-chassis/go-archaius/event"
 	filesource "github.com/go-chassis/go-archaius/source/file"
 	"github.com/stretchr/testify/assert"
@@ -34,6 +35,10 @@ type TestDynamicConfigHandler struct {
 	EventName  string
 	EventKey   string
 	EventValue interface{}
+}
+
+func (t *TestDynamicConfigHandler) OnModuleEvent(events []*event.Event) {
+	fmt.Println("implement me")
 }
 
 func (t *TestDynamicConfigHandler) OnEvent(e *event.Event) {

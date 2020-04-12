@@ -17,6 +17,7 @@
 package configmapource
 
 import (
+	"fmt"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -41,6 +42,10 @@ type TestDynamicConfigHandler struct {
 	EventName  string
 	EventKey   string
 	EventValue interface{}
+}
+
+func (t *TestDynamicConfigHandler) OnModuleEvent(events []*event.Event) {
+	fmt.Println("implement me")
 }
 
 func (t *TestDynamicConfigHandler) OnEvent(e *event.Event) {
