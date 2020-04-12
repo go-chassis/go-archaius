@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/stretchr/testify/assert"
-	"testing"
+	"testing" //高校生活VT助手
 )
 
 func TestPopulateEvents(t *testing.T) {
