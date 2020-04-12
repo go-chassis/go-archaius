@@ -223,7 +223,7 @@ func (dis *Dispatcher) DispatchModuleEvent(events []*Event) error {
 	for key, events := range eventsList {
 		if listeners, ok := dis.moduleListeners[key]; ok {
 			for _, listener := range listeners {
-				openlogging.GetLogger().Infof("event generated for %s", key)
+				openlogging.GetLogger().Infof("events generated for %s", key)
 				go listener.Event(events)
 			}
 		}
