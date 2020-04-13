@@ -242,6 +242,16 @@ func UnRegisterListener(listenerObj event.Listener, key ...string) error {
 	return manager.UnRegisterListener(listenerObj, key...)
 }
 
+//RegisterModuleListener to Register all moduleListener for different key(prefix) changes
+func RegisterModuleListener(listenerObj event.ModuleListener, prefix ...string) error {
+	return manager.RegisterModuleListener(listenerObj, prefix...)
+}
+
+// UnRegisterModuleListener is to remove the moduleListener
+func UnRegisterModuleListener(listenerObj event.ModuleListener, prefix ...string) error {
+	return manager.UnRegisterModuleListener(listenerObj, prefix...)
+}
+
 // AddFile is for to add the configuration files at runtime
 func AddFile(file string, opts ...FileOption) error {
 	o := &FileOptions{}

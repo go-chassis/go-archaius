@@ -20,6 +20,7 @@
 package env_test
 
 import (
+	"fmt"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source/env"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +29,10 @@ import (
 )
 
 type TestDynamicConfigHandler struct{}
+
+func (t *TestDynamicConfigHandler) OnModuleEvent(events []*event.Event) {
+	fmt.Println("implement me")
+}
 
 func (t *TestDynamicConfigHandler) OnEvent(e *event.Event) {}
 

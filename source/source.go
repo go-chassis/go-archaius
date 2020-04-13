@@ -20,4 +20,5 @@ type ConfigSource interface {
 // EventHandler handles config change event
 type EventHandler interface {
 	OnEvent(event *event.Event)
+	OnModuleEvent(events []*event.Event)
 }
