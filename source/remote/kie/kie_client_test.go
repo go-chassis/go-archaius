@@ -18,7 +18,7 @@ func TestNewKie(t *testing.T) {
 }
 
 func TestMergeConfig(t *testing.T) {
-	k, _ := NewKie(remote.Options{
+	k, err := NewKie(remote.Options{
 		ServerURI: "http://",
 		Labels: map[string]string{
 			remote.LabelApp:         "app",
@@ -26,12 +26,14 @@ func TestMergeConfig(t *testing.T) {
 			remote.LabelService:     "service",
 			remote.LabelVersion:     "1.0.0",
 		}})
+	assert.NoError(t, err)
 	for i, dimension := range dimensionPrecedence {
 		k.setDimensionConfigs(&client.KVResponse{
 			Data: []*client.KVDoc{
 				{
-					Key:   "foo",
-					Value: strconv.Itoa(i + 1),
+					Key:    "foo",
+					Status: "enabled",
+					Value:  strconv.Itoa(i + 1),
 				},
 			},
 		}, dimension)

@@ -21,6 +21,7 @@ type KVRequest struct {
 	ID        string            `json:"id" yaml:"id"`
 	Key       string            `json:"key" yaml:"key"`
 	Value     string            `json:"value,omitempty" yaml:"value,omitempty"`
+	Status    string            `json:"status,omitempty" yaml:"status,omitempty"`
 	ValueType string            `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty"` //ini,json,text,yaml,properties
 	Checker   string            `json:"check,omitempty" yaml:"check,omitempty"`                                       //python script
 	Labels    map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`                                     //redundant
@@ -35,14 +36,12 @@ type KVResponse struct {
 
 //LabelDocResponse is label struct
 type LabelDocResponse struct {
-	LabelID string            `json:"label_id,omitempty"`
-	Labels  map[string]string `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 //KVDoc is database struct to store kv
 type KVDoc struct {
 	ID             string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
-	LabelID        string `json:"label_id,omitempty" bson:"label_id,omitempty" yaml:"label_id,omitempty"`
 	Key            string `json:"key" yaml:"key"`
 	Value          string `json:"value,omitempty" yaml:"value,omitempty"`
 	ValueType      string `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty"` //ini,json,text,yaml,properties
