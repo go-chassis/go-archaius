@@ -589,7 +589,6 @@ func (m *Manager) toRvalueType(confValue interface{}, rValue reflect.Value) (ret
 				if l != convertType.Len() {
 					err = errors.New(fmt.Sprintf("invalid array: want %d elements but got %d", convertType.Len(), l))
 				}
-
 			}
 			j := 0
 			for i := 0; i < l; i++ {
@@ -614,14 +613,43 @@ func (m *Manager) toRvalueType(confValue interface{}, rValue reflect.Value) (ret
 			fieldValue := rValue.Field(i)
 			keyName := m.getKeyName(structField.Name, structField.Tag)
 			if v, ok := confValue.(map[string]interface{}); ok {
-				if r, err := m.toRvalueType(v[keyName], fieldValue); err == nil {
-					if fieldValue.CanSet() {
-						fieldValue.Set(r)
-					}
+				r, err := m.toRvalueType(v[keyName], fieldValue)
+				if err == nil && fieldValue.CanSet() {
+					fieldValue.Set(r)
 				}
 			}
 		}
 		returnValue.Set(rValue)
+
+	case reflect.Ptr:
+		if rValue.IsNil() {
+			ptrValue := reflect.New(rValue.Type().Elem())
+			_, err := m.toRvalueType(confValue, ptrValue)
+			if err != nil {
+				return returnValue, err
+			}
+			if rValue.CanSet() {
+				rValue.Set(ptrValue)
+			}
+			returnValue.Set(rValue)
+
+			return returnValue, err
+		}
+
+		if rValue.Elem().Kind() == reflect.Ptr {
+			ptrValue := rValue.Elem()
+			_, err := m.toRvalueType(confValue, ptrValue)
+			if err != nil {
+				return returnValue, err
+			}
+		}
+
+		ptrValue := rValue.Elem()
+		_, err := m.toRvalueType(confValue, ptrValue)
+		if err != nil {
+			return returnValue, err
+		}
+
 	default:
 		err = errors.New("can not convert type")
 	}

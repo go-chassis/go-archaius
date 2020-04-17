@@ -1,16 +1,15 @@
 package archaius_test
 
 import (
+	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
+	"github.com/go-mesh/openlogging"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
-
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-mesh/openlogging"
-	"github.com/stretchr/testify/assert"
 )
 
 type EListener struct{}
@@ -134,7 +133,7 @@ infos:
     users:
       - name: "yourname"
         age: 21
-infos1:
+infos_ptr:
   - address: "addr02"
     number: 123
     users:
@@ -162,18 +161,18 @@ infos1:
 		Us     []User `yaml:"users"`
 	}
 	type Person struct {
-		Name   string            `yaml:"key"`
-		MDS    map[string]string `yaml:"metadata_str"`
-		MDI    map[string]int    `yaml:"metadata_int"`
-		Info   *Info             `yaml:"info"`
-		StrArr []string          `yaml:"str_arr"`
-		IntArr []int             `yaml:"int_arr"`
-		Infos  []Info            `yaml:"infos"`
-		Infos1 []*Info           `yaml:"infos1"`
+		Name     string            `yaml:"key"`
+		MDS      map[string]string `yaml:"metadata_str"`
+		MDI      map[string]int    `yaml:"metadata_int"`
+		Info     *Info             `yaml:"info"`
+		StrArr   []string          `yaml:"str_arr"`
+		IntArr   []int             `yaml:"int_arr"`
+		Infos    []Info            `yaml:"infos"`
+		InfosPtr []*Info           `yaml:"infos_ptr"`
 	}
 	err = archaius.AddFile(filename1)
-	time.Sleep(time.Second * 3)
 	assert.NoError(t, err)
+	time.Sleep(time.Second * 3)
 	p := &Person{}
 	err = archaius.UnmarshalConfig(p)
 	assert.NoError(t, err)
@@ -186,6 +185,8 @@ infos1:
 	assert.Equal(t, 1, p.IntArr[0])
 	assert.Equal(t, "addr01", p.Infos[0].Addr)
 	assert.Equal(t, "yourname", p.Infos[0].Us[0].Name)
+	assert.Equal(t, "addr02", p.InfosPtr[0].Addr)
+	assert.Equal(t, "yourname1", p.InfosPtr[0].Us[0].Name)
 }
 func TestInitConfigCenter(t *testing.T) {
 	err := archaius.EnableRemoteSource("fake", nil)
