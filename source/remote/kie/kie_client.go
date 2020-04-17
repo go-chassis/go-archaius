@@ -204,19 +204,21 @@ func (k *Kie) watchKVDimensionally(f func(map[string]interface{}), errHandler fu
 	}
 }
 
-func (k *Kie) setDimensionConfigs(kv *client.KVResponse, dimension DimensionName) bool {
+func (k *Kie) setDimensionConfigs(kvs *client.KVResponse, dimension DimensionName) bool {
 	if k.dimensions[dimension] == nil {
 		return false
 	}
 	configs := make(map[string]interface{})
-	if kv != nil {
-		for _, kv := range kv.Data {
-			if kv != nil {
-				k := kv.Key
-				if k != "" {
-					configs[k] = kv.Value
-				}
-			}
+	if kvs == nil {
+		return false
+	}
+	for _, kv := range kvs.Data {
+		if kv == nil {
+			continue
+		}
+		k := kv.Key
+		if k != "" && kv.Status == "enabled" {
+			configs[k] = kv.Value
 		}
 	}
 
