@@ -134,6 +134,12 @@ infos:
     users:
       - name: "yourname"
         age: 21
+infos1:
+  - address: "addr02"
+    number: 123
+    users:
+      - name: "yourname1"
+        age: 22
 `)
 	d, _ := os.Getwd()
 	filename1 := filepath.Join(d, "f3.yaml")
@@ -163,6 +169,7 @@ infos:
 		StrArr []string          `yaml:"str_arr"`
 		IntArr []int             `yaml:"int_arr"`
 		Infos  []Info            `yaml:"infos"`
+		Infos1 []*Info           `yaml:"infos1"`
 	}
 	err = archaius.AddFile(filename1)
 	time.Sleep(time.Second * 3)

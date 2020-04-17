@@ -58,6 +58,7 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 						"key": item.Key,
 					},
 				))
+				continue
 			}
 			var keyVal = item.Value
 			if val, ok := item.Value.(string); ok {
@@ -72,7 +73,7 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 		default:
 			k, ok := item.Key.(string)
 			if !ok {
-				openlogging.Error("yaml path is not string", openlogging.WithTags(
+				openlogging.Error("yaml tag is not string", openlogging.WithTags(
 					openlogging.Tags{
 						"key": item.Key,
 					},
