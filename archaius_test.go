@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-mesh/openlogging"
@@ -115,37 +116,69 @@ key: peter
 info:
   address: a
   number: 8
-metadata:
-  a: b
+metadata_str:
+  key01: "value01"
+  key02: "value02"
+metadata_int:
+  key01: 1
+  key02: 2
+str_arr:
+  - "list01"
+  - "list02"
+int_arr:
+  - 1
+  - 2
+infos:
+  - address: "addr01"
+    number: 100
+    users:
+      - name: "yourname"
+        age: 21
 `)
 	d, _ := os.Getwd()
 	filename1 := filepath.Join(d, "f3.yaml")
 	f1, err := os.Create(filename1)
 	assert.NoError(t, err)
+	err = archaius.Init(archaius.WithMemorySource())
+	assert.NoError(t, err)
 	defer f1.Close()
 	defer os.Remove(filename1)
 	_, err = io.WriteString(f1, string(b))
 	assert.NoError(t, err)
+	type User struct {
+		Name string `yaml:"name"`
+		Age  int    `yaml:"age"`
+	}
 
 	type Info struct {
 		Addr   string `yaml:"address"`
 		Number int    `yaml:"number"`
+		Us     []User `yaml:"users"`
 	}
 	type Person struct {
-		Name string            `yaml:"key"`
-		MD   map[string]string `yaml:"metadata"`
-		Info *Info             `yaml:"info"`
+		Name   string            `yaml:"key"`
+		MDS    map[string]string `yaml:"metadata_str"`
+		MDI    map[string]int    `yaml:"metadata_int"`
+		Info   *Info             `yaml:"info"`
+		StrArr []string          `yaml:"str_arr"`
+		IntArr []int             `yaml:"int_arr"`
+		Infos  []Info            `yaml:"infos"`
 	}
 	err = archaius.AddFile(filename1)
+	time.Sleep(time.Second * 3)
 	assert.NoError(t, err)
 	p := &Person{}
 	err = archaius.UnmarshalConfig(p)
 	assert.NoError(t, err)
 	assert.Equal(t, "peter", p.Name)
-	assert.Equal(t, "b", p.MD["a"])
+	assert.Equal(t, "value01", p.MDS["key01"])
+	assert.Equal(t, 1, p.MDI["key01"])
 	assert.Equal(t, "a", p.Info.Addr)
 	assert.Equal(t, 8, p.Info.Number)
-
+	assert.Equal(t, "list01", p.StrArr[0])
+	assert.Equal(t, 1, p.IntArr[0])
+	assert.Equal(t, "addr01", p.Infos[0].Addr)
+	assert.Equal(t, "yourname", p.Infos[0].Us[0].Name)
 }
 func TestInitConfigCenter(t *testing.T) {
 	err := archaius.EnableRemoteSource("fake", nil)

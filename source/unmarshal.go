@@ -325,18 +325,20 @@ func (m *Manager) populateMap(prefix string, mapType reflect.Type, rValues refle
 			val := m.GetConfig(prefix + key)
 			setVal := reflect.ValueOf(val)
 
+			// maybe next map type
 			if mapValueType != setVal.Type() {
-				returnCongValue, err := ToRvalueType(setVal.Interface(), mapValueType)
-				if err != nil {
-					return rValue, fmt.Errorf(fmtValueNotMatched,
-						prefix+key, mapValueType, setVal.String())
-				}
+				return rValue, nil
 
-				setVal = returnCongValue
+			}
+
+			returnCongValue, err := m.toRvalueType(setVal.Interface(), reflect.New(mapValueType).Elem())
+			if err != nil {
+				return rValue, fmt.Errorf(fmtValueNotMatched,
+					prefix+key, mapValueType, setVal.String())
 			}
 
 			if rValue.CanSet() {
-				rValue.SetMapIndex(reflect.ValueOf(key[1:]), setVal)
+				rValue.SetMapIndex(reflect.ValueOf(key[1:]), returnCongValue)
 			}
 		default:
 			splitKey := strings.Split(key, `.`)
@@ -487,18 +489,15 @@ func (m *Manager) setValue(rValue reflect.Value, keyName string) error {
 
 	// assign value if assignable
 	configRValue := reflect.ValueOf(configValue)
-	if configRValue.Kind() != rValue.Kind() {
-		returnCongValue, err := ToRvalueType(configRValue.Interface(), rValue.Type())
-		if err != nil {
-			return fmt.Errorf(fmtValueNotMatched,
-				keyName, rValue.Kind(), configRValue.Kind())
-		}
 
-		configRValue = returnCongValue
+	returnCongValue, err := m.toRvalueType(configRValue.Interface(), rValue)
+	if err != nil {
+		return fmt.Errorf(fmtValueNotMatched,
+			keyName, rValue.Kind(), configRValue.Kind())
 	}
 
 	if rValue.CanSet() {
-		rValue.Set(configRValue)
+		rValue.Set(returnCongValue)
 	}
 
 	return nil
@@ -538,7 +537,8 @@ func toSnake(in string) string {
 }
 
 // ToRvalueType Deserializes the object to a particular type
-func ToRvalueType(confValue interface{}, convertType reflect.Type) (returnValue reflect.Value, err error) {
+func (m *Manager) toRvalueType(confValue interface{}, rValue reflect.Value) (returnValue reflect.Value, err error) {
+	convertType := rValue.Type()
 	castValue := cast.NewValue(confValue, nil)
 	returnValue = reflect.New(convertType).Elem()
 
@@ -577,6 +577,51 @@ func ToRvalueType(confValue interface{}, convertType reflect.Type) (returnValue 
 			err = rErr
 		}
 		returnValue.SetBool(returnBool)
+
+	case reflect.Array, reflect.Slice:
+		if to, ok := confValue.([]interface{}); ok {
+			et := convertType.Elem()
+			l := len(to)
+			switch convertType.Kind() {
+			case reflect.Slice:
+				returnValue.Set(reflect.MakeSlice(convertType, l, l))
+			case reflect.Array:
+				if l != convertType.Len() {
+					err = errors.New(fmt.Sprintf("invalid array: want %d elements but got %d", convertType.Len(), l))
+				}
+
+			}
+			j := 0
+			for i := 0; i < l; i++ {
+				e := reflect.New(et).Elem()
+				if r, err := m.toRvalueType(to[i], e); err == nil {
+					returnValue.Index(j).Set(r)
+					j++
+				}
+			}
+			if convertType.Kind() != reflect.Array {
+				returnValue.Set(returnValue.Slice(0, j))
+			}
+		} else {
+			returnValue.Set(rValue)
+		}
+
+	case reflect.Struct:
+		structType := convertType
+		numOfField := structType.NumField()
+		for i := 0; i < numOfField; i++ {
+			structField := structType.Field(i)
+			fieldValue := rValue.Field(i)
+			keyName := m.getKeyName(structField.Name, structField.Tag)
+			if v, ok := confValue.(map[string]interface{}); ok {
+				if r, err := m.toRvalueType(v[keyName], fieldValue); err == nil {
+					if fieldValue.CanSet() {
+						fieldValue.Set(r)
+					}
+				}
+			}
+		}
+		returnValue.Set(rValue)
 	default:
 		err = errors.New("can not convert type")
 	}
