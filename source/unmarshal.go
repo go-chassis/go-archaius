@@ -579,6 +579,24 @@ func (m *Manager) toRvalueType(confValue interface{}, rValue reflect.Value) (ret
 		returnValue.SetBool(returnBool)
 
 	case reflect.Array, reflect.Slice:
+		return m.toComplexType(confValue, rValue)
+	case reflect.Struct:
+		return m.toComplexType(confValue, rValue)
+	case reflect.Ptr:
+		return m.toComplexType(confValue, rValue)
+	default:
+		err = errors.New("can not convert type")
+	}
+
+	return returnValue, err
+}
+
+// ToRvalueType Deserializes the object to a particular type
+func (m *Manager) toComplexType(confValue interface{}, rValue reflect.Value) (returnValue reflect.Value, err error) {
+	convertType := rValue.Type()
+	returnValue = reflect.New(convertType).Elem()
+	switch convertType.Kind() {
+	case reflect.Array, reflect.Slice:
 		if to, ok := confValue.([]interface{}); ok {
 			et := convertType.Elem()
 			l := len(to)
@@ -644,8 +662,7 @@ func (m *Manager) toRvalueType(confValue interface{}, rValue reflect.Value) (ret
 			}
 		}
 
-		ptrValue := rValue.Elem()
-		_, err := m.toRvalueType(confValue, ptrValue)
+		_, err := m.toRvalueType(confValue, rValue.Elem())
 		if err != nil {
 			return returnValue, err
 		}
