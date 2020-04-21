@@ -579,11 +579,11 @@ func (m *Manager) toRvalueType(confValue interface{}, rValue reflect.Value) (ret
 		returnValue.SetBool(returnBool)
 
 	case reflect.Array, reflect.Slice:
-		return m.toComplexType(confValue, rValue)
+		return m.toArrayType(confValue, rValue)
 	case reflect.Struct:
-		return m.toComplexType(confValue, rValue)
+		return m.toStructType(confValue, rValue)
 	case reflect.Ptr:
-		return m.toComplexType(confValue, rValue)
+		return m.toPtrType(confValue, rValue)
 	default:
 		err = errors.New("can not convert type")
 	}
@@ -591,85 +591,94 @@ func (m *Manager) toRvalueType(confValue interface{}, rValue reflect.Value) (ret
 	return returnValue, err
 }
 
-// ToRvalueType Deserializes the object to a particular type
-func (m *Manager) toComplexType(confValue interface{}, rValue reflect.Value) (returnValue reflect.Value, err error) {
+// toArrayType Deserializes the Array to a particular type
+func (m *Manager) toArrayType(confValue interface{}, rValue reflect.Value) (returnValue reflect.Value, err error) {
 	convertType := rValue.Type()
 	returnValue = reflect.New(convertType).Elem()
-	switch convertType.Kind() {
-	case reflect.Array, reflect.Slice:
-		if to, ok := confValue.([]interface{}); ok {
-			et := convertType.Elem()
-			l := len(to)
-			switch convertType.Kind() {
-			case reflect.Slice:
-				returnValue.Set(reflect.MakeSlice(convertType, l, l))
-			case reflect.Array:
-				if l != convertType.Len() {
-					err = errors.New(fmt.Sprintf("invalid array: want %d elements but got %d", convertType.Len(), l))
-				}
-			}
-			j := 0
-			for i := 0; i < l; i++ {
-				e := reflect.New(et).Elem()
-				if r, err := m.toRvalueType(to[i], e); err == nil {
-					returnValue.Index(j).Set(r)
-					j++
-				}
-			}
-			if convertType.Kind() != reflect.Array {
-				returnValue.Set(returnValue.Slice(0, j))
-			}
-		} else {
-			returnValue.Set(rValue)
-		}
 
-	case reflect.Struct:
-		structType := convertType
-		numOfField := structType.NumField()
-		for i := 0; i < numOfField; i++ {
-			structField := structType.Field(i)
-			fieldValue := rValue.Field(i)
-			keyName := m.getKeyName(structField.Name, structField.Tag)
-			if v, ok := confValue.(map[string]interface{}); ok {
-				r, err := m.toRvalueType(v[keyName], fieldValue)
-				if err == nil && fieldValue.CanSet() {
-					fieldValue.Set(r)
-				}
-			}
-		}
+	to, ok := confValue.([]interface{})
+	if !ok {
 		returnValue.Set(rValue)
+		return returnValue, err
+	}
 
-	case reflect.Ptr:
-		if rValue.IsNil() {
-			ptrValue := reflect.New(rValue.Type().Elem())
-			_, err := m.toRvalueType(confValue, ptrValue)
-			if err != nil {
-				return returnValue, err
-			}
-			if rValue.CanSet() {
-				rValue.Set(ptrValue)
-			}
-			returnValue.Set(rValue)
-
-			return returnValue, err
+	et := convertType.Elem()
+	l := len(to)
+	switch convertType.Kind() {
+	case reflect.Slice:
+		returnValue.Set(reflect.MakeSlice(convertType, l, l))
+	case reflect.Array:
+		if l != convertType.Len() {
+			err = errors.New(fmt.Sprintf("invalid array: want %d elements but got %d", convertType.Len(), l))
 		}
+	}
 
-		if rValue.Elem().Kind() == reflect.Ptr {
-			ptrValue := rValue.Elem()
-			_, err := m.toRvalueType(confValue, ptrValue)
-			if err != nil {
-				return returnValue, err
+	j := 0
+	for i := 0; i < l; i++ {
+		e := reflect.New(et).Elem()
+		if r, err := m.toRvalueType(to[i], e); err == nil {
+			returnValue.Index(j).Set(r)
+			j++
+		}
+	}
+
+	if convertType.Kind() != reflect.Array {
+		returnValue.Set(returnValue.Slice(0, j))
+	}
+
+	return returnValue, err
+}
+
+// ToRvalueType Deserializes the Struct to a particular type
+func (m *Manager) toStructType(confValue interface{}, rValue reflect.Value) (returnValue reflect.Value, err error) {
+	structType := rValue.Type()
+	returnValue = reflect.New(structType).Elem()
+	numOfField := structType.NumField()
+
+	for i := 0; i < numOfField; i++ {
+		structField := structType.Field(i)
+		fieldValue := rValue.Field(i)
+		keyName := m.getKeyName(structField.Name, structField.Tag)
+		if v, ok := confValue.(map[string]interface{}); ok {
+			r, err := m.toRvalueType(v[keyName], fieldValue)
+			if err == nil && fieldValue.CanSet() {
+				fieldValue.Set(r)
 			}
 		}
+	}
+	returnValue.Set(rValue)
 
-		_, err := m.toRvalueType(confValue, rValue.Elem())
+	return returnValue, err
+}
+
+// ToRvalueType Deserializes the Ptr to a particular type
+func (m *Manager) toPtrType(confValue interface{}, rValue reflect.Value) (returnValue reflect.Value, err error) {
+	convertType := rValue.Type()
+	returnValue = reflect.New(convertType).Elem()
+
+	if rValue.IsNil() {
+		ptrValue := reflect.New(rValue.Type().Elem())
+		_, err := m.toRvalueType(confValue, ptrValue)
 		if err != nil {
 			return returnValue, err
 		}
 
-	default:
-		err = errors.New("type had not found")
+		if rValue.CanSet() {
+			rValue.Set(ptrValue)
+			returnValue.Set(rValue)
+		}
+
+		return returnValue, err
 	}
 
+	if rValue.Elem().Kind() == reflect.Ptr {
+		ptrValue := rValue.Elem()
+		_, err := m.toRvalueType(confValue, ptrValue)
+		if err != nil {
+			return returnValue, err
+		}
+	}
+
+	_, err = m.toRvalueType(confValue, rValue.Elem())
 	return returnValue, err
 }
