@@ -668,7 +668,7 @@ func (m *Manager) toComplexType(confValue interface{}, rValue reflect.Value) (re
 		}
 
 	default:
-		err = errors.New("can not convert type")
+		err = errors.New("type had not found")
 	}
 
 	return returnValue, err
