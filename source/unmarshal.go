@@ -250,12 +250,12 @@ func (m *Manager) getMapKeys(configValue map[string]interface{}, prefix string, 
 		}
 	} else {
 		for key := range configValue {
-			isPrefix, index := checkPrefix(key, prefix)
-			if !isPrefix {
+			isPrefix, index := checkPrefix(key, prefix+".")
+			if !isPrefix || len(prefix) == 0 {
 				continue
 			}
 
-			mapKeys = append(mapKeys, key[index:])
+			mapKeys = append(mapKeys, key[index-1:])
 		}
 	}
 
@@ -472,7 +472,6 @@ func checkPrefix(heap, prefix string) (bool, int) {
 		}
 		index++
 	}
-
 	if len(prefix) != index {
 		return false, 0
 	}

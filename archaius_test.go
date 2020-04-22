@@ -121,6 +121,12 @@ metadata_str:
 metadata_int:
   key01: 1
   key02: 2
+metadata_struct:
+  key01: {address: "addr03",number: 1230}
+  key02: {address: "addr04",number: 1231}
+metadata_ptr:
+  key01: {address: "addr05",number: 1232}
+  key02: {address: "addr06",number: 1233}
 str_arr:
   - "list01"
   - "list02"
@@ -164,6 +170,8 @@ infos_ptr:
 		Name     string            `yaml:"key"`
 		MDS      map[string]string `yaml:"metadata_str"`
 		MDI      map[string]int    `yaml:"metadata_int"`
+		MDSTR    map[string]Info   `yaml:"metadata_struct"`
+		MDPTR    map[string]*Info  `yaml:"metadata_ptr"`
 		Info     *Info             `yaml:"info"`
 		StrArr   []string          `yaml:"str_arr"`
 		IntArr   []int             `yaml:"int_arr"`
@@ -175,16 +183,31 @@ infos_ptr:
 	time.Sleep(time.Second * 3)
 	p := &Person{}
 	err = archaius.UnmarshalConfig(p)
+
 	assert.NoError(t, err)
 	assert.Equal(t, "peter", p.Name)
+	// case map[string]string
 	assert.Equal(t, "value01", p.MDS["key01"])
+	// case map[string]int
 	assert.Equal(t, 1, p.MDI["key01"])
+	// case map[string]struct
+	assert.Equal(t, "addr03", p.MDSTR["key01"].Addr)
+	// case map[string]ptr
+	assert.Equal(t, "addr05", p.MDPTR["key01"].Addr)
+
+	// case ptr
 	assert.Equal(t, "a", p.Info.Addr)
+	// case ptr
 	assert.Equal(t, 8, p.Info.Number)
+	// case string array
 	assert.Equal(t, "list01", p.StrArr[0])
+	// case int array
 	assert.Equal(t, 1, p.IntArr[0])
+	// case struct array
 	assert.Equal(t, "addr01", p.Infos[0].Addr)
+	// case struct array
 	assert.Equal(t, "yourname", p.Infos[0].Us[0].Name)
+	// case ptr array
 	assert.Equal(t, "addr02", p.InfosPtr[0].Addr)
 	assert.Equal(t, "yourname1", p.InfosPtr[0].Us[0].Name)
 }
