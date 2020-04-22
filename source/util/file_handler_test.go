@@ -22,9 +22,6 @@ e:
 	e1 := m["e"]
 	v, ok := e1.([]interface{})
 	assert.True(t, ok)
-	if ok {
-
-	}
 	map1, ok1 := v[0].(map[string]interface{})
 	assert.True(t, ok1)
 	assert.Equal(t, "addvalue", map1["addr"])
