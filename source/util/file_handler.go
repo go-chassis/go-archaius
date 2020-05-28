@@ -86,6 +86,7 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 				keyVal = ExpandValueEnv(val)
 			}
 			result[prefix+k] = keyVal
+
 		}
 
 	}

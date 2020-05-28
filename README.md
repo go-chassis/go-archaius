@@ -84,6 +84,7 @@ some:
 ttl: 30s
 service:
   name: ${NAME||go-archaius}
+  addr: ${IP||127.0.0.1}:${PORT||80} 
 ```
 after adding file
 ```go
@@ -96,10 +97,13 @@ you can get value
 ttl := archaius.GetString("ttl", "60s")
 i := archaius.GetInt("some.config", "")
 serviceName := archaius.GetString("service.name", "")
+serviceAddr := archaius.GetString("service.addr", "")
 ```
 note:
 
-For `service.name` config with value of  `${NAME||go-archaius}` is support env syntax. If environment variable `${NAME}` isn't setting, return default value `go-archaius`. It's setted, will get real environment variable value.
+1. For `service.name` config with value of  `${NAME||go-archaius}` is support env syntax. If environment variable `${NAME}` isn't setting, return default value `go-archaius`. It's setted, will get real environment variable value.
+2. For `service.addr` config is support "expand syntax". If environment variable `${IP}` or `${PORT}` is setted, will get env config. 
+eg: `export IP=0.0.0.0 PORT=443` , `archaius.GetString("service.addr", "")` will return `0.0.0.0:443` .
 
 if you want to read some.config from env
 you can run
