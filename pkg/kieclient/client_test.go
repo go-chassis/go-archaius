@@ -31,6 +31,7 @@ func TestClient_Put(t *testing.T) {
 	})
 	kv := KVRequest{
 		Key:       "app.properties",
+		Status:    "enabled",
 		Labels:    map[string]string{"service": "client"},
 		Value:     "timeout: 1s",
 		ValueType: "text",
@@ -111,6 +112,7 @@ func TestClient_Delete(t *testing.T) {
 	kvBody.ValueType = "text"
 	kvBody.Labels = make(map[string]string)
 	kvBody.Labels["env"] = "client_test"
+	kvBody.Status = "enabled"
 	kv, err := c.Create(context.TODO(), kvBody, WithProject("client_test"))
 	assert.NoError(t, err)
 	kvs, _, err := c.List(context.TODO(),

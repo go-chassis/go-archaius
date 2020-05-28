@@ -135,6 +135,7 @@ func (ms *Source) Set(key string, value interface{}) error {
 
 	if ms.callback != nil {
 		ms.callback.OnEvent(e)
+		ms.callback.OnModuleEvent([]*event.Event{e})
 	}
 
 	return nil
@@ -163,6 +164,7 @@ func (ms *Source) Delete(key string) error {
 
 	if ms.callback != nil {
 		ms.callback.OnEvent(e)
+		ms.callback.OnModuleEvent([]*event.Event{e})
 	}
 
 	return nil

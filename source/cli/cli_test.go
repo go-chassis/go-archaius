@@ -20,6 +20,7 @@
 package cli
 
 import (
+	"fmt"
 	"github.com/go-chassis/go-archaius/event"
 	"os"
 	"testing"
@@ -28,6 +29,10 @@ import (
 type TestDynamicConfigHandler struct{}
 
 func (t *TestDynamicConfigHandler) OnEvent(e *event.Event) {}
+
+func (t *TestDynamicConfigHandler) OnModuleEvent(events []*event.Event) {
+	fmt.Println("implement me")
+}
 
 func TestCommandLineConfigurationSource(t *testing.T) {
 

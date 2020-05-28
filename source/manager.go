@@ -340,6 +340,18 @@ func (m *Manager) updateConfigurationMapByDI(source ConfigSource, configs map[st
 	return nil
 }
 
+func (m *Manager) updateModuleEvent(es []*event.Event) error {
+	if es == nil || len(es) == 0 {
+		return errors.New("nil or invalid events supplied")
+	}
+
+	for i := 0; i < len(es); i++ {
+		m.updateEvent(es[i])
+	}
+
+	return m.dispatcher.DispatchModuleEvent(es)
+}
+
 func (m *Manager) updateEvent(e *event.Event) error {
 	// refresh all configuration one by one
 	if e == nil || e.EventSource == "" || e.Key == "" {
@@ -398,6 +410,13 @@ func (m *Manager) OnEvent(event *event.Event) {
 	err := m.updateEvent(event)
 	if err != nil {
 		openlogging.GetLogger().Error("failed in updating event with error: " + err.Error())
+	}
+}
+
+// OnModuleEvent Triggers actions when events are generated
+func (m *Manager) OnModuleEvent(event []*event.Event) {
+	if err := m.updateModuleEvent(event); err != nil {
+		openlogging.GetLogger().Error("failed in updating events with error: " + err.Error())
 	}
 }
 
@@ -470,4 +489,28 @@ func (m *Manager) UnRegisterListener(listenerObj event.Listener, keys ...string)
 	}
 
 	return m.dispatcher.UnRegisterListener(listenerObj, keys...)
+}
+
+// RegisterModuleListener Function to Register all moduleListener for different key(prefix) changes
+func (m *Manager) RegisterModuleListener(listenerObj event.ModuleListener, prefixes ...string) error {
+	for _, prefix := range prefixes {
+		if prefix == "" {
+			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKey, prefix))
+			return fmt.Errorf(fmtInvalidKey, prefix)
+		}
+	}
+
+	return m.dispatcher.RegisterModuleListener(listenerObj, prefixes...)
+}
+
+// UnRegisterModuleListener remove moduleListener
+func (m *Manager) UnRegisterModuleListener(listenerObj event.ModuleListener, prefixes ...string) error {
+	for _, prefix := range prefixes {
+		if prefix == "" {
+			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKey, prefix))
+			return fmt.Errorf(fmtInvalidKey, prefix)
+		}
+	}
+
+	return m.dispatcher.UnRegisterModuleListener(listenerObj, prefixes...)
 }

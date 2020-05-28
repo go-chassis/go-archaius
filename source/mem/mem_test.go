@@ -20,6 +20,7 @@
 package mem_test
 
 import (
+	"fmt"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source/mem"
 	"testing"
@@ -40,6 +41,10 @@ func (t *TestDynamicConfigHandler) OnEvent(e *event.Event) {
 	t.EventKey = e.Key
 	t.EventName = e.EventType
 	t.EventValue = e.Value
+}
+
+func (t *TestDynamicConfigHandler) OnModuleEvent(events []*event.Event) {
+	fmt.Println("implement me")
 }
 
 func TestMemoryConfigurationSource(t *testing.T) {
