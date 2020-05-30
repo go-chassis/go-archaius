@@ -1,7 +1,8 @@
 ### go-archaius
 [![Build Status](https://travis-ci.org/go-chassis/go-archaius.svg?branch=master)](https://travis-ci.org/go-chassis/go-archaius)
 [![Coverage Status](https://coveralls.io/repos/github/go-chassis/go-archaius/badge.svg)](https://coveralls.io/github/go-chassis/go-archaius)
-![](arch.PNG)
+![](arch.PNG) 
+[![HitCount](http://hits.dwyl.com/go-chassis/go-archaius.svg)](http://hits.dwyl.com/go-chassis/go-archaius)
 
 This is a light weight configuration management framework 
 which helps to manage configurations in distributed system
