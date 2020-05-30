@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 type EListener struct{}
@@ -180,10 +179,8 @@ infos_ptr:
 	}
 	err = archaius.AddFile(filename1)
 	assert.NoError(t, err)
-	time.Sleep(time.Second * 3)
 	p := &Person{}
 	err = archaius.UnmarshalConfig(p)
-
 	assert.NoError(t, err)
 	assert.Equal(t, "peter", p.Name)
 	// case map[string]string
@@ -210,6 +207,19 @@ infos_ptr:
 	// case ptr array
 	assert.Equal(t, "addr02", p.InfosPtr[0].Addr)
 	assert.Equal(t, "yourname1", p.InfosPtr[0].Us[0].Name)
+	t.Run("map test", func(t *testing.T) {
+		archaius.Set("key", "peter")
+		archaius.Set("metadata.name", "123")
+		type Person struct {
+			Name string            `yaml:"key"`
+			MD   map[string]string `yaml:"metadata"`
+		}
+		p := &Person{}
+		err := archaius.UnmarshalConfig(p)
+		assert.NoError(t, err)
+		assert.Equal(t, "peter", p.Name)
+		assert.Equal(t, "123", p.MD["name"])
+	})
 }
 func TestInitConfigCenter(t *testing.T) {
 	err := archaius.EnableRemoteSource("fake", nil)
