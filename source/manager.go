@@ -357,7 +357,7 @@ func (m *Manager) updateEvent(e *event.Event) error {
 	if e == nil || e.EventSource == "" || e.Key == "" {
 		return errors.New("nil or invalid event supplied")
 	}
-	openlogging.GetLogger().Infof("event received %s", e)
+	openlogging.Info("config update event received")
 	switch e.EventType {
 	case event.Create, event.Update:
 		m.configMapMux.Lock()
