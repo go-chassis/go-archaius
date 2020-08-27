@@ -23,7 +23,7 @@ package event
 
 import (
 	"errors"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"regexp"
 	"strings"
 )
@@ -77,7 +77,7 @@ func NewDispatcher() *Dispatcher {
 func (dis *Dispatcher) RegisterListener(listenerObj Listener, keys ...string) error {
 	if listenerObj == nil {
 		err := ErrNilListener
-		openlogging.GetLogger().Error("nil listener supplied:" + err.Error())
+		openlog.Error("nil listener supplied:" + err.Error())
 		return ErrNilListener
 	}
 
@@ -139,12 +139,12 @@ func (dis *Dispatcher) DispatchEvent(event *Event) error {
 	for regKey, listeners := range dis.listeners {
 		matched, err := regexp.MatchString(regKey, event.Key)
 		if err != nil {
-			openlogging.GetLogger().Errorf("regular expresssion for key %s failed: %s", regKey, err)
+			openlog.Error("regular expression for key " + regKey + " failed:" + err.Error())
 			continue
 		}
 		if matched {
 			for _, listener := range listeners {
-				openlogging.GetLogger().Infof("event generated for %s", regKey)
+				openlog.Info("event generated for " + regKey)
 				go listener.Event(event)
 			}
 		}
@@ -157,7 +157,7 @@ func (dis *Dispatcher) DispatchEvent(event *Event) error {
 func (dis *Dispatcher) RegisterModuleListener(listenerObj ModuleListener, modulePrefixes ...string) error {
 	if listenerObj == nil {
 		err := ErrNilListener
-		openlogging.GetLogger().Error("nil moduleListener supplied:" + err.Error())
+		openlog.Error("nil moduleListener supplied:" + err.Error())
 		return ErrNilListener
 	}
 
@@ -223,7 +223,7 @@ func (dis *Dispatcher) DispatchModuleEvent(events []*Event) error {
 	for key, events := range eventsList {
 		if listeners, ok := dis.moduleListeners[key]; ok {
 			for _, listener := range listeners {
-				openlogging.GetLogger().Infof("events generated for %s", key)
+				openlog.Info("events generated for " + key)
 				go listener.Event(events)
 			}
 		}

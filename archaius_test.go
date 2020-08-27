@@ -1,9 +1,10 @@
 package archaius_test
 
 import (
+	"fmt"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
@@ -14,7 +15,7 @@ import (
 type EListener struct{}
 
 func (e EListener) Event(event *event.Event) {
-	openlogging.GetLogger().Infof("config value after change ", event.Key, " | ", event.Value)
+	openlog.Info(fmt.Sprintf("config value after change %s |%s", event.Key, event.Value))
 }
 
 var filename2 string

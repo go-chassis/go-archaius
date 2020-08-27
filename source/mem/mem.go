@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/go-chassis/go-archaius/source"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 /*
@@ -94,7 +94,7 @@ func (*Source) GetSourceName() string {
 //Watch dynamically handles a memory configuration
 func (ms *Source) Watch(callback source.EventHandler) error {
 	ms.callback = callback
-	openlogging.Info("mem source callback prepared")
+	openlog.Info("mem source callback prepared")
 	ms.CallbackCheck <- true
 	return nil
 }

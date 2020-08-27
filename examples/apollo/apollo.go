@@ -7,7 +7,7 @@ import (
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source/apollo"
 	_ "github.com/go-chassis/go-archaius/source/apollo"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"time"
 )
 
@@ -17,9 +17,9 @@ type Listener struct {
 
 func (li *Listener) Event(event *event.Event) {
 	fmt.Printf("listen:%+v", *event)
-	openlogging.GetLogger().Info(event.Key)
-	openlogging.GetLogger().Infof(fmt.Sprintf("%v\n", event.Value))
-	openlogging.GetLogger().Info(event.EventType)
+	openlog.Info(event.Key)
+	openlog.Info(fmt.Sprintf("%v\n", event.Value))
+	openlog.Info(event.EventType)
 }
 
 func main() {

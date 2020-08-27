@@ -3,14 +3,14 @@ package main
 import (
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/source/util"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"log"
 )
 
 func main() {
 	err := archaius.Init(archaius.WithRequiredFiles([]string{"./dir", "f1.yaml"}))
 	if err != nil {
-		openlogging.GetLogger().Error("Error:" + err.Error())
+		openlog.Error("Error:" + err.Error())
 	}
 	log.Println(archaius.Get("age"))
 	log.Println(archaius.Get("name"))

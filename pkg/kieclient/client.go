@@ -29,7 +29,7 @@ import (
 
 	"github.com/go-chassis/foundation/httpclient"
 	"github.com/go-chassis/foundation/security"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 //match mode
@@ -127,7 +127,7 @@ func (c *Client) Create(ctx context.Context, kv KVRequest, opts ...OpOption) (*K
 	}
 	b := ReadBody(resp)
 	if resp.StatusCode != http.StatusOK {
-		openlogging.Error(MsgOpFailed, openlogging.WithTags(openlogging.Tags{
+		openlog.Error(MsgOpFailed, openlog.WithTags(openlog.Tags{
 			"k":      kv.Key,
 			"status": resp.Status,
 			"body":   b,
@@ -138,7 +138,7 @@ func (c *Client) Create(ctx context.Context, kv KVRequest, opts ...OpOption) (*K
 	kvs := &KVDoc{}
 	err = json.Unmarshal(b, kvs)
 	if err != nil {
-		openlogging.Error("unmarshal kv failed:" + err.Error())
+		openlog.Error("unmarshal kv failed:" + err.Error())
 		return nil, err
 	}
 	return kvs, nil
@@ -166,7 +166,7 @@ func (c *Client) Put(ctx context.Context, kv KVRequest, opts ...OpOption) (*KVDo
 	}
 	b := ReadBody(resp)
 	if resp.StatusCode != http.StatusOK {
-		openlogging.Error(MsgOpFailed, openlogging.WithTags(openlogging.Tags{
+		openlog.Error(MsgOpFailed, openlog.WithTags(openlog.Tags{
 			"k":      kv.Key,
 			"status": resp.Status,
 			"body":   b,
@@ -177,7 +177,7 @@ func (c *Client) Put(ctx context.Context, kv KVRequest, opts ...OpOption) (*KVDo
 	kvs := &KVDoc{}
 	err = json.Unmarshal(b, kvs)
 	if err != nil {
-		openlogging.Error("unmarshal kv failed:" + err.Error())
+		openlog.Error("unmarshal kv failed:" + err.Error())
 		return nil, err
 	}
 	return kvs, nil
@@ -230,7 +230,7 @@ func (c *Client) List(ctx context.Context, opts ...GetOption) (*KVResponse, int,
 		if resp.StatusCode == http.StatusNotModified {
 			return nil, responseRevision, ErrNoChanges
 		}
-		openlogging.Error(MsgOpFailed, openlogging.WithTags(openlogging.Tags{
+		openlog.Error(MsgOpFailed, openlog.WithTags(openlog.Tags{
 			"k":      options.Key,
 			"status": resp.Status,
 			"body":   b,
@@ -238,13 +238,13 @@ func (c *Client) List(ctx context.Context, opts ...GetOption) (*KVResponse, int,
 		return nil, responseRevision, fmt.Errorf(FmtOpFailed, options.Key, resp.Status, b)
 	} else if err != nil {
 		msg := fmt.Sprintf("get revision from response header failed when the request status is OK: %v", err)
-		openlogging.Error(msg)
+		openlog.Error(msg)
 		return nil, responseRevision, fmt.Errorf(msg)
 	}
 	var kvs *KVResponse
 	err = json.Unmarshal(b, &kvs)
 	if err != nil {
-		openlogging.Error("unmarshal kv failed:" + err.Error())
+		openlog.Error("unmarshal kv failed:" + err.Error())
 		return nil, responseRevision, err
 	}
 	c.currentRevision = responseRevision
@@ -285,11 +285,11 @@ func ReadBody(resp *http.Response) []byte {
 	if resp != nil && resp.Body != nil {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			openlogging.Error(fmt.Sprintf("read body failed: %s", err.Error()))
+			openlog.Error(fmt.Sprintf("read body failed: %s", err.Error()))
 			return nil
 		}
 		return body
 	}
-	openlogging.Error("response body or response is nil")
+	openlog.Error("response body or response is nil")
 	return nil
 }

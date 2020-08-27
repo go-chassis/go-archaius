@@ -23,7 +23,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 const (
@@ -40,12 +40,12 @@ type Source struct {
 
 //NewEnvConfigurationSource configures a new environment configuration
 func NewEnvConfigurationSource() source.ConfigSource {
-	openlogging.Info("enable env source")
+	openlog.Info("enable env source")
 	envConfigSource := new(Source)
 	envConfigSource.priority = envVariableSourcePriority
 	config, err := envConfigSource.pullConfigurations()
 	if err != nil {
-		openlogging.GetLogger().Error("failed to initialize environment configurations: " + err.Error())
+		openlog.Error("failed to initialize environment configurations: " + err.Error())
 		return envConfigSource
 	}
 	envConfigSource.Configurations = config

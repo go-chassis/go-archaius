@@ -26,7 +26,7 @@ import (
 	client "github.com/go-chassis/go-archaius/pkg/kieclient"
 	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/go-chassis/go-archaius/source/util/queue"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 //DimensionName is the name identifying various dimension of configurations.
@@ -96,8 +96,8 @@ func NewKie(options remote.Options) (*Kie, error) {
 		currentRevision: -1,
 		dimensions:      dimensions,
 	}
-	openlogging.Info("new kie client", openlogging.WithTags(
-		openlogging.Tags{
+	openlog.Info("new kie client", openlog.WithTags(
+		openlog.Tags{
 			"verifyPeer": options.VerifyPeer,
 			"ep":         ks,
 		}))
@@ -171,8 +171,8 @@ func (k *Kie) Watch(f func(map[string]interface{}), errHandler func(err error), 
 }
 
 func (k *Kie) watchKVDimensionally(f func(map[string]interface{}), errHandler func(err error), dimension DimensionName) {
-	openlogging.Info("start watching configurations of dimension " + string(dimension))
-	defer openlogging.Info("stop watching configurations of dimension " + string(dimension))
+	openlog.Info("start watching configurations of dimension " + string(dimension))
+	defer openlog.Info("stop watching configurations of dimension " + string(dimension))
 	if k.watchTimeOut == 0 {
 		k.watchTimeOut = defaultWaitTime
 	}
