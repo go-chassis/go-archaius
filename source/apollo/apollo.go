@@ -2,11 +2,12 @@ package apollo
 
 import (
 	"errors"
+	"fmt"
 	apollo "github.com/Shonminh/apollo-client"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"sync"
 )
 
@@ -41,6 +42,15 @@ var (
 func init() {
 	archaius.InstallRemoteSource(archaius.ApolloSource, NewApolloSource)
 }
+func Debugf(format string, v ...interface{}) {
+	openlog.Debug(fmt.Sprintf(format, v...))
+}
+func Errorf(format string, v ...interface{}) {
+	openlog.Error(fmt.Sprintf(format, v...))
+}
+func Infof(format string, v ...interface{}) {
+	openlog.Info(fmt.Sprintf(format, v...))
+}
 
 // NewApolloSource get a apollo source singleton, and pull configs at once after init apollo client.
 func NewApolloSource(remoteInfo *archaius.RemoteInfo) (source.ConfigSource, error) {
@@ -50,7 +60,7 @@ func NewApolloSource(remoteInfo *archaius.RemoteInfo) (source.ConfigSource, erro
 		apollo.WithApolloAddr(remoteInfo.URL),
 		apollo.WithAppId(remoteInfo.DefaultDimension[AppID]),
 		apollo.WithNamespaceName(remoteInfo.DefaultDimension[NamespaceList]),
-		apollo.WithLogFunc(openlogging.GetLogger().Debugf, openlogging.GetLogger().Infof, openlogging.GetLogger().Errorf),
+		apollo.WithLogFunc(Debugf, Infof, Errorf),
 	}
 
 	if remoteInfo.DefaultDimension[IgnoreNameSpace] == Ignore {

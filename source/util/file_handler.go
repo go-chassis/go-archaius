@@ -2,7 +2,7 @@ package util
 
 import (
 	"fmt"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"gopkg.in/yaml.v2"
 	"path/filepath"
 )
@@ -53,8 +53,8 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 
 			k, ok := item.Key.(string)
 			if !ok {
-				openlogging.Error("yaml path is not string", openlogging.WithTags(
-					openlogging.Tags{
+				openlog.Error("yaml path is not string", openlog.WithTags(
+					openlog.Tags{
 						"key": item.Key,
 					},
 				))
@@ -73,8 +73,8 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 		default:
 			k, ok := item.Key.(string)
 			if !ok {
-				openlogging.Error("yaml tag is not string", openlogging.WithTags(
-					openlogging.Tags{
+				openlog.Error("yaml tag is not string", openlog.WithTags(
+					openlog.Tags{
 						"key": item.Key,
 					},
 				))

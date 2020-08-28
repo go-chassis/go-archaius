@@ -29,7 +29,7 @@ import (
 	"sync"
 
 	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 //errors
@@ -122,7 +122,7 @@ func (m *Manager) Unmarshal(obj interface{}) error {
 	// only pointers are accepted
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
 		err := errors.New("invalid object supplied")
-		openlogging.GetLogger().Error("invalid object supplied: " + err.Error())
+		openlog.Error("invalid object supplied: " + err.Error())
 		return err
 	}
 
@@ -133,7 +133,7 @@ func (m *Manager) Unmarshal(obj interface{}) error {
 func (m *Manager) AddSource(source ConfigSource) error {
 	if source == nil || source.GetSourceName() == "" {
 		err := errors.New("nil or invalid source supplied")
-		openlogging.GetLogger().Error("nil or invalid source supplied: " + err.Error())
+		openlog.Error("nil or invalid source supplied: " + err.Error())
 		return err
 	}
 	sourceName := source.GetSourceName()
@@ -141,7 +141,7 @@ func (m *Manager) AddSource(source ConfigSource) error {
 	_, ok := m.Sources[sourceName]
 	if ok {
 		err := errors.New("duplicate source supplied")
-		openlogging.GetLogger().Error("duplicate source supplied: " + err.Error())
+		openlog.Error("duplicate source supplied: " + err.Error())
 		m.sourceMapMux.Unlock()
 		return err
 	}
@@ -152,10 +152,10 @@ func (m *Manager) AddSource(source ConfigSource) error {
 	err := m.pullSourceConfigs(sourceName)
 	if err != nil {
 		err = fmt.Errorf(fmtLoadConfigFailed, sourceName, err)
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 		return err
 	}
-	openlogging.Info("invoke dynamic handler:" + source.GetSourceName())
+	openlog.Info("invoke dynamic handler:" + source.GetSourceName())
 	go source.Watch(m)
 
 	return nil
@@ -167,18 +167,18 @@ func (m *Manager) pullSourceConfigs(source string) error {
 	m.sourceMapMux.RUnlock()
 	if !ok {
 		err := errors.New("invalid source or source not added")
-		openlogging.GetLogger().Error("invalid source or source not added: " + err.Error())
+		openlog.Error("invalid source or source not added: " + err.Error())
 		return err
 	}
 
 	config, err := configSource.GetConfigurations()
 	if config == nil || len(config) == 0 {
 		if err != nil {
-			openlogging.GetLogger().Error("Get configuration by items failed: " + err.Error())
+			openlog.Error("Get configuration by items failed: " + err.Error())
 			return err
 		}
 
-		openlogging.GetLogger().Warnf("empty config from %s", source)
+		openlog.Warn(fmt.Sprintf("empty config from %s", source))
 		return nil
 	}
 
@@ -211,7 +211,7 @@ func (m *Manager) AddDimensionInfo(labels map[string]string) (map[string]string,
 
 	err := m.addDimensionInfo(labels)
 	if err != nil {
-		openlogging.GetLogger().Errorf("failed to do add dimension info %s", err)
+		openlog.Error(fmt.Sprintf("failed to do add dimension info %s", err))
 		return config, err
 	}
 
@@ -222,7 +222,7 @@ func (m *Manager) AddDimensionInfo(labels map[string]string) (map[string]string,
 func (m *Manager) Refresh(sourceName string) error {
 	err := m.pullSourceConfigs(sourceName)
 	if err != nil {
-		openlogging.GetLogger().Errorf(fmtLoadConfigFailed, sourceName, err)
+		openlog.Error(fmt.Sprintf(fmtLoadConfigFailed, sourceName, err))
 		errorMsg := "fail to load configuration of" + sourceName + " source"
 		return errors.New(errorMsg)
 	}
@@ -357,7 +357,7 @@ func (m *Manager) updateEvent(e *event.Event) error {
 	if e == nil || e.EventSource == "" || e.Key == "" {
 		return errors.New("nil or invalid event supplied")
 	}
-	openlogging.Info("config update event received")
+	openlog.Info("config update event received")
 	switch e.EventType {
 	case event.Create, event.Update:
 		m.configMapMux.Lock()
@@ -372,8 +372,8 @@ func (m *Manager) updateEvent(e *event.Event) error {
 			if prioritySrc != nil && prioritySrc.GetSourceName() == sourceName {
 				// if event generated from less priority source then ignore
 				m.configMapMux.Unlock()
-				openlogging.GetLogger().Infof("the event source %s's priority is less then %s's, ignore",
-					e.EventSource, sourceName)
+				openlog.Info(fmt.Sprintf("the event source %s's priority is less then %s's, ignore",
+					e.EventSource, sourceName))
 				return nil
 			}
 			m.ConfigurationMap[e.Key] = e.EventSource
@@ -409,14 +409,14 @@ func (m *Manager) updateEvent(e *event.Event) error {
 func (m *Manager) OnEvent(event *event.Event) {
 	err := m.updateEvent(event)
 	if err != nil {
-		openlogging.GetLogger().Error("failed in updating event with error: " + err.Error())
+		openlog.Error("failed in updating event with error: " + err.Error())
 	}
 }
 
 // OnModuleEvent Triggers actions when events are generated
 func (m *Manager) OnModuleEvent(event []*event.Event) {
 	if err := m.updateModuleEvent(event); err != nil {
-		openlogging.GetLogger().Error("failed in updating events with error: " + err.Error())
+		openlog.Error("failed in updating events with error: " + err.Error())
 	}
 }
 
@@ -470,7 +470,7 @@ func (m *Manager) RegisterListener(listenerObj event.Listener, keys ...string) e
 	for _, key := range keys {
 		_, err := regexp.Compile(key)
 		if err != nil {
-			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
+			openlog.Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
 			return fmt.Errorf(fmtInvalidKey, key)
 		}
 	}
@@ -483,7 +483,7 @@ func (m *Manager) UnRegisterListener(listenerObj event.Listener, keys ...string)
 	for _, key := range keys {
 		_, err := regexp.Compile(key)
 		if err != nil {
-			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
+			openlog.Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
 			return fmt.Errorf(fmtInvalidKey, key)
 		}
 	}
@@ -495,7 +495,7 @@ func (m *Manager) UnRegisterListener(listenerObj event.Listener, keys ...string)
 func (m *Manager) RegisterModuleListener(listenerObj event.ModuleListener, prefixes ...string) error {
 	for _, prefix := range prefixes {
 		if prefix == "" {
-			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKey, prefix))
+			openlog.Error(fmt.Sprintf(fmtInvalidKey, prefix))
 			return fmt.Errorf(fmtInvalidKey, prefix)
 		}
 	}
@@ -507,7 +507,7 @@ func (m *Manager) RegisterModuleListener(listenerObj event.ModuleListener, prefi
 func (m *Manager) UnRegisterModuleListener(listenerObj event.ModuleListener, prefixes ...string) error {
 	for _, prefix := range prefixes {
 		if prefix == "" {
-			openlogging.GetLogger().Error(fmt.Sprintf(fmtInvalidKey, prefix))
+			openlog.Error(fmt.Sprintf(fmtInvalidKey, prefix))
 			return fmt.Errorf(fmtInvalidKey, prefix)
 		}
 	}

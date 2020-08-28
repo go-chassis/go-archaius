@@ -8,7 +8,7 @@ import (
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source/remote"
 	_ "github.com/go-chassis/go-archaius/source/remote/kie"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 type Listener struct {
@@ -16,7 +16,7 @@ type Listener struct {
 }
 
 func (li *Listener) Event(event *event.Event) {
-	openlogging.GetLogger().Infof("change event :%+v", *event)
+	openlog.Info(fmt.Sprintf("change event : %+v", *event))
 }
 
 func main() {

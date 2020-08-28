@@ -18,6 +18,7 @@ package kie
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -25,7 +26,7 @@ import (
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source"
 	"github.com/go-chassis/go-archaius/source/remote"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 // const
@@ -65,7 +66,7 @@ func NewKieSource(ci *archaius.RemoteInfo) (source.ConfigSource, error) {
 	}
 	k, err := NewKie(opts)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 		return nil, err
 	}
 	ks := new(Source)
@@ -78,8 +79,8 @@ func NewKieSource(ci *archaius.RemoteInfo) (source.ConfigSource, error) {
 	} else {
 		ks.RefreshInterval = time.Second * time.Duration(ci.RefreshInterval)
 	}
-	openlogging.Info("new kie source", openlogging.WithTags(
-		openlogging.Tags{
+	openlog.Info("new kie source", openlog.WithTags(
+		openlog.Tags{
 			"labels": ci.DefaultDimension,
 		}))
 	return ks, nil
@@ -108,23 +109,23 @@ func (ks *Source) GetConfigurations() (map[string]interface{}, error) {
 
 func (ks *Source) refreshConfigurationsPeriodically() {
 	ticker := time.Tick(ks.RefreshInterval)
-	openlogging.Info("start refreshing configurations")
+	openlog.Info("start refreshing configurations")
 	for range ticker {
 		err := ks.refreshConfigurations()
 		if err != nil {
-			openlogging.Error("can not pull configs: " + err.Error())
+			openlog.Error("can not pull configs: " + err.Error())
 		}
 	}
-	openlogging.Info("stop refreshing configurations")
+	openlog.Info("stop refreshing configurations")
 }
 
 func (ks *Source) refreshConfigurations() error {
 	config, err := ks.k.PullConfigs(ks.dimensions...)
 	if err != nil {
-		openlogging.GetLogger().Warnf("Failed to pull configurations from kie server", err) //Warn
+		openlog.Warn(fmt.Sprintf("failed to pull configurations from kie server %s", err)) //Warn
 		return err
 	}
-	openlogging.Debug("pull configs from kie", openlogging.WithTags(openlogging.Tags{
+	openlog.Debug("pull configs from kie", openlog.WithTags(openlog.Tags{
 		"config": config,
 	}))
 	return ks.updateConfigAndFireEvent(config)
@@ -136,13 +137,13 @@ func (ks *Source) updateConfigAndFireEvent(config map[string]interface{}) error 
 	//Populate the events based on the changed value between current config and newly received Config
 	events, err := event.PopulateEvents(Name, ks.currentConfig, config)
 	if err != nil {
-		openlogging.GetLogger().Warnf("generating event error", err)
+		openlog.Warn(fmt.Sprintf("generating event error %s", err))
 		return err
 	}
 	ks.currentConfig = config
 	//Generate OnEvent Callback based on the events created
 	if ks.eh != nil {
-		openlogging.GetLogger().Debugf("received event %s", events)
+		openlog.Debug(fmt.Sprintf("received event %v", events))
 		for _, e := range events {
 			ks.eh.OnEvent(e)
 		}
@@ -194,24 +195,24 @@ func (ks *Source) Watch(callback source.EventHandler) error {
 		return nil
 	}
 	//Start watch and receive change events.
-	openlogging.Info("start watching configurations")
+	openlog.Info("start watching configurations")
 	err := ks.k.Watch(
 		func(kv map[string]interface{}) {
-			openlogging.Debug("watch configs", openlogging.WithTags(openlogging.Tags{
+			openlog.Debug("watch configs", openlog.WithTags(openlog.Tags{
 				"config": kv,
 			}))
 			err := ks.updateConfigAndFireEvent(kv)
 			if err != nil {
-				openlogging.GetLogger().Error("error in updating configurations:" + err.Error())
+				openlog.Error("error in updating configurations:" + err.Error())
 			}
 		},
 		func(err error) {
-			openlogging.Error(err.Error())
+			openlog.Error(err.Error())
 		}, nil,
 	)
-	openlogging.Info("stop watching configurations")
+	openlog.Info("stop watching configurations")
 	if err != nil {
-		openlogging.Error("watch kie source failed: " + err.Error())
+		openlog.Error("watch kie source failed: " + err.Error())
 	}
 	return err
 }

@@ -21,7 +21,7 @@ import (
 
 	"github.com/go-chassis/go-archaius/pkg/configcenter"
 	"github.com/go-chassis/go-archaius/source/remote"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"github.com/gorilla/websocket"
 )
 
@@ -71,8 +71,8 @@ func NewConfigCenter(options remote.Options) (*ConfigCenter, error) {
 		c:    c,
 		opts: options,
 	}
-	openlogging.Info("new config center client", openlogging.WithTags(
-		openlogging.Tags{
+	openlog.Info("new config center client", openlog.WithTags(
+		openlog.Tags{
 			"dimension": d,
 			"ws_port":   options.RefreshPort,
 			"ssl":       options.EnableSSL,

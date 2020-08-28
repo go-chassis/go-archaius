@@ -33,7 +33,7 @@ import (
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source"
 	"github.com/go-chassis/go-archaius/source/util"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 const (
@@ -133,18 +133,18 @@ func (fSource *Source) AddFile(p string, priority uint32, handle util.FileHandle
 		// handle Directory input. Include all files as file source.
 		err := fSource.handleDirectory(fs, priority, handle)
 		if err != nil {
-			openlogging.GetLogger().Errorf("Failed to handle directory [%s] %s", path, err)
+			openlog.Error(fmt.Sprintf("Failed to handle directory [%s] %s", path, err))
 			return err
 		}
 	case RegularFile:
 		// handle file and include as file source.
 		err := fSource.handleFile(fs, priority, handle)
 		if err != nil {
-			openlogging.GetLogger().Errorf("Failed to handle file [%s] [%s]", path, err)
+			openlog.Error(fmt.Sprintf("Failed to handle file [%s] [%s]", path, err))
 			return err
 		}
 	case InvalidFileType:
-		openlogging.GetLogger().Errorf("File type of [%s] not supported: %s", path, err)
+		openlog.Error(fmt.Sprintf("File type of [%s] not supported: %s", path, err))
 		return fmt.Errorf("file type of [%s] not supported", path)
 	}
 
@@ -194,14 +194,14 @@ func (fSource *Source) handleDirectory(dir *os.File, priority uint32, handle uti
 
 		fs, err := os.Open(filePath)
 		if err != nil {
-			openlogging.GetLogger().Errorf("error in file open for %s file", err.Error())
+			openlog.Error(fmt.Sprintf("error in file open for %s file", err.Error()))
 			continue
 		}
 
 		err = fSource.handleFile(fs, priority, handle)
 		if err != nil {
-			openlogging.GetLogger().Errorf("error processing %s file source handler with error : %s ", fs.Name(),
-				err.Error())
+			openlog.Error(fmt.Sprintf("error processing %s file source handler with error : %s ", fs.Name(),
+				err.Error()))
 		}
 		fs.Close()
 
@@ -342,7 +342,7 @@ func (fSource *Source) Watch(callback source.EventHandler) error {
 func newWatchPool(callback source.EventHandler, cfgSrc *Source) (*watch, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		openlogging.GetLogger().Error("New file watcher failed:" + err.Error())
+		openlog.Error("New file watcher failed:" + err.Error())
 		return nil, err
 	}
 
@@ -350,7 +350,7 @@ func newWatchPool(callback source.EventHandler, cfgSrc *Source) (*watch, error) 
 	watch.callback = callback
 	watch.fileSource = cfgSrc
 	watch.watcher = watcher
-	openlogging.Info("create new watcher")
+	openlog.Info("create new watcher")
 	return watch, nil
 }
 
@@ -359,13 +359,13 @@ func (wth *watch) startWatchPool() {
 	for _, file := range wth.fileSource.files {
 		f, err := filepath.Abs(file.filePath)
 		if err != nil {
-			openlogging.GetLogger().Errorf("failed to get Directory info from: %s file: %s", file.filePath, err)
+			openlog.Error(fmt.Sprintf("failed to get Directory info from: %s file: %s", file.filePath, err))
 			return
 		}
 
 		err = wth.watcher.Add(f)
 		if err != nil {
-			openlogging.GetLogger().Errorf("add watcher file: %+v fail %s", file, err)
+			openlog.Error(fmt.Sprintf("add watcher file: %+v fail %s", file, err))
 			return
 		}
 	}
@@ -374,7 +374,7 @@ func (wth *watch) startWatchPool() {
 func (wth *watch) AddWatchFile(filePath string) {
 	err := wth.watcher.Add(filePath)
 	if err != nil {
-		openlogging.GetLogger().Errorf("add watcher file: %s fail: %s", filePath, err)
+		openlog.Error(fmt.Sprintf("add watcher file: %s fail: %s", filePath, err))
 		return
 	}
 }
@@ -384,7 +384,7 @@ func (wth *watch) watchFile() {
 		select {
 		case event, ok := <-wth.watcher.Events:
 			if !ok {
-				openlogging.GetLogger().Warnf("file watcher stop")
+				openlog.Warn("file watcher stop")
 				return
 			}
 
@@ -392,20 +392,20 @@ func (wth *watch) watchFile() {
 				//ignore
 				continue
 			}
-			openlogging.GetLogger().Debugf("file event %s, operation is %d. reload it.", event.Name, event.Op)
+			openlog.Debug(fmt.Sprintf("file event %s, operation is %d. reload it.", event.Name, event.Op))
 
 			if event.Op == fsnotify.Remove {
-				openlogging.GetLogger().Warnf("the file change mode: %s, continue", event.String())
+				openlog.Warn(fmt.Sprintf("the file change mode: %s, continue", event.String()))
 				continue
 			}
 
 			if event.Op == fsnotify.Rename {
-				openlogging.Debug("file renamed")
+				openlog.Debug("file renamed")
 				wth.watcher.Remove(event.Name)
 				// check existence of file
 				_, err := os.Open(event.Name)
 				if os.IsNotExist(err) {
-					openlogging.GetLogger().Warnf("[%s] file does not exist so not able to watch further", event.Name, err)
+					openlog.Warn(fmt.Sprintf("[%s] file does not exist so not able to watch further:%s", event.Name, err))
 				} else {
 					wth.AddWatchFile(event.Name)
 				}
@@ -414,34 +414,34 @@ func (wth *watch) watchFile() {
 			}
 
 			if event.Op == fsnotify.Create {
-				openlogging.Debug("file created")
+				openlog.Debug("file created")
 				time.Sleep(time.Millisecond)
 			}
 			handle := wth.fileSource.fileHandlers[event.Name]
 			if handle == nil {
-				openlogging.Debug("user default file handler")
+				openlog.Debug("user default file handler")
 				handle = util.Convert2JavaProps
 			}
 			content, err := ioutil.ReadFile(event.Name)
 			if err != nil {
-				openlogging.GetLogger().Error("read file error " + err.Error())
+				openlog.Error("read file error " + err.Error())
 				continue
 			}
 
 			newConf, err := handle(event.Name, content)
 			if err != nil {
-				openlogging.GetLogger().Error("convert error " + err.Error())
+				openlog.Error("convert error " + err.Error())
 				continue
 			}
 			events := wth.fileSource.compareUpdate(newConf, event.Name)
-			openlogging.GetLogger().Debugf("generated events %v", events)
+			openlog.Debug(fmt.Sprintf("generated events %v", events))
 			for _, e := range events {
 				wth.callback.OnEvent(e)
 			}
 			wth.callback.OnModuleEvent(events)
 
 		case err := <-wth.watcher.Errors:
-			openlogging.GetLogger().Debugf("watch file error:", err)
+			openlog.Debug(fmt.Sprintf("watch file error: %s", err))
 			return
 		}
 	}
@@ -508,7 +508,7 @@ func (fSource *Source) compareUpdate(configs map[string]interface{}, filePath st
 
 				if priority == filePathPriority {
 					fileConfs[key] = confInfo
-					openlogging.GetLogger().Infof("Two files have same priority. keeping %s value", confInfo.FilePath)
+					openlog.Info(fmt.Sprintf("Two files have same priority. keeping %s value", confInfo.FilePath))
 
 				} else if filePathPriority < priority { // lower the vale higher is the priority
 					confInfo.Value = newConfValue

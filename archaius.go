@@ -4,6 +4,7 @@ package archaius
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -14,7 +15,7 @@ import (
 	"github.com/go-chassis/go-archaius/source/env"
 	"github.com/go-chassis/go-archaius/source/file"
 	"github.com/go-chassis/go-archaius/source/mem"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 var (
@@ -31,7 +32,7 @@ func initFileSource(o *Options) (source.ConfigSource, error) {
 	// adding all files with file source
 	for _, v := range o.RequiredFiles {
 		if err := fs.AddFile(v, filesource.DefaultFilePriority, o.FileHandler); err != nil {
-			openlogging.GetLogger().Errorf("add file source error [%s].", err.Error())
+			openlog.Error(fmt.Sprintf("add file source error [%s].", err.Error()))
 			return nil, err
 		}
 		files = append(files, v)
@@ -39,23 +40,23 @@ func initFileSource(o *Options) (source.ConfigSource, error) {
 	for _, v := range o.OptionalFiles {
 		_, err := os.Stat(v)
 		if os.IsNotExist(err) {
-			openlogging.GetLogger().Infof("[%s] not exist", v)
+			openlog.Info(fmt.Sprintf("[%s] not exist", v))
 			continue
 		}
 		if err := fs.AddFile(v, filesource.DefaultFilePriority, o.FileHandler); err != nil {
-			openlogging.GetLogger().Infof("%v", err)
+			openlog.Info(err.Error())
 			return nil, err
 		}
 		files = append(files, v)
 	}
-	openlogging.GetLogger().Infof("Configuration files: %s", strings.Join(files, ", "))
+	openlog.Info(fmt.Sprintf("Configuration files: %s", strings.Join(files, ", ")))
 	return fs, nil
 }
 
 // Init create a Archaius config singleton
 func Init(opts ...Option) error {
 	if running {
-		openlogging.Warn("can not init archaius again, call Clean first")
+		openlog.Warn("can not init archaius again, call Clean first")
 		return nil
 	}
 	var err error
@@ -101,7 +102,7 @@ func Init(opts ...Option) error {
 		}
 	}
 
-	openlogging.Info("archaius init success")
+	openlog.Info("archaius init success")
 	running = true
 	return nil
 }
@@ -128,7 +129,7 @@ func EnableRemoteSource(remoteSource string, ci *RemoteInfo) error {
 		return errors.New("RemoteInfo can not be empty")
 	}
 	if configServerRunning {
-		openlogging.Warn("can not init config server again, call Clean first")
+		openlog.Warn("can not init config server again, call Clean first")
 		return nil
 	}
 

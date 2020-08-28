@@ -28,7 +28,7 @@ import (
 	"unicode"
 
 	"github.com/go-chassis/go-archaius/cast"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 const (
@@ -51,7 +51,7 @@ func (m *Manager) unmarshal(rValue reflect.Value, tagName string) (err error) {
 		if r := recover(); r != nil {
 			msg := fmt.Sprintf("unmarshalling [%s] failed, err: %s", tagName, r.(error).Error())
 			err = errors.New(msg)
-			openlogging.Error(msg)
+			openlog.Error(msg)
 		}
 	}()
 

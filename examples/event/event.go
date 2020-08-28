@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 //Listener is a struct used for Event listener
@@ -17,9 +17,9 @@ type Listener struct {
 
 //Event is a method for QPS event listening
 func (e *Listener) Event(event *event.Event) {
-	openlogging.GetLogger().Info(event.Key)
-	openlogging.GetLogger().Infof(fmt.Sprintf("%v", event.Value))
-	openlogging.GetLogger().Info(event.EventType)
+	openlog.Info(event.Key)
+	openlog.Info(fmt.Sprintf("%v", event.Value))
+	openlog.Info(event.EventType)
 }
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 		"./event.yaml",
 	}))
 	if err != nil {
-		openlogging.GetLogger().Error("Error:" + err.Error())
+		openlog.Error("Error:" + err.Error())
 	}
 	archaius.RegisterListener(&Listener{}, "age")
 	for {
