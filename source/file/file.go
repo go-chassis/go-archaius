@@ -290,8 +290,8 @@ func (fSource *Source) GetConfigurations() (map[string]interface{}, error) {
 
 //GetConfigurationByKey get one key value
 func (fSource *Source) GetConfigurationByKey(key string) (interface{}, error) {
-	fSource.Lock()
-	defer fSource.Unlock()
+	fSource.RLock()
+	defer fSource.RUnlock()
 
 	for ckey, confInfo := range fSource.Configurations {
 		if confInfo == nil {
@@ -433,6 +433,7 @@ func (wth *watch) watchFile() {
 				openlog.Error("convert error " + err.Error())
 				continue
 			}
+			openlog.Debug(fmt.Sprintf("new config: %v", newConf))
 			events := wth.fileSource.compareUpdate(newConf, event.Name)
 			openlog.Debug(fmt.Sprintf("generated events %v", events))
 			for _, e := range events {
