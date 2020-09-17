@@ -191,8 +191,8 @@ func (m *Manager) pullSourceConfigs(source string) error {
 func (m *Manager) Configs() map[string]interface{} {
 	config := make(map[string]interface{}, 0)
 
-	m.configMapMux.Lock()
-	defer m.configMapMux.Unlock()
+	m.configMapMux.RLock()
+	defer m.configMapMux.RUnlock()
 
 	for key, sourceName := range m.ConfigurationMap {
 		sValue := m.configValueBySource(key, sourceName)
