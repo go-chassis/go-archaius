@@ -84,8 +84,8 @@ func (cli *Source) GetConfigurations() (map[string]interface{}, error) {
 
 //GetConfigurationByKey gets required configuration for matching key
 func (cli *Source) GetConfigurationByKey(key string) (interface{}, error) {
-	cli.Lock()
-	defer cli.Unlock()
+	cli.RLock()
+	defer cli.RUnlock()
 	value, ok := cli.Configurations[key]
 	if !ok {
 		return nil, source.ErrKeyNotExist

@@ -83,8 +83,8 @@ func (es *Source) GetConfigurations() (map[string]interface{}, error) {
 
 //GetConfigurationByKey gets required configuration for a particular key
 func (es *Source) GetConfigurationByKey(key string) (interface{}, error) {
-	es.Lock()
-	defer es.Unlock()
+	es.RLock()
+	defer es.RUnlock()
 	value, ok := es.Configurations[key]
 	if !ok {
 		return nil, source.ErrKeyNotExist

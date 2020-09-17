@@ -276,8 +276,8 @@ func (cmSource *configMapSource) GetConfigurations() (map[string]interface{}, er
 }
 
 func (cmSource *configMapSource) GetConfigurationByKey(key string) (interface{}, error) {
-	cmSource.Lock()
-	defer cmSource.Unlock()
+	cmSource.RLock()
+	defer cmSource.RUnlock()
 
 	for ckey, confInfo := range cmSource.Configurations {
 		if confInfo == nil {

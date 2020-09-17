@@ -149,9 +149,9 @@ func (rs *Source) refreshConfigurations() error {
 
 //GetConfigurationByKey gets required configuration for a particular key
 func (rs *Source) GetConfigurationByKey(key string) (interface{}, error) {
-	rs.Lock()
+	rs.RLock()
 	configSrcVal, ok := rs.currentConfig[key]
-	rs.Unlock()
+	rs.RUnlock()
 	if ok {
 		return configSrcVal, nil
 	}

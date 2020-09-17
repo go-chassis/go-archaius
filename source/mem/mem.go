@@ -66,8 +66,8 @@ func (ms *Source) GetConfigurations() (map[string]interface{}, error) {
 
 //GetConfigurationByKey gets required memory configuration for a particular key
 func (ms *Source) GetConfigurationByKey(key string) (interface{}, error) {
-	ms.Lock()
-	defer ms.Unlock()
+	ms.RLock()
+	defer ms.RUnlock()
 	value, ok := ms.Configurations[key]
 	if !ok {
 		return nil, source.ErrKeyNotExist
