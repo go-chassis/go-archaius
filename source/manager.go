@@ -265,8 +265,8 @@ func (m *Manager) addDimensionInfo(labels map[string]string) error {
 
 // IsKeyExist check if key exist in cache
 func (m *Manager) IsKeyExist(key string) bool {
-	m.configMapMux.Lock()
-	defer m.configMapMux.Unlock()
+	m.configMapMux.RLock()
+	defer m.configMapMux.RUnlock()
 
 	if _, ok := m.ConfigurationMap[key]; ok {
 		return true
@@ -277,9 +277,9 @@ func (m *Manager) IsKeyExist(key string) bool {
 
 // GetConfig returns the value for a particular key from cache
 func (m *Manager) GetConfig(key string) interface{} {
-	m.configMapMux.Lock()
+	m.configMapMux.RLock()
 	sourceName, ok := m.ConfigurationMap[key]
-	m.configMapMux.Unlock()
+	m.configMapMux.RUnlock()
 	if !ok {
 		return nil
 	}
