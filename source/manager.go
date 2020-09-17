@@ -360,10 +360,13 @@ func (m *Manager) updateEvent(e *event.Event) error {
 	openlog.Info("config update event received")
 	switch e.EventType {
 	case event.Create, event.Update:
-		m.configMapMux.Lock()
+		m.configMapMux.RLock()
 		sourceName, ok := m.ConfigurationMap[e.Key]
+		m.configMapMux.RUnlock()
 		if !ok {
+			m.configMapMux.Lock()
 			m.ConfigurationMap[e.Key] = e.EventSource
+			m.configMapMux.Unlock()
 			e.EventType = event.Create
 		} else if sourceName == e.EventSource {
 			e.EventType = event.Update
@@ -371,33 +374,37 @@ func (m *Manager) updateEvent(e *event.Event) error {
 			prioritySrc := m.getHighPrioritySource(sourceName, e.EventSource)
 			if prioritySrc != nil && prioritySrc.GetSourceName() == sourceName {
 				// if event generated from less priority source then ignore
-				m.configMapMux.Unlock()
 				openlog.Info(fmt.Sprintf("the event source %s's priority is less then %s's, ignore",
 					e.EventSource, sourceName))
 				return nil
 			}
+			m.configMapMux.Lock()
 			m.ConfigurationMap[e.Key] = e.EventSource
+			m.configMapMux.Unlock()
 			e.EventType = event.Update
 		}
-		m.configMapMux.Unlock()
 
 	case event.Delete:
-		m.configMapMux.Lock()
+		m.configMapMux.RLock()
 		sourceName, ok := m.ConfigurationMap[e.Key]
+		m.configMapMux.RUnlock()
 		if !ok || sourceName != e.EventSource {
 			// if delete event generated from source not maintained ignore it
-			m.configMapMux.Unlock()
 			return nil
 		} else if sourceName == e.EventSource {
 			// find less priority source or delete key
 			source := m.findNextBestSource(e.Key, sourceName)
 			if source == nil {
+				m.configMapMux.Lock()
 				delete(m.ConfigurationMap, e.Key)
+				m.configMapMux.Unlock()
 			} else {
+				m.configMapMux.Lock()
 				m.ConfigurationMap[e.Key] = source.GetSourceName()
+				m.configMapMux.Unlock()
 			}
 		}
-		m.configMapMux.Unlock()
+
 	}
 
 	m.dispatcher.DispatchEvent(e)
