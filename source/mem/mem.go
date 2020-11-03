@@ -1,6 +1,7 @@
 package mem
 
 import (
+	"errors"
 	"github.com/go-chassis/go-archaius/event"
 	"sync"
 
@@ -30,24 +31,24 @@ const (
 	memoryVariableSourcePriority = 1
 )
 
+var ErrSourceNotReady = errors.New("source is not ready")
+
 //Source is a struct
 type Source struct {
-	sync.RWMutex
-	Configurations map[string]interface{}
+	Configs sync.Map
 
 	callback source.EventHandler
-
-	CallbackCheck chan bool
-	ChanStatus    bool
-	priority      int
+	waitOnce sync.Once
+	Ready    chan bool
+	priority int
 }
 
 //NewMemoryConfigurationSource initializes all necessary components for memory configuration
 func NewMemoryConfigurationSource() source.ConfigSource {
 	memoryConfigSource := new(Source)
 	memoryConfigSource.priority = memoryVariableSourcePriority
-	memoryConfigSource.Configurations = make(map[string]interface{})
-	memoryConfigSource.CallbackCheck = make(chan bool)
+	memoryConfigSource.Configs = sync.Map{}
+	memoryConfigSource.Ready = make(chan bool)
 	return memoryConfigSource
 }
 
@@ -55,20 +56,17 @@ func NewMemoryConfigurationSource() source.ConfigSource {
 func (ms *Source) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
 
-	ms.Lock()
-	defer ms.Unlock()
-	for key, value := range ms.Configurations {
-		configMap[key] = value
-	}
+	ms.Configs.Range(func(key, value interface{}) bool {
+		configMap[key.(string)] = value
+		return true
+	})
 
 	return configMap, nil
 }
 
 //GetConfigurationByKey gets required memory configuration for a particular key
 func (ms *Source) GetConfigurationByKey(key string) (interface{}, error) {
-	ms.RLock()
-	defer ms.RUnlock()
-	value, ok := ms.Configurations[key]
+	value, ok := ms.Configs.Load(key)
 	if !ok {
 		return nil, source.ErrKeyNotExist
 	}
@@ -95,14 +93,13 @@ func (*Source) GetSourceName() string {
 func (ms *Source) Watch(callback source.EventHandler) error {
 	ms.callback = callback
 	openlog.Info("mem source callback prepared")
-	ms.CallbackCheck <- true
+	ms.Ready <- true
 	return nil
 }
 
 //Cleanup cleans a particular memory configuration up
 func (ms *Source) Cleanup() error {
-	ms.Configurations = nil
-
+	ms.Configs = sync.Map{}
 	return nil
 }
 
@@ -113,25 +110,22 @@ func (ms *Source) AddDimensionInfo(labels map[string]string) error {
 
 //Set set mem config
 func (ms *Source) Set(key string, value interface{}) error {
-	if !ms.ChanStatus {
-		<-ms.CallbackCheck
-		ms.ChanStatus = true
-	}
+	ms.waitOnce.Do(func() {
+		<-ms.Ready
+	})
 
 	e := new(event.Event)
 	e.EventSource = ms.GetSourceName()
 	e.Key = key
 	e.Value = value
 
-	ms.Lock()
-	defer ms.Unlock()
-	if _, ok := ms.Configurations[key]; !ok {
+	if _, ok := ms.Configs.Load(key); !ok {
 		e.EventType = event.Create
 	} else {
 		e.EventType = event.Update
 	}
 
-	ms.Configurations[key] = value
+	ms.Configs.Store(key, value)
 
 	if ms.callback != nil {
 		ms.callback.OnEvent(e)
@@ -143,24 +137,20 @@ func (ms *Source) Set(key string, value interface{}) error {
 
 //Delete remvove mem config
 func (ms *Source) Delete(key string) error {
-	if !ms.ChanStatus {
-		<-ms.CallbackCheck
-		ms.ChanStatus = true
-	}
+	ms.waitOnce.Do(func() {
+		<-ms.Ready
+	})
 
 	e := new(event.Event)
 	e.EventSource = ms.GetSourceName()
 	e.Key = key
 
-	ms.Lock()
-	if v, ok := ms.Configurations[key]; ok {
+	if v, ok := ms.Configs.Load(key); ok {
 		e.EventType = event.Delete
 		e.Value = v
 	} else {
 		return nil
 	}
-
-	ms.Unlock()
 
 	if ms.callback != nil {
 		ms.callback.OnEvent(e)
