@@ -33,8 +33,7 @@ const (
 
 //Source is a struct
 type Source struct {
-	Configurations map[string]interface{}
-	sync.RWMutex
+	Configs  sync.Map
 	priority int
 }
 
@@ -43,49 +42,38 @@ func NewEnvConfigurationSource() source.ConfigSource {
 	openlog.Info("enable env source")
 	envConfigSource := new(Source)
 	envConfigSource.priority = envVariableSourcePriority
-	config, err := envConfigSource.pullConfigurations()
-	if err != nil {
-		openlog.Error("failed to initialize environment configurations: " + err.Error())
-		return envConfigSource
-	}
-	envConfigSource.Configurations = config
-
+	envConfigSource.pullConfigurations()
 	return envConfigSource
 }
 
-func (*Source) pullConfigurations() (map[string]interface{}, error) {
-	configMap := make(map[string]interface{})
+func (es *Source) pullConfigurations() {
+	es.Configs = sync.Map{}
 	for _, value := range os.Environ() {
 		rs := []rune(value)
 		in := strings.Index(value, "=")
 		key := string(rs[0:in])
 		value := string(rs[in+1:])
 		envKey := strings.Replace(key, "_", ".", -1)
-		configMap[key] = value
-		configMap[envKey] = value
+		es.Configs.Store(key, value)
+		es.Configs.Store(envKey, value)
 
 	}
-	return configMap, nil
 }
 
 //GetConfigurations gets all configuration
 func (es *Source) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
-
-	es.Lock()
-	defer es.Unlock()
-	for key, value := range es.Configurations {
-		configMap[key] = value
-	}
+	es.Configs.Range(func(k, v interface{}) bool {
+		configMap[k.(string)] = v
+		return true
+	})
 
 	return configMap, nil
 }
 
 //GetConfigurationByKey gets required configuration for a particular key
 func (es *Source) GetConfigurationByKey(key string) (interface{}, error) {
-	es.RLock()
-	defer es.RUnlock()
-	value, ok := es.Configurations[key]
+	value, ok := es.Configs.Load(key)
 	if !ok {
 		return nil, source.ErrKeyNotExist
 	}
@@ -116,7 +104,7 @@ func (*Source) Watch(callback source.EventHandler) error {
 
 //Cleanup cleans a particular environment configuration up
 func (es *Source) Cleanup() error {
-	es.Configurations = nil
+	es.Configs = sync.Map{}
 	return nil
 }
 

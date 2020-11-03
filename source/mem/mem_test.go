@@ -26,11 +26,6 @@ import (
 	"testing"
 )
 
-type EListener struct {
-	Name      string
-	EventName string
-}
-
 type TestDynamicConfigHandler struct {
 	EventName  string
 	EventKey   string
