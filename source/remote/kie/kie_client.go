@@ -23,9 +23,9 @@ import (
 	"sync"
 	"time"
 
-	client "github.com/go-chassis/go-archaius/pkg/kieclient"
 	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/go-chassis/go-archaius/source/util/queue"
+	client "github.com/go-chassis/kie-client"
 	"github.com/go-chassis/openlog"
 )
 
@@ -77,7 +77,7 @@ func NewKie(options remote.Options) (*Kie, error) {
 		ks = append(ks, value)
 	}
 
-	c, err := client.New(client.Config{
+	c, err := client.NewClient(client.Config{
 		Endpoint:   ks[0],
 		VerifyPeer: options.VerifyPeer,
 	})
