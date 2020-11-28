@@ -2,9 +2,10 @@ package util
 
 import (
 	"fmt"
+	"path/filepath"
+
 	"github.com/go-chassis/openlog"
 	"gopkg.in/yaml.v2"
-	"path/filepath"
 )
 
 //FileHandler decide how to convert a file content into key values

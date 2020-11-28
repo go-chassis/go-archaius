@@ -13,9 +13,10 @@ package cast
 
 import (
 	"fmt"
-	ca "github.com/spf13/cast"
 	"reflect"
 	"strconv"
+
+	ca "github.com/spf13/cast"
 )
 
 //const

@@ -18,9 +18,10 @@
 package configcenter_test
 
 import (
+	"testing"
+
 	"github.com/go-chassis/go-archaius/source/remote/configcenter"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestGenerateDimension(t *testing.T) {

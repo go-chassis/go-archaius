@@ -21,9 +21,10 @@ package cli
 
 import (
 	"fmt"
-	"github.com/go-chassis/go-archaius/event"
 	"os"
 	"testing"
+
+	"github.com/go-chassis/go-archaius/event"
 )
 
 type TestDynamicConfigHandler struct{}

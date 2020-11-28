@@ -2,8 +2,9 @@ package mem
 
 import (
 	"errors"
-	"github.com/go-chassis/go-archaius/event"
 	"sync"
+
+	"github.com/go-chassis/go-archaius/event"
 
 	"github.com/go-chassis/go-archaius/source"
 	"github.com/go-chassis/openlog"

@@ -3,12 +3,13 @@ package apollo
 import (
 	"errors"
 	"fmt"
+	"sync"
+
 	apollo "github.com/Shonminh/apollo-client"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source"
 	"github.com/go-chassis/openlog"
-	"sync"
 )
 
 // Source apollo source

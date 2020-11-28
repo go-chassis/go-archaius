@@ -2,14 +2,15 @@ package archaius_test
 
 import (
 	"fmt"
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/openlog"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-archaius/event"
+	"github.com/go-chassis/openlog"
+	"github.com/stretchr/testify/assert"
 )
 
 type EListener struct{}

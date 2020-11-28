@@ -1,9 +1,10 @@
 package util
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExpandValueEnv(t *testing.T) {

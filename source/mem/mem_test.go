@@ -21,9 +21,10 @@ package mem_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source/mem"
-	"testing"
 )
 
 type TestDynamicConfigHandler struct {

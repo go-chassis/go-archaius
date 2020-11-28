@@ -19,8 +19,6 @@ package configmapource
 import (
 	"errors"
 	"fmt"
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/go-archaius/source"
 	"io/ioutil"
 	"math"
 	"os"
@@ -28,11 +26,15 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/go-chassis/go-archaius/event"
+	"github.com/go-chassis/go-archaius/source"
+
+	"strings"
+	"time"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-chassis/go-archaius/source/util"
 	"github.com/go-chassis/openlog"
-	"strings"
-	"time"
 )
 
 const (

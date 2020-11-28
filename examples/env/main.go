@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/go-chassis/go-archaius"
 	"log"
 	"os"
+
+	"github.com/go-chassis/go-archaius"
 )
 
 func main() {
