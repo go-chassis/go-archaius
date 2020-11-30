@@ -51,8 +51,7 @@ type Manager struct {
 	sourceMapMux sync.RWMutex
 	Sources      map[string]ConfigSource
 
-	configMapMux     sync.RWMutex
-	ConfigurationMap map[string]string
+	ConfigurationMap sync.Map
 
 	dispatcher *event.Dispatcher
 }
@@ -62,7 +61,6 @@ func NewManager() *Manager {
 	configMgr := new(Manager)
 	configMgr.dispatcher = event.NewDispatcher()
 	configMgr.Sources = make(map[string]ConfigSource)
-	configMgr.ConfigurationMap = make(map[string]string)
 	return configMgr
 }
 
@@ -191,16 +189,14 @@ func (m *Manager) pullSourceConfigs(source string) error {
 func (m *Manager) Configs() map[string]interface{} {
 	config := make(map[string]interface{}, 0)
 
-	m.configMapMux.RLock()
-	defer m.configMapMux.RUnlock()
-
-	for key, sourceName := range m.ConfigurationMap {
-		sValue := m.configValueBySource(key, sourceName)
+	m.ConfigurationMap.Range(func(key, value interface{}) bool {
+		sValue := m.configValueBySource(key.(string), value.(string))
 		if sValue == nil {
-			continue
+			return true
 		}
-		config[key] = sValue
-	}
+		config[key.(string)] = sValue
+		return true
+	})
 
 	return config
 }
@@ -265,10 +261,8 @@ func (m *Manager) addDimensionInfo(labels map[string]string) error {
 
 // IsKeyExist check if key exist in cache
 func (m *Manager) IsKeyExist(key string) bool {
-	m.configMapMux.RLock()
-	defer m.configMapMux.RUnlock()
 
-	if _, ok := m.ConfigurationMap[key]; ok {
+	if _, ok := m.ConfigurationMap.Load(key); ok {
 		return true
 	}
 
@@ -277,36 +271,32 @@ func (m *Manager) IsKeyExist(key string) bool {
 
 // GetConfig returns the value for a particular key from cache
 func (m *Manager) GetConfig(key string) interface{} {
-	m.configMapMux.RLock()
-	sourceName, ok := m.ConfigurationMap[key]
-	m.configMapMux.RUnlock()
+	sourceName, ok := m.ConfigurationMap.Load(key)
 	if !ok {
 		return nil
 	}
-	return m.configValueBySource(key, sourceName)
+	return m.configValueBySource(key, sourceName.(string))
 }
 
 func (m *Manager) updateConfigurationMap(source ConfigSource, configs map[string]interface{}) error {
-	m.configMapMux.Lock()
-	defer m.configMapMux.Unlock()
 	for key := range configs {
-		sourceName, ok := m.ConfigurationMap[key]
+		sourceName, ok := m.ConfigurationMap.Load(key)
 		if !ok { // if key do not exist then add source
-			m.ConfigurationMap[key] = source.GetSourceName()
+			m.ConfigurationMap.Store(key, source.GetSourceName())
 			continue
 		}
 
 		m.sourceMapMux.RLock()
-		currentSource, ok := m.Sources[sourceName]
+		currentSource, ok := m.Sources[sourceName.(string)]
 		m.sourceMapMux.RUnlock()
 		if !ok {
-			m.ConfigurationMap[key] = source.GetSourceName()
+			m.ConfigurationMap.Store(key, source.GetSourceName())
 			continue
 		}
 
 		currentSrcPriority := currentSource.GetPriority()
 		if currentSrcPriority > source.GetPriority() { // lesser value has high priority
-			m.ConfigurationMap[key] = source.GetSourceName()
+			m.ConfigurationMap.Store(key, source.GetSourceName())
 		}
 	}
 
@@ -314,26 +304,24 @@ func (m *Manager) updateConfigurationMap(source ConfigSource, configs map[string
 }
 
 func (m *Manager) updateConfigurationMapByDI(source ConfigSource, configs map[string]interface{}) error {
-	m.configMapMux.Lock()
-	defer m.configMapMux.Unlock()
 	for key := range configs {
-		sourceName, ok := m.ConfigurationMap[key]
+		sourceName, ok := m.ConfigurationMap.Load(key)
 		if !ok { // if key do not exist then add source
-			m.ConfigurationMap[key] = source.GetSourceName()
+			m.ConfigurationMap.Store(key, source.GetSourceName())
 			continue
 		}
 
 		m.sourceMapMux.RLock()
-		currentSource, ok := m.Sources[sourceName]
+		currentSource, ok := m.Sources[sourceName.(string)]
 		m.sourceMapMux.RUnlock()
 		if !ok {
-			m.ConfigurationMap[key] = source.GetSourceName()
+			m.ConfigurationMap.Store(key, source.GetSourceName())
 			continue
 		}
 
 		currentSrcPriority := currentSource.GetPriority()
 		if currentSrcPriority > source.GetPriority() { // lesser value has high priority
-			m.ConfigurationMap[key] = source.GetSourceName()
+			m.ConfigurationMap.Store(key, source.GetSourceName())
 		}
 	}
 
@@ -360,48 +348,36 @@ func (m *Manager) updateEvent(e *event.Event) error {
 	openlog.Info("config update event received")
 	switch e.EventType {
 	case event.Create, event.Update:
-		m.configMapMux.RLock()
-		sourceName, ok := m.ConfigurationMap[e.Key]
-		m.configMapMux.RUnlock()
+		sourceName, ok := m.ConfigurationMap.Load(e.Key)
 		if !ok {
-			m.configMapMux.Lock()
-			m.ConfigurationMap[e.Key] = e.EventSource
-			m.configMapMux.Unlock()
+			m.ConfigurationMap.Store(e.Key, e.EventSource)
 			e.EventType = event.Create
 		} else if sourceName == e.EventSource {
 			e.EventType = event.Update
 		} else if sourceName != e.EventSource {
-			prioritySrc := m.getHighPrioritySource(sourceName, e.EventSource)
+			prioritySrc := m.getHighPrioritySource(sourceName.(string), e.EventSource)
 			if prioritySrc != nil && prioritySrc.GetSourceName() == sourceName {
 				// if event generated from less priority source then ignore
 				openlog.Info(fmt.Sprintf("the event source %s's priority is less then %s's, ignore",
 					e.EventSource, sourceName))
 				return nil
 			}
-			m.configMapMux.Lock()
-			m.ConfigurationMap[e.Key] = e.EventSource
-			m.configMapMux.Unlock()
+			m.ConfigurationMap.Store(e.Key, e.EventSource)
 			e.EventType = event.Update
 		}
 
 	case event.Delete:
-		m.configMapMux.RLock()
-		sourceName, ok := m.ConfigurationMap[e.Key]
-		m.configMapMux.RUnlock()
+		sourceName, ok := m.ConfigurationMap.Load(e.Key)
 		if !ok || sourceName != e.EventSource {
 			// if delete event generated from source not maintained ignore it
 			return nil
 		} else if sourceName == e.EventSource {
 			// find less priority source or delete key
-			source := m.findNextBestSource(e.Key, sourceName)
+			source := m.findNextBestSource(e.Key, sourceName.(string))
 			if source == nil {
-				m.configMapMux.Lock()
-				delete(m.ConfigurationMap, e.Key)
-				m.configMapMux.Unlock()
+				m.ConfigurationMap.Delete(e.Key)
 			} else {
-				m.configMapMux.Lock()
-				m.ConfigurationMap[e.Key] = source.GetSourceName()
-				m.configMapMux.Unlock()
+				m.ConfigurationMap.Store(e.Key, source.GetSourceName())
 			}
 		}
 

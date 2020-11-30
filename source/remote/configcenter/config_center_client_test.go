@@ -1,10 +1,11 @@
 package configcenter_test
 
 import (
+	"testing"
+
 	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/go-chassis/go-archaius/source/remote/configcenter"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewConfigCenter(t *testing.T) {

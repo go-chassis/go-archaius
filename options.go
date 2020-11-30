@@ -2,6 +2,7 @@ package archaius
 
 import (
 	"crypto/tls"
+
 	"github.com/go-chassis/go-archaius/source/util"
 )
 

@@ -21,11 +21,12 @@ package env_test
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source/env"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
 )
 
 type TestDynamicConfigHandler struct{}

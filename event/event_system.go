@@ -23,9 +23,10 @@ package event
 
 import (
 	"errors"
-	"github.com/go-chassis/openlog"
 	"regexp"
 	"strings"
+
+	"github.com/go-chassis/openlog"
 )
 
 //errors

@@ -19,6 +19,7 @@ package serializers
 
 import (
 	"errors"
+
 	"github.com/go-chassis/go-archaius/pkg/serializers/json"
 )
 

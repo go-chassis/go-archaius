@@ -1,8 +1,9 @@
 package configcenter_test
 
 import (
-	"github.com/go-chassis/go-archaius/pkg/configcenter"
 	"testing"
+
+	"github.com/go-chassis/go-archaius/pkg/configcenter"
 )
 
 func TestNew(t *testing.T) {

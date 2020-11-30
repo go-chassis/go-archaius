@@ -21,10 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-chassis/foundation/httpclient"
-	"github.com/go-chassis/go-archaius/pkg/serializers"
-	"github.com/go-chassis/openlog"
-	"github.com/gorilla/websocket"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -33,6 +29,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-chassis/foundation/httpclient"
+	"github.com/go-chassis/go-archaius/pkg/serializers"
+	"github.com/go-chassis/openlog"
+	"github.com/gorilla/websocket"
 )
 
 const (

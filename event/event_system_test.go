@@ -1,8 +1,9 @@
 package event_test
 
 import (
-	"github.com/go-chassis/go-archaius/event"
 	"testing"
+
+	"github.com/go-chassis/go-archaius/event"
 )
 
 type EListener struct {

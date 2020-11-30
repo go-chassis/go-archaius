@@ -21,14 +21,15 @@ package filesource_test
 
 import (
 	"fmt"
-	"github.com/go-chassis/go-archaius/event"
-	filesource "github.com/go-chassis/go-archaius/source/file"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/go-chassis/go-archaius/event"
+	filesource "github.com/go-chassis/go-archaius/source/file"
+	"github.com/stretchr/testify/assert"
 )
 
 type TestDynamicConfigHandler struct {

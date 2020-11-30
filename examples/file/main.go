@@ -1,10 +1,11 @@
 package main
 
 import (
+	"log"
+
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/source/util"
 	"github.com/go-chassis/openlog"
-	"log"
 )
 
 func main() {

@@ -2,9 +2,10 @@ package configcenter_test
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/go-chassis/go-archaius/pkg/configcenter"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestGetConfigs(t *testing.T) {
