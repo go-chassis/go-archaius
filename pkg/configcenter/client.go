@@ -102,7 +102,6 @@ func New(opts Options) (*Client, error) {
 	updateAPIPath(apiVersion)
 
 	hc, err := httpclient.New(&httpclient.Options{
-		SSLEnabled: opts.EnableSSL,
 		TLSConfig:  opts.TLSConfig,
 		Compressed: false,
 	})
