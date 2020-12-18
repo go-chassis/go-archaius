@@ -94,6 +94,10 @@ func TestConfig_Get(t *testing.T) {
 	m := archaius.GetConfigs()
 	t.Log(m)
 	assert.Equal(t, 1, m["number"])
+
+	m = archaius.GetConfigsWithSourceNames()
+	assert.Equal(t, 1, m["number"].(map[string]interface{})["value"])
+	assert.Equal(t, "FileSource", m["number"].(map[string]interface{})["source"])
 }
 func TestConfig_GetInt(t *testing.T) {
 	s := archaius.GetInt("number", 0)

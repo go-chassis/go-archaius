@@ -201,6 +201,26 @@ func (m *Manager) Configs() map[string]interface{} {
 	return config
 }
 
+// ConfigsWithSourceNames returns all the key values along with its source name
+// the returned map will be like:
+// map[string]interface{}{
+// 		key string: map[string]interface{"value": value, "source": sourceName}
+// }
+func (m *Manager) ConfigsWithSourceNames() map[string]interface{} {
+	config := make(map[string]interface{}, 0)
+
+	m.ConfigurationMap.Range(func(key, value interface{}) bool {
+		sValue := m.configValueBySource(key.(string), value.(string))
+		if sValue == nil {
+			return true
+		}
+		// each key stores its value and source name
+		config[key.(string)] = map[string]interface{}{"value": sValue, "source": value}
+		return true
+	})
+	return config
+}
+
 // AddDimensionInfo adds the dimensionInfo to the list of which configurations needs to be pulled
 func (m *Manager) AddDimensionInfo(labels map[string]string) (map[string]string, error) {
 	config := make(map[string]string, 0)
