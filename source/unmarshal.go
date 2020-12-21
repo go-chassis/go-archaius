@@ -27,8 +27,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/go-chassis/go-archaius/cast"
 	"github.com/go-chassis/openlog"
+	"github.com/spf13/cast"
 )
 
 const (
@@ -538,43 +538,27 @@ func toSnake(in string) string {
 // ToRvalueType Deserializes the object to a particular type
 func (m *Manager) toRvalueType(confValue interface{}, rValue reflect.Value) (returnValue reflect.Value, err error) {
 	convertType := rValue.Type()
-	castValue := cast.NewValue(confValue, nil)
 	returnValue = reflect.New(convertType).Elem()
 
 	switch convertType.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		returnInt, rErr := castValue.ToInt64()
-		if err != nil {
-			err = rErr
-		}
+		returnInt := cast.ToInt64(confValue)
 		returnValue.SetInt(returnInt)
 
 	case reflect.String:
-		returnString, rErr := castValue.ToString()
-		if err != nil {
-			err = rErr
-		}
+		returnString := cast.ToString(confValue)
 
 		returnValue.SetString(returnString)
 
 	case reflect.Float32, reflect.Float64:
-		returnFloat, rErr := castValue.ToFloat64()
-		if err != nil {
-			err = rErr
-		}
+		returnFloat := cast.ToFloat64(confValue)
 		returnValue.SetFloat(returnFloat)
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		returnUInt, rErr := castValue.ToUint64()
-		if err != nil {
-			err = rErr
-		}
+		returnUInt := cast.ToUint64(confValue)
 		returnValue.SetUint(returnUInt)
 	case reflect.Bool:
-		returnBool, rErr := castValue.ToBool()
-		if err != nil {
-			err = rErr
-		}
+		returnBool := cast.ToBool(confValue)
 		returnValue.SetBool(returnBool)
 
 	case reflect.Array, reflect.Slice:

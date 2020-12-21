@@ -80,11 +80,6 @@ func TestConfig_Get(t *testing.T) {
 	n3 := archaius.GetString("name", "")
 	assert.Equal(t, "peter", n3)
 
-	n2 := archaius.GetValue("name")
-	name, err := n2.ToString()
-	assert.NoError(t, err)
-	assert.Equal(t, "peter", name)
-
 	b := archaius.Exist("name")
 	assert.True(t, b)
 
