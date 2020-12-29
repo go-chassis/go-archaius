@@ -227,6 +227,16 @@ func GetConfigs() map[string]interface{} {
 	return manager.Configs()
 }
 
+// GetConfigsWithSourceNames gives the information about all configurations
+// each config key, along with its source will be returned
+// the returned map will be like:
+// map[string]interface{}{
+// 		key string: map[string]interface{"value": value, "sourceName": sourceName}
+// }
+func GetConfigsWithSourceNames() map[string]interface{} {
+	return manager.ConfigsWithSourceNames()
+}
+
 // AddDimensionInfo adds a NewDimensionInfo of which configurations needs to be taken
 func AddDimensionInfo(labels map[string]string) (map[string]string, error) {
 	config, err := manager.AddDimensionInfo(labels)

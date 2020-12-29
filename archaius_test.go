@@ -94,6 +94,15 @@ func TestConfig_Get(t *testing.T) {
 	m := archaius.GetConfigs()
 	t.Log(m)
 	assert.Equal(t, 1, m["number"])
+
+	// case: view config keys and its original source
+	// context: archaius is initialized and has config key: "number", value: 1 from source: FileSource
+	// expected result: able to get config key and its original source
+	t.Run("get all configs along with source", func(t *testing.T) {
+		c1 := archaius.GetConfigsWithSourceNames()
+		assert.Equal(t, 1, c1["number"].(map[string]interface{})["value"])
+		assert.Equal(t, "FileSource", c1["number"].(map[string]interface{})["source"])
+	})
 }
 func TestConfig_GetInt(t *testing.T) {
 	s := archaius.GetInt("number", 0)
