@@ -403,7 +403,7 @@ func (m *Manager) updateEvent(e *event.Event) (error, bool) {
 		sourceName, ok := m.ConfigurationMap.Load(e.Key)
 		if !ok || sourceName != e.EventSource {
 			// if delete event generated from source not maintained ignore it
-			return nil
+			return nil, false
 		} else if sourceName == e.EventSource {
 			// find less priority source or delete key
 			source := m.findNextBestSource(e.Key, sourceName.(string))
