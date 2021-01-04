@@ -436,10 +436,12 @@ func (wth *watch) watchFile() {
 			openlog.Debug(fmt.Sprintf("new config: %v", newConf))
 			events := wth.fileSource.compareUpdate(newConf, event.Name)
 			openlog.Debug(fmt.Sprintf("generated events %v", events))
-			for _, e := range events {
-				wth.callback.OnEvent(e)
+			if len(events) > 0 { //avoid OnModuleEvent empty events error
+				for _, e := range events {
+					wth.callback.OnEvent(e)
+				}
+				wth.callback.OnModuleEvent(events)
 			}
-			wth.callback.OnModuleEvent(events)
 
 		case err := <-wth.watcher.Errors:
 			openlog.Debug(fmt.Sprintf("watch file error: %s", err))

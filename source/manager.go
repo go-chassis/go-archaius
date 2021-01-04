@@ -353,17 +353,30 @@ func (m *Manager) updateModuleEvent(es []*event.Event) error {
 		return errors.New("nil or invalid events supplied")
 	}
 
+	var validEvents []*event.Event
 	for i := 0; i < len(es); i++ {
-		m.updateEvent(es[i])
+		err, needNotify := m.updateEvent(es[i])
+		if err != nil {
+			openlog.Error(fmt.Sprintf("%dth event %+v got error:%v", i, *es[i], err))
+			continue
+		}
+		if needNotify {
+			validEvents = append(validEvents, es[i])
+		}
 	}
 
-	return m.dispatcher.DispatchModuleEvent(es)
+	if len(validEvents) == 0 {
+		openlog.Info("all events are invalid")
+		return nil
+	}
+
+	return m.dispatcher.DispatchModuleEvent(validEvents)
 }
 
-func (m *Manager) updateEvent(e *event.Event) error {
+func (m *Manager) updateEvent(e *event.Event) (error, bool) {
 	// refresh all configuration one by one
 	if e == nil || e.EventSource == "" || e.Key == "" {
-		return errors.New("nil or invalid event supplied")
+		return errors.New("nil or invalid event supplied"), false
 	}
 	openlog.Info("config update event received")
 	switch e.EventType {
@@ -380,7 +393,7 @@ func (m *Manager) updateEvent(e *event.Event) error {
 				// if event generated from less priority source then ignore
 				openlog.Info(fmt.Sprintf("the event source %s's priority is less then %s's, ignore",
 					e.EventSource, sourceName))
-				return nil
+				return nil, false
 			}
 			m.ConfigurationMap.Store(e.Key, e.EventSource)
 			e.EventType = event.Update
@@ -403,16 +416,18 @@ func (m *Manager) updateEvent(e *event.Event) error {
 
 	}
 
-	m.dispatcher.DispatchEvent(e)
-
-	return nil
+	return nil, true
 }
 
 // OnEvent Triggers actions when an event is generated
 func (m *Manager) OnEvent(event *event.Event) {
-	err := m.updateEvent(event)
+	err, needNotify := m.updateEvent(event)
 	if err != nil {
 		openlog.Error("failed in updating event with error: " + err.Error())
+	}
+
+	if needNotify {
+		m.dispatcher.DispatchEvent(event)
 	}
 }
 

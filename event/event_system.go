@@ -42,6 +42,81 @@ const (
 	InvalidAction = "INVALID-ACTION"
 )
 
+type PrefixIndex struct {
+	Prefix string
+	NextParts map[string]*PrefixIndex
+}
+
+func (pre *PrefixIndex) AddPrefix(prefix string) {
+	parts := strings.Split(prefix, ".")
+	cur := pre
+	for _, part := range parts {
+		if cur.NextParts == nil {
+			cur.NextParts = map[string]*PrefixIndex{}
+		}
+		next, ok := cur.NextParts[part]
+		if !ok {
+			next = &PrefixIndex{}
+			cur.NextParts[part] = next
+		}
+		cur = next
+	}
+	cur.Prefix = prefix
+}
+
+func (pre *PrefixIndex) RemovePrefix(prefix string) {
+	parts := strings.Split(prefix, ".")
+	cur := pre
+	var path []*PrefixIndex
+	path = append(path, cur)
+	for _, part := range parts {
+		if cur.NextParts == nil {
+			return
+		}
+		next, ok := cur.NextParts[part]
+		if !ok {
+			return
+		}
+		cur = next
+		path = append(path, cur)
+	}
+	cur.Prefix = ""
+	remove := ""
+	for i:=len(path); i>0; i-- {
+		cur = path[i-1]
+		if remove != "" {
+			delete(cur.NextParts, remove)
+		}
+		if len(cur.NextParts) > 0 {
+			break
+		}
+		if cur.Prefix != "" {
+			break
+		}
+		if i > 1 {
+			remove = parts[i-2]
+		} else {
+			cur.NextParts = nil
+		}
+	}
+}
+
+func (pre *PrefixIndex) FindPrefix(key string) string {
+	parts := strings.Split(key, ".")
+	cur := pre
+	for _, part := range parts {
+		if cur.Prefix != "" {
+			return cur.Prefix
+		}
+		next, ok := cur.NextParts[part]
+		if !ok {
+			return ""
+		}
+		cur = next
+	}
+	return cur.Prefix
+}
+
 // Event generated when any config changes
 type Event struct {
 	EventSource string
@@ -64,6 +139,7 @@ type ModuleListener interface {
 type Dispatcher struct {
 	listeners       map[string][]Listener
 	moduleListeners map[string][]ModuleListener
+	modulePrefixIndex PrefixIndex
 }
 
 // NewDispatcher is a new Dispatcher for listeners
@@ -166,6 +242,7 @@ func (dis *Dispatcher) RegisterModuleListener(listenerObj ModuleListener, module
 		moduleListeners, ok := dis.moduleListeners[prefix]
 		if !ok {
 			moduleListeners = make([]ModuleListener, 0)
+			dis.modulePrefixIndex.AddPrefix(prefix)
 		}
 
 		// for duplicate registration
@@ -207,6 +284,9 @@ func (dis *Dispatcher) UnRegisterModuleListener(listenerObj ModuleListener, modu
 
 		// assign latest moduleListener list
 		dis.moduleListeners[prefix] = newListenerList
+		if len(newListenerList) == 0 {
+			dis.modulePrefixIndex.RemovePrefix(prefix)
+		}
 	}
 	return nil
 }
@@ -238,14 +318,18 @@ func (dis *Dispatcher) parseEvents(events []*Event) map[string][]*Event {
 	var eventList = make(map[string][]*Event)
 	for _, event := range events {
 		// find first prefix from event.key
-		registerKey := dis.findFirstRegisterPrefix(event.Key)
-		if module, ok := eventList[registerKey]; ok {
+		//registerKey := dis.findFirstRegisterPrefix(event.Key)
+		prefix := dis.modulePrefixIndex.FindPrefix(event.Key)
+		if prefix == "" {
+			continue
+		}
+		if module, ok := eventList[prefix]; ok {
 			events := module
 			events = append(events, event)
-			eventList[registerKey] = events
+			eventList[prefix] = events
 		} else {
 			newModule := append([]*Event{}, event)
-			eventList[registerKey] = newModule
+			eventList[prefix] = newModule
 		}
 	}
 
