@@ -5,11 +5,13 @@ package archaius
 import (
 	"errors"
 	"fmt"
+
 	filesource "github.com/go-chassis/go-archaius/source/file"
+	"github.com/spf13/cast"
+
 	"os"
 	"strings"
 
-	"github.com/go-chassis/go-archaius/cast"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/go-archaius/source"
 	"github.com/go-chassis/go-archaius/source/cli"
@@ -155,16 +157,9 @@ func Get(key string) interface{} {
 }
 
 //GetValue return interface
-func GetValue(key string) cast.Value {
-	var confValue cast.Value
-	val := manager.GetConfig(key)
-	if val == nil {
-		confValue = cast.NewValue(nil, source.ErrKeyNotExist)
-	} else {
-		confValue = cast.NewValue(val, nil)
-	}
+func GetValue(key string) interface{} {
 
-	return confValue
+	return manager.GetConfig(key)
 }
 
 // Exist check the configuration key existence
@@ -179,47 +174,52 @@ func UnmarshalConfig(obj interface{}) error {
 
 // GetBool is gives the key value in the form of bool
 func GetBool(key string, defaultValue bool) bool {
-	b, err := GetValue(key).ToBool()
-	if err != nil {
+	v := GetValue(key)
+	if v == nil {
 		return defaultValue
 	}
-	return b
+	r := cast.ToBool(v)
+	return r
 }
 
 // GetFloat64 gives the key value in the form of float64
 func GetFloat64(key string, defaultValue float64) float64 {
-	result, err := GetValue(key).ToFloat64()
-	if err != nil {
+	v := GetValue(key)
+	if v == nil {
 		return defaultValue
 	}
-	return result
+	r := cast.ToFloat64(v)
+	return r
 }
 
 // GetInt gives the key value in the form of GetInt
 func GetInt(key string, defaultValue int) int {
-	result, err := GetValue(key).ToInt()
-	if err != nil {
+	v := GetValue(key)
+	if v == nil {
 		return defaultValue
 	}
-	return result
+	r := cast.ToInt(v)
+	return r
 }
 
 // GetInt64 gives the key value in the form of int64
 func GetInt64(key string, defaultValue int64) int64 {
-	result, err := GetValue(key).ToInt64()
-	if err != nil {
+	v := GetValue(key)
+	if v == nil {
 		return defaultValue
 	}
-	return result
+	r := cast.ToInt64(v)
+	return r
 }
 
 // GetString gives the key value in the form of GetString
 func GetString(key string, defaultValue string) string {
-	result, err := GetValue(key).ToString()
-	if err != nil {
+	v := GetValue(key)
+	if v == nil {
 		return defaultValue
 	}
-	return result
+	r := cast.ToString(v)
+	return r
 }
 
 // GetConfigs gives the information about all configurations

@@ -19,6 +19,8 @@ github.com/gin-gonic/gin v1.4.0/go.mod h1:OW2EZn3DO8Ln9oIKOvM++LBO+5UPHJJDH72/q/
 github.com/go-chassis/cari v0.0.0-20201210041921-7b6fbef2df11/go.mod h1:MgtsEI0AM4Ush6Lyw27z9Gk4nQ/8GWTSXrFzupawWDM=
 github.com/go-chassis/foundation v0.2.2-0.20201210043510-9f6d3de40234 h1:5qa8IJk6m6zP8k9fvUMYULtrLmMRmNAbRprWlgwfLq4=
 github.com/go-chassis/foundation v0.2.2-0.20201210043510-9f6d3de40234/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
+github.com/go-chassis/foundation v0.2.2 h1:pu378+kf/NejqgHU9LogU6smWpjs+Mx0S99y27nW8OQ=
+github.com/go-chassis/foundation v0.2.2/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
 github.com/go-chassis/kie-client v0.0.0-20201210060018-938c7680a9ab h1:3vZbK1AZjYiOOXrRUdrcTNKvM1MP2qk73UyRLxaKWbI=
 github.com/go-chassis/kie-client v0.0.0-20201210060018-938c7680a9ab/go.mod h1:UTdbtyN5ge/v9DmQzdVRxQP7z51Q4z6hyl+W6ZpUHFM=
 github.com/go-chassis/openlog v1.1.2 h1:LgGfwwOhpU8c6URV6ADpaRBPVY7Ph1C28jCQ6zzQawQ=
