@@ -35,6 +35,7 @@ import (
 //errors
 var (
 	ErrKeyNotExist = errors.New("key does not exist")
+	ErrIgnoreChange = errors.New("ignore key changed")
 )
 
 //const
@@ -355,14 +356,14 @@ func (m *Manager) updateModuleEvent(es []*event.Event) error {
 
 	var validEvents []*event.Event
 	for i := 0; i < len(es); i++ {
-		err, needNotify := m.updateEvent(es[i])
+		err := m.updateEvent(es[i])
 		if err != nil {
-			openlog.Error(fmt.Sprintf("%dth event %+v got error:%v", i, *es[i], err))
+			if err != ErrKeyNotExist {
+				openlog.Error(fmt.Sprintf("%dth event %+v got error:%v", i, *es[i], err))
+			}
 			continue
 		}
-		if needNotify {
-			validEvents = append(validEvents, es[i])
-		}
+		validEvents = append(validEvents, es[i])
 	}
 
 	if len(validEvents) == 0 {
@@ -373,10 +374,10 @@ func (m *Manager) updateModuleEvent(es []*event.Event) error {
 	return m.dispatcher.DispatchModuleEvent(validEvents)
 }
 
-func (m *Manager) updateEvent(e *event.Event) (error, bool) {
+func (m *Manager) updateEvent(e *event.Event) error {
 	// refresh all configuration one by one
 	if e == nil || e.EventSource == "" || e.Key == "" {
-		return errors.New("nil or invalid event supplied"), false
+		return errors.New("nil or invalid event supplied")
 	}
 	openlog.Info("config update event received")
 	switch e.EventType {
@@ -393,7 +394,7 @@ func (m *Manager) updateEvent(e *event.Event) (error, bool) {
 				// if event generated from less priority source then ignore
 				openlog.Info(fmt.Sprintf("the event source %s's priority is less then %s's, ignore",
 					e.EventSource, sourceName))
-				return nil, false
+				return ErrIgnoreChange
 			}
 			m.ConfigurationMap.Store(e.Key, e.EventSource)
 			e.EventType = event.Update
@@ -403,7 +404,9 @@ func (m *Manager) updateEvent(e *event.Event) (error, bool) {
 		sourceName, ok := m.ConfigurationMap.Load(e.Key)
 		if !ok || sourceName != e.EventSource {
 			// if delete event generated from source not maintained ignore it
-			return nil, false
+			openlog.Info(fmt.Sprintf("the event source %s (expect %s) is not maintained, ignore",
+				e.EventSource, sourceName))
+			return ErrIgnoreChange
 		} else if sourceName == e.EventSource {
 			// find less priority source or delete key
 			source := m.findNextBestSource(e.Key, sourceName.(string))
@@ -416,19 +419,20 @@ func (m *Manager) updateEvent(e *event.Event) (error, bool) {
 
 	}
 
-	return nil, true
+	return nil
 }
 
 // OnEvent Triggers actions when an event is generated
 func (m *Manager) OnEvent(event *event.Event) {
-	err, needNotify := m.updateEvent(event)
+	err := m.updateEvent(event)
 	if err != nil {
-		openlog.Error("failed in updating event with error: " + err.Error())
+		if err != ErrIgnoreChange {
+			openlog.Error("failed in updating event with error: " + err.Error())
+		}
+		return
 	}
 
-	if needNotify {
-		m.dispatcher.DispatchEvent(event)
-	}
+	m.dispatcher.DispatchEvent(event)
 }
 
 // OnModuleEvent Triggers actions when events are generated
