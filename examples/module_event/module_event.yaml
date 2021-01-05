@@ -1,0 +1,8 @@
+---
+test:
+  person:
+    name: tom
+    age: 24
+    favorites:
+      food: dumplins
+      color: red
