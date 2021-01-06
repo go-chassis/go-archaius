@@ -112,6 +112,10 @@ func Init(opts ...Option) error {
 //CustomInit accept a list of config source, add it into archaius runtime.
 //it almost like Init(), but you can fully control config sources you inject to archaius
 func CustomInit(sources ...source.ConfigSource) error {
+	if running {
+		openlog.Warn("can not init archaius again, call Clean first")
+		return nil
+	}
 	var err error
 	manager = source.NewManager()
 	for _, s := range sources {
@@ -120,6 +124,7 @@ func CustomInit(sources ...source.ConfigSource) error {
 			return err
 		}
 	}
+	running = true
 	return err
 }
 

@@ -1,6 +1,8 @@
 package event_test
 
 import (
+	"github.com/stretchr/testify/assert"
+	"sync"
 	"testing"
 
 	"github.com/go-chassis/go-archaius/event"
@@ -80,4 +82,91 @@ func TestDispatchEvent(t *testing.T) {
 
 	dispatcher.UnRegisterListener(eventListener3, "Key1")
 
+}
+
+type MListener struct {
+	eventKeys []string
+	wg sync.WaitGroup
+}
+
+func (m *MListener) Event(events []*event.Event) {
+	for _, ev := range events {
+		m.eventKeys = append(m.eventKeys, ev.Key)
+		m.wg.Done()
+	}
+	m.wg.Done()
+}
+
+func TestDispatcher_DispatchModuleEvent(t *testing.T) {
+	t.Run("RegisterModuleEvent", func(t *testing.T) {
+		dispatcher := event.NewDispatcher()
+		lis := &MListener{}
+		dispatcher.RegisterModuleListener(lis, "aaa.bbb")
+		lis.wg.Add(3)
+		dispatcher.DispatchModuleEvent([]*event.Event{
+			{
+				Key:"aaa.bbb.ccc",
+			},
+			{
+				Key:"aaa",
+			},
+			{
+				Key:"aaa.bbb",
+			},
+		})
+		lis.wg.Wait()
+		if assert.Len(t, lis.eventKeys, 2) {
+			assert.Equal(t, "aaa.bbb.ccc", lis.eventKeys[0])
+			assert.Equal(t, "aaa.bbb", lis.eventKeys[1])
+		}
+	})
+	t.Run("RegisterModuleEventCovered", func(t *testing.T) {
+		dispatcher := event.NewDispatcher()
+		lis1 := &MListener{}
+		dispatcher.RegisterModuleListener(lis1, "aaa.bbb")
+		lis2 := &MListener{}
+		dispatcher.RegisterModuleListener(lis2, "aaa.bbb.ccc")
+		lis1.wg.Add(3)
+		dispatcher.DispatchModuleEvent([]*event.Event{
+			{
+				Key:"aaa.bbb.ccc",
+			},
+			{
+				Key:"aaa",
+			},
+			{
+				Key:"aaa.bbb",
+			},
+		})
+		lis1.wg.Wait()
+		if assert.Len(t, lis1.eventKeys, 2) {
+			assert.Equal(t, "aaa.bbb.ccc", lis1.eventKeys[0])
+			assert.Equal(t, "aaa.bbb", lis1.eventKeys[1])
+		}
+		assert.Len(t, lis2.eventKeys, 0)
+	})
+	t.Run("UnRegisterModuleEventCovered", func(t *testing.T) {
+		dispatcher := event.NewDispatcher()
+		lis1 := &MListener{}
+		dispatcher.RegisterModuleListener(lis1, "aaa.bbb")
+		lis2 := &MListener{}
+		dispatcher.RegisterModuleListener(lis2, "aaa.bbb.ccc")
+		dispatcher.UnRegisterModuleListener(lis1, "aaa.bbb")
+		lis2.wg.Add(2)
+		dispatcher.DispatchModuleEvent([]*event.Event{
+			{
+				Key:"aaa.bbb.ccc",
+			},
+			{
+				Key:"aaa",
+			},
+			{
+				Key:"aaa.bbb",
+			},
+		})
+		lis2.wg.Wait()
+		if assert.Len(t, lis2.eventKeys, 1) {
+			assert.Equal(t, "aaa.bbb.ccc", lis2.eventKeys[0])
+		}
+	})
 }

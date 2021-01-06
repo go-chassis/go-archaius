@@ -166,3 +166,11 @@ Complete [example](https://github.com/go-chassis/go-archaius/tree/master/example
 
 Complete [example](https://github.com/go-chassis/go-archaius/tree/master/examples/kie)
 
+### Example: Manage module change events
+
+Sometimes, we may want to handle multiple key value changes as a module, which means that
+the different key in the module has some relation with each other.
+Once such keys have changed, we expect to handle the changes as a whole instead of one by one.
+Module events help us to handle this case.
+
+Complete [example](https://github.com/go-chassis/go-archaius/tree/master/examples/module_event)

@@ -35,6 +35,7 @@ import (
 //errors
 var (
 	ErrKeyNotExist = errors.New("key does not exist")
+	ErrIgnoreChange = errors.New("ignore key changed")
 )
 
 //const
@@ -353,11 +354,24 @@ func (m *Manager) updateModuleEvent(es []*event.Event) error {
 		return errors.New("nil or invalid events supplied")
 	}
 
+	var validEvents []*event.Event
 	for i := 0; i < len(es); i++ {
-		m.updateEvent(es[i])
+		err := m.updateEvent(es[i])
+		if err != nil {
+			if err != ErrKeyNotExist {
+				openlog.Error(fmt.Sprintf("%dth event %+v got error:%v", i, *es[i], err))
+			}
+			continue
+		}
+		validEvents = append(validEvents, es[i])
 	}
 
-	return m.dispatcher.DispatchModuleEvent(es)
+	if len(validEvents) == 0 {
+		openlog.Info("all events are invalid")
+		return nil
+	}
+
+	return m.dispatcher.DispatchModuleEvent(validEvents)
 }
 
 func (m *Manager) updateEvent(e *event.Event) error {
@@ -380,7 +394,7 @@ func (m *Manager) updateEvent(e *event.Event) error {
 				// if event generated from less priority source then ignore
 				openlog.Info(fmt.Sprintf("the event source %s's priority is less then %s's, ignore",
 					e.EventSource, sourceName))
-				return nil
+				return ErrIgnoreChange
 			}
 			m.ConfigurationMap.Store(e.Key, e.EventSource)
 			e.EventType = event.Update
@@ -390,7 +404,9 @@ func (m *Manager) updateEvent(e *event.Event) error {
 		sourceName, ok := m.ConfigurationMap.Load(e.Key)
 		if !ok || sourceName != e.EventSource {
 			// if delete event generated from source not maintained ignore it
-			return nil
+			openlog.Info(fmt.Sprintf("the event source %s (expect %s) is not maintained, ignore",
+				e.EventSource, sourceName))
+			return ErrIgnoreChange
 		} else if sourceName == e.EventSource {
 			// find less priority source or delete key
 			source := m.findNextBestSource(e.Key, sourceName.(string))
@@ -403,8 +419,6 @@ func (m *Manager) updateEvent(e *event.Event) error {
 
 	}
 
-	m.dispatcher.DispatchEvent(e)
-
 	return nil
 }
 
@@ -412,8 +426,13 @@ func (m *Manager) updateEvent(e *event.Event) error {
 func (m *Manager) OnEvent(event *event.Event) {
 	err := m.updateEvent(event)
 	if err != nil {
-		openlog.Error("failed in updating event with error: " + err.Error())
+		if err != ErrIgnoreChange {
+			openlog.Error("failed in updating event with error: " + err.Error())
+		}
+		return
 	}
+
+	m.dispatcher.DispatchEvent(event)
 }
 
 // OnModuleEvent Triggers actions when events are generated
