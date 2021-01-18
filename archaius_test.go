@@ -1,6 +1,7 @@
 package archaius_test
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -227,6 +228,51 @@ infos_ptr:
 		assert.Equal(t, "123", p.MD["name"])
 	})
 }
+
+func TestMarshalConfig(t *testing.T) {
+	b := []byte(`
+info:
+  address: a
+metadata_str:
+  key01: "value01"
+metadata_int:
+  key01: 1
+metadata_struct:
+  key01: {address: "addr03",number: 1230}
+metadata_ptr:
+  key01: {address: "addr05",number: 1232}
+str_arr:
+  - "list01"
+int_arr:
+  - 1
+infos:
+  - address: "addr01"
+    users:
+      - name: "yourname"
+infos_ptr:
+  - number: 123
+    users:
+      - name: "yourname1"
+        age: 22
+`)
+	d, _ := os.Getwd()
+	filename1 := filepath.Join(d, "f4.yaml")
+	f1, err := os.Create(filename1)
+	assert.NoError(t, err)
+	err = archaius.Init(archaius.WithMemorySource())
+	assert.NoError(t, err)
+	defer f1.Close()
+	defer os.Remove(filename1)
+	_, err = io.WriteString(f1, string(b))
+	assert.NoError(t, err)
+	err = archaius.AddFile(filename1)
+	assert.NoError(t, err)
+	buf := bytes.NewBuffer(nil)
+	err = archaius.WriteTo(buf)
+	assert.NoError(t, err)
+	t.Logf("%s", buf.String())
+}
+
 func TestInitConfigCenter(t *testing.T) {
 	err := archaius.EnableRemoteSource("fake", nil)
 	assert.Error(t, err)

@@ -24,6 +24,8 @@ package source
 import (
 	"errors"
 	"fmt"
+	"gopkg.in/yaml.v3"
+	"io"
 	"reflect"
 	"regexp"
 	"sync"
@@ -36,6 +38,7 @@ import (
 var (
 	ErrKeyNotExist = errors.New("key does not exist")
 	ErrIgnoreChange = errors.New("ignore key changed")
+	ErrWriterInvalid = errors.New("writer is invalid")
 )
 
 //const
@@ -82,7 +85,7 @@ func (m *Manager) Cleanup() error {
 //Set call set of all sources
 func (m *Manager) Set(k string, v interface{}) error {
 	m.sourceMapMux.RLock()
-	defer m.sourceMapMux.RLock()
+	defer m.sourceMapMux.RUnlock()
 	var err error
 	for _, s := range m.Sources {
 		err = s.Set(k, v)
@@ -126,6 +129,28 @@ func (m *Manager) Unmarshal(obj interface{}) error {
 	}
 
 	return m.unmarshal(rv, doNotConsiderTag)
+}
+
+// Marshal function is used to write all configuration by yaml
+func (m *Manager) Marshal(w io.Writer) error {
+	if w == nil {
+		openlog.Error("invalid writer")
+		return ErrWriterInvalid
+	}
+	allConfig := make(map[string]map[string]interface{})
+	for name, source := range m.Sources {
+		config, err :=  source.GetConfigurations()
+		if err != nil  {
+			openlog.Error("get source " + name + " error " + err.Error())
+			continue
+		}
+		if len(config) == 0 {
+			continue
+		}
+		allConfig[name] = config
+	}
+	encode := yaml.NewEncoder(w)
+	return encode.Encode(allConfig)
 }
 
 // AddSource adds a source to configurationManager

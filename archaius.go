@@ -5,6 +5,7 @@ package archaius
 import (
 	"errors"
 	"fmt"
+	"io"
 
 	filesource "github.com/go-chassis/go-archaius/source/file"
 
@@ -181,6 +182,11 @@ func Exist(key string) bool {
 // UnmarshalConfig unmarshal the config of receiving object
 func UnmarshalConfig(obj interface{}) error {
 	return manager.Unmarshal(obj)
+}
+
+// WriteTo write the config to writer by yaml
+func WriteTo(w io.Writer) error {
+	return manager.Marshal(w)
 }
 
 // GetBool is gives the key value in the form of bool
