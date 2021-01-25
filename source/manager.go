@@ -405,7 +405,7 @@ func (m *Manager) updateEvent(e *event.Event) error {
 		return errors.New("nil or invalid event supplied")
 	}
 	if e.HasUpdated {
-		openlog.Info(fmt.Sprintf("config update event %s has been updated", *e))
+		openlog.Info(fmt.Sprintf("config update event %+v has been updated", *e))
 		return nil
 	}
 	openlog.Info("config update event received")
