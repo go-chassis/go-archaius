@@ -123,6 +123,7 @@ type Event struct {
 	EventType   string
 	Key         string
 	Value       interface{}
+	HasUpdated  bool
 }
 
 // Listener All Listener should implement this Interface
