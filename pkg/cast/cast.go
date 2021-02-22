@@ -206,65 +206,19 @@ func (val *configValue) ToIntSlice() ([]int, error) {
 }
 
 func (val *configValue) ToBool() (bool, error) {
-	value := indirect(val.value)
-	switch dataType := value.(type) {
-	case bool:
-		return dataType, nil
-	case int:
-		if value.(int) != 0 {
-			return true, nil
-		}
-		return false, nil
-	case string:
-		if len(value.(string)) != 0 {
-			value, parseError := strconv.ParseBool(dataType)
-			if parseError != nil {
-				fmt.Println("error in parsing string to bool", parseError, value)
-			}
-			return value, nil
-		}
-		return false, nil
-	default:
-		return false, fmt.Errorf("unable to cast %#v of type %T to bool", value, value)
+	if val.err != nil {
+		return false, val.err
 	}
+
+	return ca.ToBoolE(val.value)
 }
 
 func (val *configValue) ToFloat64() (float64, error) {
-	value := indirect(val.value)
-
-	switch dataType := value.(type) {
-	case float64:
-		return dataType, nil
-	case float32:
-		return float64(dataType), nil
-	case int:
-		return float64(dataType), nil
-	case int64:
-		return float64(dataType), nil
-	case int32:
-		return float64(dataType), nil
-	case int16:
-		return float64(dataType), nil
-	case int8:
-		return float64(dataType), nil
-	case uint:
-		return float64(dataType), nil
-	case uint64:
-		return float64(dataType), nil
-	case uint32:
-		return float64(dataType), nil
-	case uint16:
-		return float64(dataType), nil
-	case uint8:
-		return float64(dataType), nil
-	case nil:
-		return 0, nil
-	case string:
-		floatData, err := parsingString(dataType, value)
-		return floatData, err
-	default:
-		return 0, fmt.Errorf(fmtToFloat64Failed, value, value)
+	if val.err != nil {
+		return 0, val.err
 	}
+
+	return ca.ToFloat64E(val.value)
 }
 
 func parsingString(dataType string, value interface{}) (float64, error) {
