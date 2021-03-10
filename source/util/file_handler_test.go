@@ -14,7 +14,8 @@ c:
  d: 3
 e:
  - addr: "addvalue"
-   nameber: 10
+   nameber: ${NAME||10}
+ - ${TEST||none}
 `)
 	m, err := Convert2JavaProps("test.yaml", b)
 	assert.NoError(t, err)
@@ -26,6 +27,8 @@ e:
 	map1, ok1 := v[0].(map[string]interface{})
 	assert.True(t, ok1)
 	assert.Equal(t, "addvalue", map1["addr"])
+	assert.Equal(t, "10", map1["nameber"])
+	assert.Equal(t, "none", v[1])
 }
 
 func TestConvert2ConfigMap(t *testing.T) {
