@@ -1,1 +1,8 @@
 age: 131
+name: ${NAME||peter}
+favorite:
+  - ${FRUIT||apple}
+  - ${COLOR||red}
+  - food:
+      fish: true
+      meet: true

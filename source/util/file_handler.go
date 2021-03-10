@@ -34,65 +34,65 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 	result := map[string]interface{}{}
 
 	for _, item := range subItems {
+		//check the item key first
+		k, ok := checkKey(item.Key)
+		if !ok {
+			continue
+		}
 		//If there are sub-items existing
 		switch item.Value.(type) {
+		//sub items in a map
 		case yaml.MapSlice:
 			subResult := retrieveItems(prefix+item.Key.(string), item.Value.(yaml.MapSlice))
 			for k, v := range subResult {
 				result[k] = v
 			}
 
-		// Struct field to map
+		// sub items in an array
 		case []interface{}:
-			arr := make([]interface{}, 0)
-			for _, v := range item.Value.([]interface{}) {
-				if ms, ok := v.(yaml.MapSlice); ok {
-					subResult := retrieveItems("", ms)
-					arr = append(arr, subResult)
-				}
-			}
+			keyVal := item.Value.([]interface{})
+			result[prefix+k] = retrieveItemInSlice(keyVal)
 
-			k, ok := item.Key.(string)
-			if !ok {
-				openlog.Error("yaml path is not string", openlog.WithTags(
-					openlog.Tags{
-						"key": item.Key,
-					},
-				))
-				continue
-			}
-			var keyVal = item.Value
-			if val, ok := item.Value.(string); ok {
-				keyVal = ExpandValueEnv(val)
-			}
-			result[prefix+k] = keyVal
-			// replace  prefix+k with new arr value
-			if len(arr) != 0 {
-				result[prefix+k] = arr
-			}
+		// sub item is a string
+		case string:
+			result[prefix+k] = ExpandValueEnv(item.Value.(string))
 
+		// sub item in other type
 		default:
-			k, ok := item.Key.(string)
-			if !ok {
-				openlog.Error("yaml tag is not string", openlog.WithTags(
-					openlog.Tags{
-						"key": item.Key,
-					},
-				))
-				continue
-			}
-
-			var keyVal = item.Value
-			if val, ok := item.Value.(string); ok {
-				keyVal = ExpandValueEnv(val)
-			}
-			result[prefix+k] = keyVal
+			result[prefix+k] = item.Value
 
 		}
 
 	}
 
 	return result
+}
+
+func checkKey(key interface{}) (string, bool) {
+	k, ok := key.(string)
+	if !ok {
+		openlog.Error("yaml tag is not string", openlog.WithTags(
+			openlog.Tags{
+				"key": key,
+			},
+		))
+		return "", false
+	}
+	return k, true
+}
+
+func retrieveItemInSlice(value []interface{}) []interface{} {
+	for i, v := range value {
+		switch v.(type) {
+		case yaml.MapSlice:
+			value[i] = retrieveItems("", v.(yaml.MapSlice))
+		case string:
+			value[i] = ExpandValueEnv(v.(string))
+		default:
+			//do nothing
+		}
+	}
+	return value
 }
 
 //UseFileNameAsKeyContentAsValue is a FileHandler, it sets the yaml file name as key and the content as value
