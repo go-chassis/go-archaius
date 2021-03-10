@@ -1,6 +1,7 @@
 package util
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,7 @@ e:
    nameber: ${NAME||10}
  - ${TEST||none}
 `)
+	os.Setenv("NAME", "go-archaius")
 	m, err := Convert2JavaProps("test.yaml", b)
 	assert.NoError(t, err)
 	assert.Equal(t, m["c.d"], 3)
@@ -27,7 +29,7 @@ e:
 	map1, ok1 := v[0].(map[string]interface{})
 	assert.True(t, ok1)
 	assert.Equal(t, "addvalue", map1["addr"])
-	assert.Equal(t, "10", map1["nameber"])
+	assert.Equal(t, "go-archaius", map1["nameber"])
 	assert.Equal(t, "none", v[1])
 }
 
