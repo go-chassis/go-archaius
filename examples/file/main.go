@@ -15,6 +15,7 @@ func main() {
 	}
 	log.Println(archaius.Get("age"))
 	log.Println(archaius.Get("name"))
+	log.Println(archaius.Get("favorite"))
 	log.Println(archaius.Get("c"))
 	log.Println(archaius.Get("b"))
 	err = archaius.AddFile("f2.yaml")

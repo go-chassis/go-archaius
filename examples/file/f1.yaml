@@ -1,1 +1,5 @@
 age: 131
+name: ${NAME||peter}
+favorite:
+  - ${FRUIT||apple}
+  - ${COLOR||red}

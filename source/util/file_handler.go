@@ -61,9 +61,11 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 				))
 				continue
 			}
-			var keyVal = item.Value
-			if val, ok := item.Value.(string); ok {
-				keyVal = ExpandValueEnv(val)
+			keyVal := item.Value.([]interface{})
+			for i, subVal := range keyVal {
+				if subStr, ok := subVal.(string); ok {
+					keyVal[i] = ExpandValueEnv(subStr)
+				}
 			}
 			result[prefix+k] = keyVal
 			// replace  prefix+k with new arr value
