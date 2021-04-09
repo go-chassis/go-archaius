@@ -8,7 +8,7 @@ import (
 
 // The name of a variable can contain only letters (a to z or A to Z), numbers ( 0 to 9) or
 // the underscore character ( _), and can't begin with number.
-const envVariable = `\${([a-zA-Z_]{1}[\w]+)[\|]{2}(.*?)}`
+const envVariable = `\${([a-zA-Z_]{1}[\w]+)((?:\,\,|\^\^)?)[\|]{2}(.*?)}`
 
 // reg exp
 var variableReg *regexp.Regexp
@@ -35,7 +35,13 @@ func ExpandValueEnv(value string) (realValue string) {
 	for _, sub := range submatch {
 		item := os.Getenv(sub[1])
 		if item == "" {
-			item = sub[2]
+			item = sub[3]
+		} else {
+			if sub[2] == "^^" {
+				item = strings.ToUpper(item)
+			} else if sub[2] == ",," {
+				item = strings.ToLower(item)
+			}
 		}
 		realValue = strings.ReplaceAll(realValue, sub[0], item)
 	}
