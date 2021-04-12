@@ -33,6 +33,9 @@ func ExpandValueEnv(value string) (realValue string) {
 
 	realValue = value
 	for _, sub := range submatch {
+		if len(sub) != 4 { //rule matching behaves in an unexpected way
+			continue
+		}
 		item := os.Getenv(sub[1])
 		if item == "" {
 			item = sub[3]
