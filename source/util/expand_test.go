@@ -49,4 +49,13 @@ func TestExpandValueEnv(t *testing.T) {
 		t.Logf("err:%+v", e)
 	}
 	assert.Equal(t, "${IP|}", ExpandValueEnv(str10))
+
+	os.Unsetenv("UPPER_ENV")
+	str11 := "env:${UPPER_ENV^^||local}"
+	assert.Equal(t, "env:local", ExpandValueEnv(str11))
+	os.Setenv("UPPER_ENV", "Test")
+	assert.Equal(t, "env:TEST", ExpandValueEnv(str11))
+	str12 := "env:${UPPER_ENV,,||local}"
+	assert.Equal(t, "env:test", ExpandValueEnv(str12))
+	os.Unsetenv("UPPER_ENV")
 }

@@ -104,7 +104,7 @@ serviceAddr := archaius.GetString("service.addr", "")
 ```
 note:
 
-1. For `service.name` config with value of  `${NAME||go-archaius}` is support env syntax. If environment variable `${NAME}` isn't setting, return default value `go-archaius`. It's setted, will get real environment variable value.
+1. For `service.name` config with value of  `${NAME||go-archaius}` is support env syntax. If environment variable `${NAME}` isn't setting, return default value `go-archaius`. It's setted, will get real environment variable value. Besides, if `${Name^^}` is used instead of `${Name}`, the value of environment variable `Name` will be shown in upper case, and `${Name,,}` will bring the value in lower case.
 2. For `service.addr` config is support "expand syntax". If environment variable `${IP}` or `${PORT}` is setted, will get env config. 
 eg: `export IP=0.0.0.0 PORT=443` , `archaius.GetString("service.addr", "")` will return `0.0.0.0:443` .
 
