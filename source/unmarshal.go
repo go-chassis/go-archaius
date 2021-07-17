@@ -327,18 +327,15 @@ func (m *Manager) populateMap(prefix string, mapType reflect.Type, rValues refle
 
 			// maybe next map type
 			if mapValueType != setVal.Type() {
-				return rValue, nil
-
+				returnCongValue, err := m.toRvalueType(setVal.Interface(), reflect.New(mapValueType).Elem())
+				if err != nil {
+					return rValue, fmt.Errorf(fmtValueNotMatched,
+						prefix+key, mapValueType, setVal.String())
+				}
+				setVal = returnCongValue
 			}
-
-			returnCongValue, err := m.toRvalueType(setVal.Interface(), reflect.New(mapValueType).Elem())
-			if err != nil {
-				return rValue, fmt.Errorf(fmtValueNotMatched,
-					prefix+key, mapValueType, setVal.String())
-			}
-
 			if rValue.CanSet() {
-				rValue.SetMapIndex(reflect.ValueOf(key[1:]), returnCongValue)
+				rValue.SetMapIndex(reflect.ValueOf(key[1:]), setVal)
 			}
 		default:
 			splitKey := strings.Split(key, `.`)
