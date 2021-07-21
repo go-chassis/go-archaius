@@ -283,3 +283,43 @@ func TestClean(t *testing.T) {
 	s := archaius.Get("age")
 	assert.Equal(t, nil, s)
 }
+func TestInitConfigBool2String(t *testing.T) {
+	b := []byte(`
+ssl:
+  rest.Provider.cipherPlugin: aes
+  rest.Provider.verifyPeer: false
+  rest.Provider.cipherSuits: TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+  rest.Provider.protocol: TLSv1.2
+  rest.Provider.caFile: ca.cer
+  rest.Provider.certFile: cert_chain.pem
+  rest.Provider.keyFile: private.pem
+  rest.Provider.certPwdFile: PwdFile.yaml
+`)
+	d, _ := os.Getwd()
+	testFile := filepath.Join(d, "tls_bool.yaml")
+	f1, err := os.Create(testFile)
+	assert.NoError(t, err)
+	err = archaius.Init(archaius.WithMemorySource())
+	assert.NoError(t, err)
+	defer f1.Close()
+	defer os.Remove(testFile)
+	_, err = io.WriteString(f1, string(b))
+	assert.NoError(t, err)
+	type Ssl struct {
+		Ssl map[string]string `yaml:"ssl"`
+	}
+	err = archaius.AddFile(testFile)
+	assert.NoError(t, err)
+	//p := &Person{}
+	sslConfig := &Ssl{}
+	err = archaius.UnmarshalConfig(sslConfig)
+	assert.NoError(t, err)
+	assert.Equal(t, "aes", sslConfig.Ssl["rest.Provider.cipherPlugin"])
+	assert.Equal(t, "false", sslConfig.Ssl["rest.Provider.verifyPeer"])
+	assert.Equal(t, "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", sslConfig.Ssl["rest.Provider.cipherSuits"])
+	assert.Equal(t, "TLSv1.2", sslConfig.Ssl["rest.Provider.protocol"])
+	assert.Equal(t, "ca.cer", sslConfig.Ssl["rest.Provider.caFile"])
+	assert.Equal(t, "cert_chain.pem", sslConfig.Ssl["rest.Provider.certFile"])
+	assert.Equal(t, "private.pem", sslConfig.Ssl["rest.Provider.keyFile"])
+	assert.Equal(t, "PwdFile.yaml", sslConfig.Ssl["rest.Provider.certPwdFile"])
+}
