@@ -8,7 +8,7 @@ if you want to run kie.go, you should do that:
 3. run command to create a configuration to kie (if your ServiceComb-Kie server url is `http://127.0.0.1:30110`):
 
    ```shell
-   curl -X POST -H 'Content-Type:application/json' http://127.0.0.1:30110/v1/default/kie/kv -d '{"key": "user","labels":{"appId":"foo","serviceName":"bar","version":"1.0.0","environment":"prod"},"value":"admin","value_type":"text"}'
+   curl -X POST -H 'Content-Type:application/json' http://127.0.0.1:30110/v1/default/kie/kv -d '{"key": "user","labels":{"appId":"foo","serviceName":"bar","version":"1.0.0","environment":"prod"},"value":"admin","value_type":"text","status":"enabled"}'
    ```
    and you will receive a response like:
    ```json
