@@ -36,8 +36,8 @@ import (
 
 //errors
 var (
-	ErrKeyNotExist = errors.New("key does not exist")
-	ErrIgnoreChange = errors.New("ignore key changed")
+	ErrKeyNotExist   = errors.New("key does not exist")
+	ErrIgnoreChange  = errors.New("ignore key changed")
 	ErrWriterInvalid = errors.New("writer is invalid")
 )
 
@@ -54,6 +54,8 @@ const (
 type Manager struct {
 	sourceMapMux sync.RWMutex
 	Sources      map[string]ConfigSource
+
+	ConfigValueCache sync.Map
 
 	ConfigurationMap sync.Map
 
@@ -79,6 +81,9 @@ func (m *Manager) Cleanup() error {
 			return err
 		}
 	}
+
+	m.ConfigValueCache = sync.Map{}
+
 	return nil
 }
 
@@ -139,8 +144,8 @@ func (m *Manager) Marshal(w io.Writer) error {
 	}
 	allConfig := make(map[string]map[string]interface{})
 	for name, source := range m.Sources {
-		config, err :=  source.GetConfigurations()
-		if err != nil  {
+		config, err := source.GetConfigurations()
+		if err != nil {
 			openlog.Error("get source " + name + " error " + err.Error())
 			continue
 		}
@@ -215,12 +220,11 @@ func (m *Manager) pullSourceConfigs(source string) error {
 func (m *Manager) Configs() map[string]interface{} {
 	config := make(map[string]interface{}, 0)
 
-	m.ConfigurationMap.Range(func(key, value interface{}) bool {
-		sValue := m.configValueBySource(key.(string), value.(string))
-		if sValue == nil {
+	m.ConfigValueCache.Range(func(key, value interface{}) bool {
+		if value == nil {
 			return true
 		}
-		config[key.(string)] = sValue
+		config[key.(string)] = value
 		return true
 	})
 
@@ -236,8 +240,8 @@ func (m *Manager) ConfigsWithSourceNames() map[string]interface{} {
 	config := make(map[string]interface{}, 0)
 
 	m.ConfigurationMap.Range(func(key, value interface{}) bool {
-		sValue := m.configValueBySource(key.(string), value.(string))
-		if sValue == nil {
+		sValue, ok := m.ConfigValueCache.Load(key.(string))
+		if !ok || sValue == nil {
 			return true
 		}
 		// each key stores its value and source name
@@ -317,18 +321,23 @@ func (m *Manager) IsKeyExist(key string) bool {
 
 // GetConfig returns the value for a particular key from cache
 func (m *Manager) GetConfig(key string) interface{} {
-	sourceName, ok := m.ConfigurationMap.Load(key)
-	if !ok {
-		return nil
-	}
-	return m.configValueBySource(key, sourceName.(string))
+	val, _ := m.ConfigValueCache.Load(key)
+	return val
 }
 
 func (m *Manager) updateConfigurationMap(source ConfigSource, configs map[string]interface{}) error {
 	for key := range configs {
+
+		val, err := source.GetConfigurationByKey(key)
+		if err != nil {
+			return err
+		}
+
 		sourceName, ok := m.ConfigurationMap.Load(key)
 		if !ok { // if key do not exist then add source
 			m.ConfigurationMap.Store(key, source.GetSourceName())
+
+			m.ConfigValueCache.Store(key, val)
 			continue
 		}
 
@@ -337,37 +346,15 @@ func (m *Manager) updateConfigurationMap(source ConfigSource, configs map[string
 		m.sourceMapMux.RUnlock()
 		if !ok {
 			m.ConfigurationMap.Store(key, source.GetSourceName())
+
+			m.ConfigValueCache.Store(key, val)
 			continue
 		}
 
 		currentSrcPriority := currentSource.GetPriority()
 		if currentSrcPriority > source.GetPriority() { // lesser value has high priority
 			m.ConfigurationMap.Store(key, source.GetSourceName())
-		}
-	}
-
-	return nil
-}
-
-func (m *Manager) updateConfigurationMapByDI(source ConfigSource, configs map[string]interface{}) error {
-	for key := range configs {
-		sourceName, ok := m.ConfigurationMap.Load(key)
-		if !ok { // if key do not exist then add source
-			m.ConfigurationMap.Store(key, source.GetSourceName())
-			continue
-		}
-
-		m.sourceMapMux.RLock()
-		currentSource, ok := m.Sources[sourceName.(string)]
-		m.sourceMapMux.RUnlock()
-		if !ok {
-			m.ConfigurationMap.Store(key, source.GetSourceName())
-			continue
-		}
-
-		currentSrcPriority := currentSource.GetPriority()
-		if currentSrcPriority > source.GetPriority() { // lesser value has high priority
-			m.ConfigurationMap.Store(key, source.GetSourceName())
+			m.ConfigValueCache.Store(key, val)
 		}
 	}
 
@@ -409,16 +396,29 @@ func (m *Manager) updateEvent(e *event.Event) error {
 		return nil
 	}
 	openlog.Info("config update event received")
+
 	switch e.EventType {
 	case event.Create, event.Update:
+
 		sourceName, ok := m.ConfigurationMap.Load(e.Key)
+
+		val := m.configValueBySource(e.Key, e.EventSource)
+
 		if !ok {
 			m.ConfigurationMap.Store(e.Key, e.EventSource)
+
+			m.ConfigValueCache.Store(e.Key, val)
+
 			e.EventType = event.Create
 		} else if sourceName == e.EventSource {
+
+			m.ConfigValueCache.Store(e.Key, val)
+
 			e.EventType = event.Update
 		} else if sourceName != e.EventSource {
+
 			prioritySrc := m.getHighPrioritySource(sourceName.(string), e.EventSource)
+
 			if prioritySrc != nil && prioritySrc.GetSourceName() == sourceName {
 				// if event generated from less priority source then ignore
 				openlog.Info(fmt.Sprintf("the event source %s's priority is less then %s's, ignore",
@@ -426,6 +426,9 @@ func (m *Manager) updateEvent(e *event.Event) error {
 				return ErrIgnoreChange
 			}
 			m.ConfigurationMap.Store(e.Key, e.EventSource)
+
+			m.ConfigValueCache.Store(e.Key, val)
+
 			e.EventType = event.Update
 		}
 
@@ -441,8 +444,12 @@ func (m *Manager) updateEvent(e *event.Event) error {
 			source := m.findNextBestSource(e.Key, sourceName.(string))
 			if source == nil {
 				m.ConfigurationMap.Delete(e.Key)
+
+				m.ConfigValueCache.Delete(e.Key)
 			} else {
 				m.ConfigurationMap.Store(e.Key, source.GetSourceName())
+
+				m.ConfigValueCache.Store(e.Key, m.configValueBySource(e.Key, source.GetSourceName()))
 			}
 		}
 
