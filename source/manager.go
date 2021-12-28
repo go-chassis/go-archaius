@@ -81,9 +81,7 @@ func (m *Manager) Cleanup() error {
 			return err
 		}
 	}
-
-	m.ConfigValueCache = sync.Map{}
-
+	
 	return nil
 }
 
@@ -335,9 +333,7 @@ func (m *Manager) updateConfigurationMap(source ConfigSource, configs map[string
 
 		sourceName, ok := m.ConfigurationMap.Load(key)
 		if !ok { // if key do not exist then add source
-			m.ConfigurationMap.Store(key, source.GetSourceName())
-
-			m.ConfigValueCache.Store(key, val)
+			m.updateCache(source.GetSourceName(), key, val)
 			continue
 		}
 
@@ -345,16 +341,13 @@ func (m *Manager) updateConfigurationMap(source ConfigSource, configs map[string
 		currentSource, ok := m.Sources[sourceName.(string)]
 		m.sourceMapMux.RUnlock()
 		if !ok {
-			m.ConfigurationMap.Store(key, source.GetSourceName())
-
-			m.ConfigValueCache.Store(key, val)
+			m.updateCache(source.GetSourceName(), key, val)
 			continue
 		}
 
 		currentSrcPriority := currentSource.GetPriority()
 		if currentSrcPriority > source.GetPriority() { // lesser value has high priority
-			m.ConfigurationMap.Store(key, source.GetSourceName())
-			m.ConfigValueCache.Store(key, val)
+			m.updateCache(source.GetSourceName(), key, val)
 		}
 	}
 
@@ -401,18 +394,13 @@ func (m *Manager) updateEvent(e *event.Event) error {
 	case event.Create, event.Update:
 
 		sourceName, ok := m.ConfigurationMap.Load(e.Key)
-
 		val := m.configValueBySource(e.Key, e.EventSource)
-
 		if !ok {
-			m.ConfigurationMap.Store(e.Key, e.EventSource)
-
-			m.ConfigValueCache.Store(e.Key, val)
-
+			m.updateCache(e.EventSource, e.Key, val)
 			e.EventType = event.Create
 		} else if sourceName == e.EventSource {
 
-			m.ConfigValueCache.Store(e.Key, val)
+			m.updateCache(e.EventSource, e.Key, val)
 
 			e.EventType = event.Update
 		} else if sourceName != e.EventSource {
@@ -425,9 +413,7 @@ func (m *Manager) updateEvent(e *event.Event) error {
 					e.EventSource, sourceName))
 				return ErrIgnoreChange
 			}
-			m.ConfigurationMap.Store(e.Key, e.EventSource)
-
-			m.ConfigValueCache.Store(e.Key, val)
+			m.updateCache(e.EventSource, e.Key, val)
 
 			e.EventType = event.Update
 		}
@@ -443,13 +429,16 @@ func (m *Manager) updateEvent(e *event.Event) error {
 			// find less priority source or delete key
 			source := m.findNextBestSource(e.Key, sourceName.(string))
 			if source == nil {
-				m.ConfigurationMap.Delete(e.Key)
-
-				m.ConfigValueCache.Delete(e.Key)
+				m.deleteCache(e.Key)
 			} else {
-				m.ConfigurationMap.Store(e.Key, source.GetSourceName())
-
-				m.ConfigValueCache.Store(e.Key, m.configValueBySource(e.Key, source.GetSourceName()))
+				srcName := source.GetSourceName()
+				// fixme:
+				// val may not consistent with srcName if
+				//    1. key A have two sources
+				//    2. both source delete the key on the same time
+				// but it rarely happens
+				val := m.configValueBySource(e.Key, srcName)
+				m.updateCache(srcName, e.Key, val)
 			}
 		}
 
@@ -457,6 +446,16 @@ func (m *Manager) updateEvent(e *event.Event) error {
 
 	e.HasUpdated = true
 	return nil
+}
+
+func (m *Manager) updateCache(source, key string, val interface{}) {
+	m.ConfigurationMap.Store(key, source)
+	m.ConfigValueCache.Store(key, val)
+}
+
+func (m *Manager) deleteCache(key string) {
+	m.ConfigurationMap.Delete(key)
+	m.ConfigValueCache.Delete(key)
 }
 
 // OnEvent Triggers actions when an event is generated
