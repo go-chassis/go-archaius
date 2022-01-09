@@ -38,7 +38,6 @@ func GenerateLabels(dimension DimensionName, optionsLabels map[string]string) (m
 		return dimensionLabels, nil
 	}
 	dimensionLabels[remote.LabelService] = optionsLabels[remote.LabelService]
-	dimensionLabels[remote.LabelVersion] = optionsLabels[remote.LabelVersion]
 	if dimension == DimensionService {
 		return dimensionLabels, nil
 	}
