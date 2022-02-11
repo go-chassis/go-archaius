@@ -275,21 +275,6 @@ func (m *Manager) Refresh(sourceName string) error {
 	return nil
 }
 
-func (m *Manager) configValueBySource(configKey, sourceName string) (source ConfigSource, value interface{}) {
-	m.sourceMapMux.RLock()
-	source, ok := m.Sources[sourceName]
-	m.sourceMapMux.RUnlock()
-	if !ok {
-		return nil, nil
-	}
-	value, err := source.GetConfigurationByKey(configKey)
-	if err != nil {
-		// may be before getting config, Event has deleted it so get next priority config value
-		return m.findNextBestSource(configKey, sourceName)
-	}
-	return source, value
-}
-
 func (m *Manager) addDimensionInfo(labels map[string]string) error {
 	m.sourceMapMux.RLock()
 	defer m.sourceMapMux.RUnlock()
