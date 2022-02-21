@@ -29,10 +29,6 @@ jobs:
       run: |
         go get -u golang.org/x/lint/golint
         bash scripts/ci/goLintChecker.sh
-    - name: Cyclo
-      run: |
-        go get github.com/fzipp/gocyclo
-        bash scripts/ci/goCycloChecker.sh
     - name: UT
       run: |
         go get github.com/stretchr/testify
