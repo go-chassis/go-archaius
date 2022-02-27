@@ -3,15 +3,14 @@ package archaius_test
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
-	"testing"
-
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/event"
 	"github.com/go-chassis/openlog"
 	"github.com/stretchr/testify/assert"
+	"io"
+	"os"
+	"path/filepath"
+	"testing"
 )
 
 type EListener struct{}
@@ -58,6 +57,8 @@ exist: true
 	t.Run("add mem config", func(t *testing.T) {
 		archaius.Set("age", "16")
 		assert.Equal(t, "16", archaius.Get("age"))
+		archaius.Set("age", "17")
+		assert.Equal(t, "17", archaius.Get("age"))
 	})
 	t.Run("delete mem config", func(t *testing.T) {
 		archaius.Delete("age")
