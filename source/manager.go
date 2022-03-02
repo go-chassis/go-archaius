@@ -36,8 +36,8 @@ import (
 
 //errors
 var (
-	ErrKeyNotExist = errors.New("key does not exist")
-	ErrIgnoreChange = errors.New("ignore key changed")
+	ErrKeyNotExist   = errors.New("key does not exist")
+	ErrIgnoreChange  = errors.New("ignore key changed")
 	ErrWriterInvalid = errors.New("writer is invalid")
 )
 
@@ -139,8 +139,8 @@ func (m *Manager) Marshal(w io.Writer) error {
 	}
 	allConfig := make(map[string]map[string]interface{})
 	for name, source := range m.Sources {
-		config, err :=  source.GetConfigurations()
-		if err != nil  {
+		config, err := source.GetConfigurations()
+		if err != nil {
 			openlog.Error("get source " + name + " error " + err.Error())
 			continue
 		}
@@ -405,7 +405,7 @@ func (m *Manager) updateEvent(e *event.Event) error {
 		return errors.New("nil or invalid event supplied")
 	}
 	if e.HasUpdated {
-		openlog.Info(fmt.Sprintf("config update event %+v has been updated", *e))
+		openlog.Debug(fmt.Sprintf("config update event %+v has been updated", *e))
 		return nil
 	}
 	openlog.Info("config update event received")
