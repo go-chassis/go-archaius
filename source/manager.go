@@ -395,8 +395,8 @@ func (m *Manager) updateEventWithConfigUpdateLock(e *event.Event) error {
 		}
 		// we need to update cache if oldSrc != src || oldVal != val
 		m.updateCacheWithoutConfigUpdateLock(src.GetSourceName(), e.Key, val)
-		if oldVal == val {
-			openlog.Info(fmt.Sprintf("the key %s value %s is up-to-date, ignore value change", e.Key, val))
+		if reflect.DeepEqual(oldVal, val) {
+			openlog.Info(fmt.Sprintf("the key %q value %+v is up-to-date, ignore value change", e.Key, val))
 			return ErrIgnoreChange
 		}
 	}
