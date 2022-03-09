@@ -115,17 +115,22 @@ func TestConfig_RegisterListener(t *testing.T) {
 }
 
 func TestConfig_Update(t *testing.T) {
-	assert.NoError(t, archaius.Set("aNumber", 1))
-	assert.NoError(t, archaius.Set("aNumber", 2))
-
-	assert.NoError(t, archaius.Set("aSlice", []int{1,2,3}))
-	// nothing changed
-	assert.NoError(t, archaius.Set("aSlice", []int{1,2,3}))
-
-	assert.NoError(t, archaius.Set("aMap", map[int]int{1:1}))
-	assert.NoError(t, archaius.Set("aMap", map[int]int{1:1}))
-	assert.NoError(t, archaius.Set("aMap", 1))
-	assert.NoError(t, archaius.Set("aMap", map[int]int{1:1}))
+	t.Run("update a simple type config", func(t *testing.T) {
+		assert.NoError(t, archaius.Set("aNumber", 1))
+		assert.NoError(t, archaius.Set("aNumber", 2))
+	})
+	t.Run("update a slice config", func(t *testing.T) {
+		assert.NoError(t, archaius.Set("aSlice", []int{1,2,3}))
+		assert.NoError(t, archaius.Set("aSlice", []int{1,2,3}))
+		assert.NoError(t, archaius.Set("aSlice", 1))
+		assert.NoError(t, archaius.Set("aSlice", []int{1,2,3}))
+	})
+	t.Run("update a map config", func(t *testing.T) {
+		assert.NoError(t, archaius.Set("aMap", map[int]int{1: 1}))
+		assert.NoError(t, archaius.Set("aMap", map[int]int{1: 1}))
+		assert.NoError(t, archaius.Set("aMap", 1))
+		assert.NoError(t, archaius.Set("aMap", map[int]int{1: 1}))
+	})
 }
 
 func TestUnmarshalConfig(t *testing.T) {
