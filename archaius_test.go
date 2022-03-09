@@ -19,8 +19,6 @@ func (e EListener) Event(event *event.Event) {
 	openlog.Info(fmt.Sprintf("config value after change %s |%s", event.Key, event.Value))
 }
 
-var filename2 string
-
 func TestInit(t *testing.T) {
 	f1Bytes := []byte(`
 age: 14
@@ -33,7 +31,7 @@ exist: true
 `)
 	d, _ := os.Getwd()
 	filename1 := filepath.Join(d, "f1.yaml")
-	filename2 = filepath.Join(d, "f2.yaml")
+	filename2 := filepath.Join(d, "f2.yaml")
 	f1, err := os.Create(filename1)
 	assert.NoError(t, err)
 	defer f1.Close()
@@ -114,6 +112,25 @@ func TestConfig_RegisterListener(t *testing.T) {
 	assert.NoError(t, err)
 	defer archaius.UnRegisterListener(eventHandler, "a*")
 
+}
+
+func TestConfig_Update(t *testing.T) {
+	t.Run("update a simple type config", func(t *testing.T) {
+		assert.NoError(t, archaius.Set("aNumber", 1))
+		assert.NoError(t, archaius.Set("aNumber", 2))
+	})
+	t.Run("update a slice config", func(t *testing.T) {
+		assert.NoError(t, archaius.Set("aSlice", []int{1,2,3}))
+		assert.NoError(t, archaius.Set("aSlice", []int{1,2,3}))
+		assert.NoError(t, archaius.Set("aSlice", 1))
+		assert.NoError(t, archaius.Set("aSlice", []int{1,2,3}))
+	})
+	t.Run("update a map config", func(t *testing.T) {
+		assert.NoError(t, archaius.Set("aMap", map[int]int{1: 1}))
+		assert.NoError(t, archaius.Set("aMap", map[int]int{1: 1}))
+		assert.NoError(t, archaius.Set("aMap", 1))
+		assert.NoError(t, archaius.Set("aMap", map[int]int{1: 1}))
+	})
 }
 
 func TestUnmarshalConfig(t *testing.T) {
