@@ -34,15 +34,17 @@ const (
 
 //Source is a struct
 type Source struct {
-	Configs  sync.Map
-	priority int
+	Configs         sync.Map
+	priority        int
+	lowerCaseForKey bool
 }
 
 //NewEnvConfigurationSource configures a new environment configuration
-func NewEnvConfigurationSource() source.ConfigSource {
+func NewEnvConfigurationSource(openLowerCase bool) source.ConfigSource {
 	openlog.Info("enable env source")
 	envConfigSource := new(Source)
 	envConfigSource.priority = envVariableSourcePriority
+	envConfigSource.lowerCaseForKey = openLowerCase
 	envConfigSource.pullConfigurations()
 	return envConfigSource
 }
@@ -55,6 +57,10 @@ func (es *Source) pullConfigurations() {
 		key := string(rs[0:in])
 		value := string(rs[in+1:])
 		envKey := strings.Replace(key, "_", ".", -1)
+		if es.lowerCaseForKey {
+			key = strings.ToLower(key)
+			envKey = strings.ToLower(envKey)
+		}
 		es.Configs.Store(key, value)
 		es.Configs.Store(envKey, value)
 

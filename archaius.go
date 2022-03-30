@@ -99,7 +99,7 @@ func Init(opts ...Option) error {
 		}
 	}
 	if o.UseENVSource {
-		envSource := env.NewEnvConfigurationSource()
+		envSource := env.NewEnvConfigurationSource(o.EnvKeyLowerCases)
 		if err = manager.AddSource(envSource); err != nil {
 			return err
 		}
