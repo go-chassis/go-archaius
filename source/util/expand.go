@@ -4,11 +4,12 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 // The name of a variable can contain only letters (a to z or A to Z), numbers ( 0 to 9) or
 // the underscore character ( _), and can't begin with number.
-const envVariable = `\${([a-zA-Z_]{1}[\w]+)((?:\,\,|\^\^)?)[\|]{2}(.*?)}`
+const envVariable = `\${([a-zA-Z_]{1}[\w]+)((?:\,\,|\^\^|\,|\^)?)[\|]{2}(.*?)}`
 
 // reg exp
 var variableReg *regexp.Regexp
@@ -44,6 +45,10 @@ func ExpandValueEnv(value string) (realValue string) {
 				item = strings.ToUpper(item)
 			} else if sub[2] == ",," {
 				item = strings.ToLower(item)
+			} else if sub[2] == "^" {
+				item = makeFirstUpperCase(item)
+			} else if sub[2] == "," {
+				item = makeFirstLowerCase(item)
 			}
 		}
 		realValue = strings.ReplaceAll(realValue, sub[0], item)
@@ -51,3 +56,22 @@ func ExpandValueEnv(value string) (realValue string) {
 
 	return
 }
+
+func makeFirstLowerCase(s string) string {
+	if len(s)==0 {
+		return s
+	}
+	r := []rune(s)
+	r[0] = unicode.ToLower(r[0])
+	return string(r)
+}
+
+func makeFirstUpperCase(s string) string {
+	if len(s)==0 {
+		return s
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
+}
+
