@@ -32,6 +32,7 @@ type RemoteInfo struct {
 	AutoDiscovery bool
 	APIVersion    string
 	RefreshPort   string
+	ProjectID     string
 }
 
 //Options hold options

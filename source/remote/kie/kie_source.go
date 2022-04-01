@@ -63,6 +63,7 @@ func NewKieSource(ci *archaius.RemoteInfo) (source.ConfigSource, error) {
 		AutoDiscovery: ci.AutoDiscovery,
 		Labels:        ci.DefaultDimension,
 		WatchTimeOut:  ci.RefreshInterval,
+		ProjectID:     ci.ProjectID,
 	}
 	k, err := NewKie(opts)
 	if err != nil {
