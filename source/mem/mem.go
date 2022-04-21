@@ -147,6 +147,7 @@ func (ms *Source) Delete(key string) error {
 	e.Key = key
 
 	if v, ok := ms.Configs.Load(key); ok {
+		ms.Configs.Delete(key)
 		e.EventType = event.Delete
 		e.Value = v
 	} else {
