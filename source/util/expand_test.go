@@ -50,12 +50,27 @@ func TestExpandValueEnv(t *testing.T) {
 	}
 	assert.Equal(t, "${IP|}", ExpandValueEnv(str10))
 
-	os.Unsetenv("UPPER_ENV")
-	str11 := "env:${UPPER_ENV^^||local}"
+	os.Unsetenv("STR_ENV")
+	str11 := "env:${STR_ENV^^||local}"
+	str12 := "env:${STR_ENV,,||local}"
+	str13 := "env:${STR_ENV^||local}"
+	str14 := "env:${STR_ENV,||local}"
 	assert.Equal(t, "env:local", ExpandValueEnv(str11))
-	os.Setenv("UPPER_ENV", "Test")
+	assert.Equal(t, "env:local", ExpandValueEnv(str12))
+	assert.Equal(t, "env:local", ExpandValueEnv(str13))
+	assert.Equal(t, "env:local", ExpandValueEnv(str14))
+
+	os.Setenv("STR_ENV", "TesT")
 	assert.Equal(t, "env:TEST", ExpandValueEnv(str11))
-	str12 := "env:${UPPER_ENV,,||local}"
 	assert.Equal(t, "env:test", ExpandValueEnv(str12))
-	os.Unsetenv("UPPER_ENV")
+	assert.Equal(t, "env:TesT", ExpandValueEnv(str13))
+	assert.Equal(t, "env:tesT", ExpandValueEnv(str14))
+
+	os.Setenv("STR_ENV", "工Test")
+	assert.Equal(t, "env:工TEST", ExpandValueEnv(str11))
+	assert.Equal(t, "env:工test", ExpandValueEnv(str12))
+	assert.Equal(t, "env:工Test", ExpandValueEnv(str13))
+	assert.Equal(t, "env:工Test", ExpandValueEnv(str14))
+
+	os.Unsetenv("STR_ENV")
 }
