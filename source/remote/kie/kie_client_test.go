@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/go-chassis/go-archaius/source/remote"
+	"github.com/arielsrv/go-archaius/source/remote"
 	client "github.com/go-chassis/kie-client"
 	"github.com/stretchr/testify/assert"
 )

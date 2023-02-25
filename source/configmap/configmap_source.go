@@ -26,14 +26,14 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/go-archaius/source"
+	"github.com/arielsrv/go-archaius/event"
+	"github.com/arielsrv/go-archaius/source"
 
 	"strings"
 	"time"
 
+	"github.com/arielsrv/go-archaius/source/util"
 	"github.com/fsnotify/fsnotify"
-	"github.com/go-chassis/go-archaius/source/util"
 	"github.com/go-chassis/openlog"
 )
 
@@ -45,7 +45,7 @@ const (
 	DefaultConfigMapPriority = 0
 )
 
-//ConfigMapFileSourceTypes is a string
+// ConfigMapFileSourceTypes is a string
 type ConfigMapFileSourceTypes string
 
 const (
@@ -57,7 +57,7 @@ const (
 	InvalidFileType ConfigMapFileSourceTypes = "InvalidType"
 )
 
-//ConfigInfo is s struct
+// ConfigInfo is s struct
 type ConfigInfo struct {
 	FilePath string
 	Value    interface{}
@@ -87,13 +87,13 @@ type watch struct {
 
 var configMapConfigSource *configMapSource
 
-//ConfigMapSource is interface
+// ConfigMapSource is interface
 type ConfigMapSource interface {
 	source.ConfigSource
 	AddFile(filePath string, priority uint32, handler util.FileHandler) error
 }
 
-//NewConfigMapSource creates a source which can handler recurse directory
+// NewConfigMapSource creates a source which can handler recurse directory
 func NewConfigMapSource() ConfigMapSource {
 	if configMapConfigSource == nil {
 		configMapConfigSource = new(configMapSource)
@@ -303,7 +303,7 @@ func (cmSource *configMapSource) GetPriority() int {
 	return cmSource.priority
 }
 
-//SetPriority custom priority
+// SetPriority custom priority
 func (cmSource *configMapSource) SetPriority(priority int) {
 	cmSource.priority = priority
 }
@@ -582,12 +582,12 @@ func (cmSource *configMapSource) AddDimensionInfo(labels map[string]string) erro
 	return nil
 }
 
-//Set no use
+// Set no use
 func (cmSource *configMapSource) Set(key string, value interface{}) error {
 	return nil
 }
 
-//Set no use
+// Set no use
 func (cmSource *configMapSource) Delete(key string) error {
 	return nil
 }

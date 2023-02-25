@@ -5,10 +5,10 @@ import (
 	"time"
 
 	agollo "github.com/Shonminh/apollo-client"
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/go-archaius/source/apollo"
-	_ "github.com/go-chassis/go-archaius/source/apollo"
+	"github.com/arielsrv/go-archaius"
+	"github.com/arielsrv/go-archaius/event"
+	"github.com/arielsrv/go-archaius/source/apollo"
+	_ "github.com/arielsrv/go-archaius/source/apollo"
 	"github.com/go-chassis/openlog"
 )
 

@@ -21,9 +21,10 @@ func init() {
 // will query environment variable for ${NAME}
 // if environment variable is "" return default string `archaius`
 // support multi variable, eg:
-//    value string => addr:${IP||127.0.0.1}:${PORT||8080}
-//    if environment variable =>  IP=0.0.0.0 PORT=443 , result => addr:0.0.0.0:443
-//    if no exist environment variable                , result => addr:127.0.0.1:8080
+//
+//	value string => addr:${IP||127.0.0.1}:${PORT||8080}
+//	if environment variable =>  IP=0.0.0.0 PORT=443 , result => addr:0.0.0.0:443
+//	if no exist environment variable                , result => addr:127.0.0.1:8080
 func ExpandValueEnv(value string) (realValue string) {
 	value = strings.TrimSpace(value)
 	submatch := variableReg.FindAllStringSubmatch(value, -1)

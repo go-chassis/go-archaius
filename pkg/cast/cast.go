@@ -19,7 +19,7 @@ import (
 	ca "github.com/spf13/cast"
 )
 
-//const
+// const
 const (
 	fmtToFloat64Failed = "unable to cast %#v of type %T to float64"
 )

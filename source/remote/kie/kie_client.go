@@ -23,30 +23,30 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-chassis/go-archaius/source/remote"
-	"github.com/go-chassis/go-archaius/source/util/queue"
+	"github.com/arielsrv/go-archaius/source/remote"
+	"github.com/arielsrv/go-archaius/source/util/queue"
 	client "github.com/go-chassis/kie-client"
 	"github.com/go-chassis/openlog"
 )
 
-//DimensionName is the name identifying various dimension of configurations.
-//One dimension corresponds to one label combination.
+// DimensionName is the name identifying various dimension of configurations.
+// One dimension corresponds to one label combination.
 type DimensionName string
 
-//Priority of dimension in dimensionPrecedence array must from low to high
+// Priority of dimension in dimensionPrecedence array must from low to high
 var dimensionPrecedence = []DimensionName{
 	DimensionApp,
 	DimensionService,
 }
 
-//const
+// const
 const (
 	defaultWaitTime                = 30
 	DimensionApp     DimensionName = "app"
 	DimensionService DimensionName = "service"
 )
 
-//Kie is Implementation
+// Kie is Implementation
 type Kie struct {
 	c    *client.Client
 	opts remote.Options
@@ -58,14 +58,14 @@ type Kie struct {
 	dimensions map[DimensionName]*Dimension
 }
 
-//Dimension contains a label combination and the configuration corresponding to this label combination
+// Dimension contains a label combination and the configuration corresponding to this label combination
 type Dimension struct {
 	sync.RWMutex
 	labels map[string]string
 	config map[string]interface{}
 }
 
-//NewKie is a return a new kie client
+// NewKie is a return a new kie client
 func NewKie(options remote.Options) (*Kie, error) {
 	if options.ServerURI == "" {
 		return nil, remote.ErrInvalidEP
@@ -255,7 +255,7 @@ func (k *Kie) getDimensionLabels(dimension DimensionName) map[string]string {
 	return k.dimensions[dimension].labels
 }
 
-//Options return options
+// Options return options
 func (k *Kie) Options() remote.Options {
 	return k.opts
 }

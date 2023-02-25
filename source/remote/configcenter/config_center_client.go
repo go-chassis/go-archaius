@@ -19,8 +19,8 @@ package configcenter
 import (
 	"strings"
 
-	"github.com/go-chassis/go-archaius/pkg/configcenter"
-	"github.com/go-chassis/go-archaius/source/remote"
+	"github.com/arielsrv/go-archaius/pkg/configcenter"
+	"github.com/arielsrv/go-archaius/source/remote"
 	"github.com/go-chassis/openlog"
 	"github.com/gorilla/websocket"
 )
@@ -32,14 +32,14 @@ const (
 	HeaderUserAgent = "User-Agent"
 )
 
-//ConfigCenter is Implementation
+// ConfigCenter is Implementation
 type ConfigCenter struct {
 	c        *configcenter.Client
 	opts     remote.Options
 	wsDialer *websocket.Dialer
 }
 
-//NewConfigCenter is a function
+// NewConfigCenter is a function
 func NewConfigCenter(options remote.Options) (*ConfigCenter, error) {
 	if options.ServerURI == "" {
 		return nil, remote.ErrInvalidEP
@@ -96,12 +96,12 @@ func (c *ConfigCenter) PullConfigs(labels ...map[string]string) (map[string]inte
 	return configurations, nil
 }
 
-//Watch use ws
+// Watch use ws
 func (c *ConfigCenter) Watch(f func(map[string]interface{}), errHandler func(err error), labels map[string]string) error {
 	return c.c.Watch(f, errHandler)
 }
 
-//Options return options
+// Options return options
 func (c *ConfigCenter) Options() remote.Options {
 	return c.opts
 }

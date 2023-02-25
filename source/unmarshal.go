@@ -41,9 +41,9 @@ const (
 )
 
 /*
-   unmarshal configurations on supplied object.
-   multi level configuration key structure > source.module.type.config: value
-   simple key structure > config: value
+unmarshal configurations on supplied object.
+multi level configuration key structure > source.module.type.config: value
+simple key structure > config: value
 */
 func (m *Manager) unmarshal(rValue reflect.Value, tagName string) (err error) {
 	// handle panic
@@ -515,7 +515,7 @@ func (*Manager) getKeyName(fieldName string, fieldTagName reflect.StructTag) str
 	return tagName
 }
 
-//convert camel case to snake case
+// convert camel case to snake case
 func toSnake(in string) string {
 	runes := []rune(in)
 	length := len(runes)

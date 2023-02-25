@@ -27,8 +27,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chassis/go-archaius/event"
-	filesource "github.com/go-chassis/go-archaius/source/file"
+	"github.com/arielsrv/go-archaius/event"
+	filesource "github.com/arielsrv/go-archaius/source/file"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,7 +48,7 @@ func (t *TestDynamicConfigHandler) OnEvent(e *event.Event) {
 	t.EventValue = e.Value
 }
 
-//GetWorkDir is a function used to get the working directory
+// GetWorkDir is a function used to get the working directory
 func GetWorkDir() (string, error) {
 	wd, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {

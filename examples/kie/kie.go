@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/go-archaius/source/remote"
-	_ "github.com/go-chassis/go-archaius/source/remote/kie"
+	"github.com/arielsrv/go-archaius"
+	"github.com/arielsrv/go-archaius/event"
+	"github.com/arielsrv/go-archaius/source/remote"
+	_ "github.com/arielsrv/go-archaius/source/remote/kie"
 	"github.com/go-chassis/openlog"
 )
 

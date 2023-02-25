@@ -1,6 +1,6 @@
 package source
 
-import "github.com/go-chassis/go-archaius/event"
+import "github.com/arielsrv/go-archaius/event"
 
 // ConfigSource get key values from a system, like file system, key value store, memory etc
 type ConfigSource interface {

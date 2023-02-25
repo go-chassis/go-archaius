@@ -3,8 +3,8 @@ package kie
 import (
 	"testing"
 
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/source/remote"
+	"github.com/arielsrv/go-archaius"
+	"github.com/arielsrv/go-archaius/source/remote"
 	"github.com/stretchr/testify/assert"
 )
 

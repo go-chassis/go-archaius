@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-//Package env created on 2017/6/22.
+// Package env created on 2017/6/22.
 package env
 
 import (
@@ -22,7 +22,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-chassis/go-archaius/source"
+	"github.com/arielsrv/go-archaius/source"
 
 	"github.com/go-chassis/openlog"
 )
@@ -32,13 +32,13 @@ const (
 	envVariableSourcePriority = 3
 )
 
-//Source is a struct
+// Source is a struct
 type Source struct {
 	Configs  sync.Map
 	priority int
 }
 
-//NewEnvConfigurationSource configures a new environment configuration
+// NewEnvConfigurationSource configures a new environment configuration
 func NewEnvConfigurationSource() source.ConfigSource {
 	openlog.Info("enable env source")
 	envConfigSource := new(Source)
@@ -61,7 +61,7 @@ func (es *Source) pullConfigurations() {
 	}
 }
 
-//GetConfigurations gets all configuration
+// GetConfigurations gets all configuration
 func (es *Source) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
 	es.Configs.Range(func(k, v interface{}) bool {
@@ -72,7 +72,7 @@ func (es *Source) GetConfigurations() (map[string]interface{}, error) {
 	return configMap, nil
 }
 
-//GetConfigurationByKey gets required configuration for a particular key
+// GetConfigurationByKey gets required configuration for a particular key
 func (es *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	value, ok := es.Configs.Load(key)
 	if !ok {
@@ -82,44 +82,44 @@ func (es *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	return value, nil
 }
 
-//GetPriority returns priority of environment configuration
+// GetPriority returns priority of environment configuration
 func (es *Source) GetPriority() int {
 	return es.priority
 }
 
-//SetPriority custom priority
+// SetPriority custom priority
 func (es *Source) SetPriority(priority int) {
 	es.priority = priority
 }
 
-//GetSourceName returns the name of environment source
+// GetSourceName returns the name of environment source
 func (*Source) GetSourceName() string {
 	return envSourceConst
 }
 
-//Watch dynamically handles a environment configuration
+// Watch dynamically handles a environment configuration
 func (*Source) Watch(callback source.EventHandler) error {
 	//TODO env change
 	return nil
 }
 
-//Cleanup cleans a particular environment configuration up
+// Cleanup cleans a particular environment configuration up
 func (es *Source) Cleanup() error {
 	es.Configs = sync.Map{}
 	return nil
 }
 
-//AddDimensionInfo no use
+// AddDimensionInfo no use
 func (es *Source) AddDimensionInfo(labels map[string]string) error {
 	return nil
 }
 
-//Set no use
+// Set no use
 func (es *Source) Set(key string, value interface{}) error {
 	return nil
 }
 
-//Delete no use
+// Delete no use
 func (es *Source) Delete(key string) error {
 	return nil
 }

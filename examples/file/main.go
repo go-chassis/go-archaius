@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/source/util"
+	"github.com/arielsrv/go-archaius"
+	"github.com/arielsrv/go-archaius/source/util"
 	"github.com/go-chassis/openlog"
 )
 

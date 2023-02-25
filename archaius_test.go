@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/event"
+	"github.com/arielsrv/go-archaius"
+	"github.com/arielsrv/go-archaius/event"
 	"github.com/go-chassis/openlog"
 	"github.com/stretchr/testify/assert"
 )

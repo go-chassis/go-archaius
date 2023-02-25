@@ -1,6 +1,6 @@
 package configcenter
 
-//Instance is a struct
+// Instance is a struct
 type Instance struct {
 	Status      string   `json:"status"`
 	ServiceName string   `json:"serviceName"`
@@ -8,7 +8,7 @@ type Instance struct {
 	EntryPoints []string `json:"endpoints"`
 }
 
-//Members is a struct
+// Members is a struct
 type Members struct {
 	Instances []Instance `json:"instances"`
 }

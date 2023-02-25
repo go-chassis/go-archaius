@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-//Package serializers created  on 2017/6/22.
+// Package serializers created  on 2017/6/22.
 package serializers
 
 import (
 	"errors"
 
-	"github.com/go-chassis/go-archaius/pkg/serializers/json"
+	"github.com/arielsrv/go-archaius/pkg/serializers/json"
 )
 
 const (
@@ -30,7 +30,7 @@ const (
 
 var availableSerializers map[string]Serializer
 
-//Serializer is a interface which declares encode and decode methods
+// Serializer is a interface which declares encode and decode methods
 type Serializer interface {
 	Encode(obj interface{}) ([]byte, error)
 	Decode(data []byte, obj interface{}) error

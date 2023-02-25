@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/go-chassis/go-archaius"
+	"github.com/arielsrv/go-archaius"
 )
 
 func main() {

@@ -22,14 +22,14 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/go-chassis/go-archaius/source/remote"
+	"github.com/arielsrv/go-archaius/source/remote"
 )
 
 const (
 	maxValue = 256
 )
 
-//GenerateDimension create config center dimension string
+// GenerateDimension create config center dimension string
 func GenerateDimension(serviceName, version, appName string) (string, error) {
 	if appName != "" {
 		serviceName = serviceName + "@" + appName

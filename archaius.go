@@ -5,20 +5,19 @@ package archaius
 import (
 	"errors"
 	"fmt"
+	"github.com/arielsrv/go-archaius/event"
+	"github.com/arielsrv/go-archaius/pkg/cast"
+	"github.com/arielsrv/go-archaius/source"
+	"github.com/arielsrv/go-archaius/source/cli"
+	"github.com/arielsrv/go-archaius/source/env"
+	"github.com/arielsrv/go-archaius/source/mem"
+	"github.com/go-chassis/openlog"
 	"io"
 
-	filesource "github.com/go-chassis/go-archaius/source/file"
+	filesource "github.com/arielsrv/go-archaius/source/file"
 
 	"os"
 	"strings"
-
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/go-archaius/pkg/cast"
-	"github.com/go-chassis/go-archaius/source"
-	"github.com/go-chassis/go-archaius/source/cli"
-	"github.com/go-chassis/go-archaius/source/env"
-	"github.com/go-chassis/go-archaius/source/mem"
-	"github.com/go-chassis/openlog"
 )
 
 var (
@@ -28,7 +27,7 @@ var (
 	configServerRunning = false
 )
 
-func initFileSource(o *Options) (source.ConfigSource, error) {
+func initFileSource(o *Options) (filesource.FileSource, error) {
 	files := make([]string, 0)
 	// created file source object
 	fs = filesource.NewFileSource()
@@ -110,8 +109,8 @@ func Init(opts ...Option) error {
 	return nil
 }
 
-//CustomInit accept a list of config source, add it into archaius runtime.
-//it almost like Init(), but you can fully control config sources you inject to archaius
+// CustomInit accept a list of config source, add it into archaius runtime.
+// it almost like Init(), but you can fully control config sources you inject to archaius
 func CustomInit(sources ...source.ConfigSource) error {
 	if running {
 		openlog.Warn("can not init archaius again, call Clean first")
@@ -129,9 +128,9 @@ func CustomInit(sources ...source.ConfigSource) error {
 	return err
 }
 
-//EnableRemoteSource create a remote source singleton
-//A config center source pull remote config server key values into local memory
-//so that you can use GetXXX to get value easily
+// EnableRemoteSource create a remote source singleton
+// A config center source pull remote config server key values into local memory
+// so that you can use GetXXX to get value easily
 func EnableRemoteSource(remoteSource string, ci *RemoteInfo) error {
 	if ci == nil {
 		return errors.New("RemoteInfo can not be empty")
@@ -162,7 +161,7 @@ func Get(key string) interface{} {
 	return manager.GetConfig(key)
 }
 
-//GetValue return interface
+// GetValue return interface
 func GetValue(key string) cast.Value {
 	var confValue cast.Value
 	val := manager.GetConfig(key)
@@ -242,9 +241,10 @@ func GetConfigs() map[string]interface{} {
 // GetConfigsWithSourceNames gives the information about all configurations
 // each config key, along with its source will be returned
 // the returned map will be like:
-// map[string]interface{}{
-// 		key string: map[string]interface{"value": value, "sourceName": sourceName}
-// }
+//
+//	map[string]interface{}{
+//			key string: map[string]interface{"value": value, "sourceName": sourceName}
+//	}
 func GetConfigsWithSourceNames() map[string]interface{} {
 	return manager.ConfigsWithSourceNames()
 }
@@ -255,7 +255,7 @@ func AddDimensionInfo(labels map[string]string) (map[string]string, error) {
 	return config, err
 }
 
-//RegisterListener to Register all listener for different key changes, each key could be a regular expression
+// RegisterListener to Register all listener for different key changes, each key could be a regular expression
 func RegisterListener(listenerObj event.Listener, key ...string) error {
 	return manager.RegisterListener(listenerObj, key...)
 }
@@ -265,7 +265,7 @@ func UnRegisterListener(listenerObj event.Listener, key ...string) error {
 	return manager.UnRegisterListener(listenerObj, key...)
 }
 
-//RegisterModuleListener to Register all moduleListener for different key(prefix) changes
+// RegisterModuleListener to Register all moduleListener for different key(prefix) changes
 func RegisterModuleListener(listenerObj event.ModuleListener, prefix ...string) error {
 	return manager.RegisterModuleListener(listenerObj, prefix...)
 }
@@ -287,8 +287,8 @@ func AddFile(file string, opts ...FileOption) error {
 	return manager.Refresh(fs.GetSourceName())
 }
 
-//Set add the configuration key, value pairs into memory source at runtime
-//it is just affect the local configs
+// Set add the configuration key, value pairs into memory source at runtime
+// it is just affect the local configs
 func Set(key string, value interface{}) error {
 	return manager.Set(key, value)
 }
@@ -298,14 +298,14 @@ func Delete(key string) error {
 	return manager.Delete(key)
 }
 
-//AddSource add source implementation
+// AddSource add source implementation
 func AddSource(source source.ConfigSource) error {
 	return manager.AddSource(source)
 }
 
-//Clean will call config manager CleanUp Method,
-//it deletes all sources which means all of key value is deleted.
-//after you call Clean, you can init archaius again
+// Clean will call config manager CleanUp Method,
+// it deletes all sources which means all of key value is deleted.
+// after you call Clean, you can init archaius again
 func Clean() error {
 	manager.Cleanup()
 	running = false

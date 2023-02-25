@@ -15,7 +15,7 @@
  */
 //Created by on 2017/6/22.
 
-//Package json is used for marshalling and unmarshalling
+// Package json is used for marshalling and unmarshalling
 package json
 
 import (
@@ -23,15 +23,15 @@ import (
 	"errors"
 )
 
-//errors
+// errors
 var (
 	ErrInvalidRequest = errors.New("Invalid request ")
 )
 
-//Serializer is a empty struct
+// Serializer is a empty struct
 type Serializer struct{}
 
-//Decode - Unmarshal unmarshaling data
+// Decode - Unmarshal unmarshaling data
 func (js Serializer) Decode(data []byte, v interface{}) error {
 	var err error
 	defer func() {
@@ -45,7 +45,7 @@ func (js Serializer) Decode(data []byte, v interface{}) error {
 	return err
 }
 
-//Encode - Marshal marshaling data
+// Encode - Marshal marshaling data
 func (js Serializer) Encode(v interface{}) ([]byte, error) {
 	var (
 		data []byte

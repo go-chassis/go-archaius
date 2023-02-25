@@ -19,14 +19,13 @@ package kie
 import (
 	"errors"
 	"fmt"
+	"github.com/arielsrv/go-archaius"
+	"github.com/arielsrv/go-archaius/event"
+	"github.com/arielsrv/go-archaius/source"
+	"github.com/arielsrv/go-archaius/source/remote"
+	"github.com/go-chassis/openlog"
 	"sync"
 	"time"
-
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/go-archaius/source"
-	"github.com/go-chassis/go-archaius/source/remote"
-	"github.com/go-chassis/openlog"
 )
 
 // const
@@ -36,7 +35,7 @@ const (
 	kieSourcePriority = 0
 )
 
-//Source handles configs from ServiceComb-Kie
+// Source handles configs from ServiceComb-Kie
 type Source struct {
 	k *Kie
 
@@ -52,7 +51,7 @@ type Source struct {
 	eh source.EventHandler
 }
 
-//NewKieSource initializes all components of ServiceComb-Kie
+// NewKieSource initializes all components of ServiceComb-Kie
 func NewKieSource(ci *archaius.RemoteInfo) (source.ConfigSource, error) {
 	opts := remote.Options{
 		ServerURI:     ci.URL,
@@ -87,7 +86,7 @@ func NewKieSource(ci *archaius.RemoteInfo) (source.ConfigSource, error) {
 	return ks, nil
 }
 
-//GetConfigurations pull config from remote and start refresh configs interval
+// GetConfigurations pull config from remote and start refresh configs interval
 // write a new map and return, internal map can not be operated outside struct
 func (ks *Source) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
@@ -152,7 +151,7 @@ func (ks *Source) updateConfigAndFireEvent(config map[string]interface{}) error 
 	return nil
 }
 
-//GetConfigurationByKey gets required configuration for a particular key
+// GetConfigurationByKey gets required configuration for a particular key
 func (ks *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	if ks.currentConfig == nil {
 		return nil, errors.New("currentConfig is nil")
@@ -167,29 +166,29 @@ func (ks *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	return nil, source.ErrKeyNotExist
 }
 
-//AddDimensionInfo adds dimension info for a configuration
+// AddDimensionInfo adds dimension info for a configuration
 func (ks *Source) AddDimensionInfo(labels map[string]string) error {
 	// TODO check duplication labels
 	ks.dimensions = append(ks.dimensions, labels)
 	return nil
 }
 
-//GetSourceName returns name of the configuration
+// GetSourceName returns name of the configuration
 func (*Source) GetSourceName() string {
 	return Name
 }
 
-//GetPriority returns priority of a configuration
+// GetPriority returns priority of a configuration
 func (ks *Source) GetPriority() int {
 	return ks.priority
 }
 
-//SetPriority custom priority
+// SetPriority custom priority
 func (ks *Source) SetPriority(priority int) {
 	ks.priority = priority
 }
 
-//Watch dynamically handles a configuration
+// Watch dynamically handles a configuration
 func (ks *Source) Watch(callback source.EventHandler) error {
 	ks.eh = callback
 	if ks.RefreshMode != remote.ModeWatch {
@@ -218,7 +217,7 @@ func (ks *Source) Watch(callback source.EventHandler) error {
 	return err
 }
 
-//Cleanup cleans the particular configuration up
+// Cleanup cleans the particular configuration up
 func (ks *Source) Cleanup() error {
 	ks.Lock()
 	defer ks.Unlock()
@@ -228,12 +227,12 @@ func (ks *Source) Cleanup() error {
 	return nil
 }
 
-//Set no use
+// Set no use
 func (ks *Source) Set(key string, value interface{}) error {
 	return nil
 }
 
-//Delete no use
+// Delete no use
 func (ks *Source) Delete(key string) error {
 	return nil
 }

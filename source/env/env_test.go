@@ -24,8 +24,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/go-archaius/source/env"
+	"github.com/arielsrv/go-archaius/event"
+	"github.com/arielsrv/go-archaius/source/env"
 	"github.com/stretchr/testify/assert"
 )
 

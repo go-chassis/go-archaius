@@ -17,7 +17,7 @@
 
 package archaius
 
-import "github.com/go-chassis/go-archaius/source"
+import "github.com/arielsrv/go-archaius/source"
 
 var newFuncMap = make(map[string]NewRemoteSource)
 
@@ -30,10 +30,10 @@ const (
 	KieSource = "kie"
 )
 
-//NewRemoteSource create a new remote source
+// NewRemoteSource create a new remote source
 type NewRemoteSource func(info *RemoteInfo) (source.ConfigSource, error)
 
-//InstallRemoteSource allow user customize remote source
+// InstallRemoteSource allow user customize remote source
 func InstallRemoteSource(source string, remoteSource NewRemoteSource) {
 	newFuncMap[source] = remoteSource
 }

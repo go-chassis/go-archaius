@@ -5,22 +5,22 @@ import (
 	"log"
 	"time"
 
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/event"
+	"github.com/arielsrv/go-archaius"
+	"github.com/arielsrv/go-archaius/event"
 	"github.com/go-chassis/openlog"
 )
 
-//Listener is a struct used for Event listener
+// Listener is a struct used for Event listener
 type Person struct {
-	Name string `yaml:"name"`
-	Age int `yaml:"age"`
+	Name      string            `yaml:"name"`
+	Age       int               `yaml:"age"`
 	Favorites map[string]string `yaml:"favorites"`
 }
 type Listener struct {
 	Person Person `yaml:"test.person"`
 }
 
-//Event is a method for QPS event listening
+// Event is a method for QPS event listening
 func (e *Listener) Event(events []*event.Event) {
 	for i, ev := range events {
 		openlog.GetLogger().Info(fmt.Sprintf("%dth event:%+v", i, ev))

@@ -6,9 +6,9 @@ import (
 	"sync"
 
 	apollo "github.com/Shonminh/apollo-client"
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/go-archaius/source"
+	"github.com/arielsrv/go-archaius"
+	"github.com/arielsrv/go-archaius/event"
+	"github.com/arielsrv/go-archaius/source"
 	"github.com/go-chassis/openlog"
 )
 

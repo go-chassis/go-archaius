@@ -24,7 +24,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/go-chassis/go-archaius/event"
+	"github.com/arielsrv/go-archaius/event"
 )
 
 type TestDynamicConfigHandler struct{}

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-//Package filesource created on 2017/6/22.
+// Package filesource created on 2017/6/22.
 package filesource
 
 import (
@@ -29,10 +29,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/arielsrv/go-archaius/event"
+	"github.com/arielsrv/go-archaius/source"
+	"github.com/arielsrv/go-archaius/source/util"
 	"github.com/fsnotify/fsnotify"
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/go-archaius/source"
-	"github.com/go-chassis/go-archaius/source/util"
 	"github.com/go-chassis/openlog"
 )
 
@@ -44,7 +44,7 @@ const (
 	DefaultFilePriority = 0
 )
 
-//FileSourceTypes is a string
+// FileSourceTypes is a string
 type FileSourceTypes string
 
 const (
@@ -56,13 +56,13 @@ const (
 	InvalidFileType FileSourceTypes = "InvalidType"
 )
 
-//ConfigInfo is s struct
+// ConfigInfo is s struct
 type ConfigInfo struct {
 	FilePath string
 	Value    interface{}
 }
 
-//Source is file source
+// Source is file source
 type Source struct {
 	Configurations map[string]*ConfigInfo
 	files          []file
@@ -94,13 +94,13 @@ type watch struct {
   	TODO: Currently file sources priority not considered. if key conflicts then latest key will get considered
 */
 
-//FileSource is a interface
+// FileSource is a interface
 type FileSource interface {
 	source.ConfigSource
 	AddFile(filePath string, priority uint32, handler util.FileHandler) error
 }
 
-//NewFileSource creates a source which can handler local files
+// NewFileSource creates a source which can handler local files
 func NewFileSource() FileSource {
 	fileConfigSource := new(Source)
 	fileConfigSource.priority = fileSourcePriority
@@ -109,7 +109,7 @@ func NewFileSource() FileSource {
 	return fileConfigSource
 }
 
-//AddFile add file and manage configs
+// AddFile add file and manage configs
 func (fSource *Source) AddFile(p string, priority uint32, handle util.FileHandler) error {
 	path, err := filepath.Abs(p)
 	if err != nil {
@@ -270,7 +270,7 @@ func (fSource *Source) handlePriority(filePath string, priority uint32) error {
 	return nil
 }
 
-//GetConfigurations get all configs
+// GetConfigurations get all configs
 func (fSource *Source) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
 
@@ -288,7 +288,7 @@ func (fSource *Source) GetConfigurations() (map[string]interface{}, error) {
 	return configMap, nil
 }
 
-//GetConfigurationByKey get one key value
+// GetConfigurationByKey get one key value
 func (fSource *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	fSource.RLock()
 	defer fSource.RUnlock()
@@ -306,22 +306,22 @@ func (fSource *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	return nil, source.ErrKeyNotExist
 }
 
-//GetSourceName get name of source
+// GetSourceName get name of source
 func (*Source) GetSourceName() string {
 	return FileConfigSourceConst
 }
 
-//GetPriority get precedence
+// GetPriority get precedence
 func (fSource *Source) GetPriority() int {
 	return fSource.priority
 }
 
-//SetPriority custom priority
+// SetPriority custom priority
 func (fSource *Source) SetPriority(priority int) {
 	fSource.priority = priority
 }
 
-//Watch watch change event
+// Watch watch change event
 func (fSource *Source) Watch(callback source.EventHandler) error {
 	if callback == nil {
 		return errors.New("call back can not be nil")
@@ -559,7 +559,7 @@ func (fSource *Source) addOrCreateConf(fileConfs map[string]*ConfigInfo, newconf
 	return fileConfs, events
 }
 
-//Cleanup clear all configs
+// Cleanup clear all configs
 func (fSource *Source) Cleanup() error {
 	fSource.filelock.Lock()
 	defer fSource.filelock.Unlock()
@@ -573,17 +573,17 @@ func (fSource *Source) Cleanup() error {
 	return nil
 }
 
-//AddDimensionInfo  is none function
+// AddDimensionInfo  is none function
 func (fSource *Source) AddDimensionInfo(labels map[string]string) error {
 	return nil
 }
 
-//Set no use
+// Set no use
 func (fSource *Source) Set(key string, value interface{}) error {
 	return nil
 }
 
-//Delete no use
+// Delete no use
 func (fSource *Source) Delete(key string) error {
 	return nil
 }

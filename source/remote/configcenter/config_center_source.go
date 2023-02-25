@@ -21,10 +21,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/go-archaius/source"
-	"github.com/go-chassis/go-archaius/source/remote"
+	"github.com/arielsrv/go-archaius"
+	"github.com/arielsrv/go-archaius/event"
+	"github.com/arielsrv/go-archaius/source"
+	"github.com/arielsrv/go-archaius/source/remote"
 	"github.com/go-chassis/openlog"
 )
 
@@ -35,7 +35,7 @@ const (
 	configCenterSourcePriority = 0
 )
 
-//Source handles configs from config center
+// Source handles configs from config center
 type Source struct {
 	c *ConfigCenter
 
@@ -56,7 +56,7 @@ type Source struct {
 	eh source.EventHandler
 }
 
-//NewConfigCenterSource initializes all components of configuration center
+// NewConfigCenterSource initializes all components of configuration center
 func NewConfigCenterSource(ci *archaius.RemoteInfo) (source.ConfigSource, error) {
 	opts := remote.Options{
 		ServerURI:     ci.URL,
@@ -81,7 +81,7 @@ func NewConfigCenterSource(ci *archaius.RemoteInfo) (source.ConfigSource, error)
 	return s, nil
 }
 
-//GetConfigurations pull config from remote and start refresh configs interval
+// GetConfigurations pull config from remote and start refresh configs interval
 // write a new map and return, internal map can not be operated outside struct
 func (rs *Source) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
@@ -147,7 +147,7 @@ func (rs *Source) refreshConfigurations() error {
 	return nil
 }
 
-//GetConfigurationByKey gets required configuration for a particular key
+// GetConfigurationByKey gets required configuration for a particular key
 func (rs *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	rs.RLock()
 	configSrcVal, ok := rs.currentConfig[key]
@@ -159,29 +159,29 @@ func (rs *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	return nil, source.ErrKeyNotExist
 }
 
-//AddDimensionInfo adds dimension info for a configuration
+// AddDimensionInfo adds dimension info for a configuration
 func (rs *Source) AddDimensionInfo(labels map[string]string) error {
 	// TODO check duplication labels
 	rs.dimensions = append(rs.dimensions, labels)
 	return nil
 }
 
-//GetSourceName returns name of the configuration
+// GetSourceName returns name of the configuration
 func (*Source) GetSourceName() string {
 	return ConfigCenterSourceName
 }
 
-//GetPriority returns priority of a configuration
+// GetPriority returns priority of a configuration
 func (rs *Source) GetPriority() int {
 	return rs.priority
 }
 
-//SetPriority custom priority
+// SetPriority custom priority
 func (rs *Source) SetPriority(priority int) {
 	rs.priority = priority
 }
 
-//Watch dynamically handles a configuration
+// Watch dynamically handles a configuration
 func (rs *Source) Watch(callback source.EventHandler) error {
 	rs.eh = callback
 	if rs.RefreshMode == remote.ModeWatch {
@@ -217,7 +217,7 @@ func (rs *Source) Watch(callback source.EventHandler) error {
 	return nil
 }
 
-//Cleanup cleans the particular configuration up
+// Cleanup cleans the particular configuration up
 func (rs *Source) Cleanup() error {
 	rs.connsLock.Lock()
 	defer rs.connsLock.Unlock()
@@ -227,12 +227,12 @@ func (rs *Source) Cleanup() error {
 	return nil
 }
 
-//Set no use
+// Set no use
 func (rs *Source) Set(key string, value interface{}) error {
 	return nil
 }
 
-//Delete no use
+// Delete no use
 func (rs *Source) Delete(key string) error {
 	return nil
 }

@@ -20,10 +20,10 @@ package kie
 import (
 	"errors"
 
-	"github.com/go-chassis/go-archaius/source/remote"
+	"github.com/arielsrv/go-archaius/source/remote"
 )
 
-//GenerateLabels generate labels to an specific dimensions
+// GenerateLabels generate labels to an specific dimensions
 func GenerateLabels(dimension DimensionName, optionsLabels map[string]string) (map[string]string, error) {
 	if optionsLabels == nil {
 		return nil, remote.ErrLabelsNil

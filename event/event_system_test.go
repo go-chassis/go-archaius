@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/go-chassis/go-archaius/event"
+	"github.com/arielsrv/go-archaius/event"
 )
 
 type EListener struct {
@@ -86,7 +86,7 @@ func TestDispatchEvent(t *testing.T) {
 
 type MListener struct {
 	eventKeys []string
-	wg sync.WaitGroup
+	wg        sync.WaitGroup
 }
 
 func (m *MListener) Event(events []*event.Event) {
@@ -105,13 +105,13 @@ func TestDispatcher_DispatchModuleEvent(t *testing.T) {
 		lis.wg.Add(3)
 		dispatcher.DispatchModuleEvent([]*event.Event{
 			{
-				Key:"aaa.bbb.ccc",
+				Key: "aaa.bbb.ccc",
 			},
 			{
-				Key:"aaa",
+				Key: "aaa",
 			},
 			{
-				Key:"aaa.bbb",
+				Key: "aaa.bbb",
 			},
 		})
 		lis.wg.Wait()
@@ -129,13 +129,13 @@ func TestDispatcher_DispatchModuleEvent(t *testing.T) {
 		lis1.wg.Add(3)
 		dispatcher.DispatchModuleEvent([]*event.Event{
 			{
-				Key:"aaa.bbb.ccc",
+				Key: "aaa.bbb.ccc",
 			},
 			{
-				Key:"aaa",
+				Key: "aaa",
 			},
 			{
-				Key:"aaa.bbb",
+				Key: "aaa.bbb",
 			},
 		})
 		lis1.wg.Wait()
@@ -155,13 +155,13 @@ func TestDispatcher_DispatchModuleEvent(t *testing.T) {
 		lis2.wg.Add(2)
 		dispatcher.DispatchModuleEvent([]*event.Event{
 			{
-				Key:"aaa.bbb.ccc",
+				Key: "aaa.bbb.ccc",
 			},
 			{
-				Key:"aaa",
+				Key: "aaa",
 			},
 			{
-				Key:"aaa.bbb",
+				Key: "aaa.bbb",
 			},
 		})
 		lis2.wg.Wait()

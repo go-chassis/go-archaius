@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-chassis/go-archaius/event"
-	"github.com/go-chassis/go-archaius/source/mem"
+	"github.com/arielsrv/go-archaius/event"
+	"github.com/arielsrv/go-archaius/source/mem"
 )
 
 type TestDynamicConfigHandler struct {

@@ -30,18 +30,18 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/go-chassis/go-archaius/event"
+	"github.com/arielsrv/go-archaius/event"
 	"github.com/go-chassis/openlog"
 )
 
-//errors
+// errors
 var (
 	ErrKeyNotExist   = errors.New("key does not exist")
 	ErrIgnoreChange  = errors.New("ignore key changed")
 	ErrWriterInvalid = errors.New("writer is invalid")
 )
 
-//const
+// const
 const (
 	//DefaultPriority gives the default priority
 	DefaultPriority      = -1
@@ -82,7 +82,7 @@ func (m *Manager) Cleanup() error {
 	return nil
 }
 
-//Set call set of all sources
+// Set call set of all sources
 func (m *Manager) Set(k string, v interface{}) error {
 	m.sourceMapMux.RLock()
 	defer m.sourceMapMux.RUnlock()
@@ -96,7 +96,7 @@ func (m *Manager) Set(k string, v interface{}) error {
 	return nil
 }
 
-//Delete call Delete of all sources
+// Delete call Delete of all sources
 func (m *Manager) Delete(k string) error {
 	m.sourceMapMux.RLock()
 	defer m.sourceMapMux.RUnlock()
@@ -115,10 +115,10 @@ func (m *Manager) Delete(k string) error {
 // Unmarshal only accepts a pointer values
 // Unmarshal returns error if obj values are 0. nil and value type.
 // Procedure:
-//      1. Unmarshal first checks the passed object type using reflection.
-//      2. Based on type Unmarshal function will check and set the values
-//      ex: If type is basic types like int, string, float then it will assigb directly values,
-//          If type is map, ptr and struct then it will again send for unmarshal until it find the basic type and set the values
+//  1. Unmarshal first checks the passed object type using reflection.
+//  2. Based on type Unmarshal function will check and set the values
+//     ex: If type is basic types like int, string, float then it will assigb directly values,
+//     If type is map, ptr and struct then it will again send for unmarshal until it find the basic type and set the values
 func (m *Manager) Unmarshal(obj interface{}) error {
 	rv := reflect.ValueOf(obj)
 	// only pointers are accepted
@@ -229,9 +229,10 @@ func (m *Manager) Configs() map[string]interface{} {
 
 // ConfigsWithSourceNames returns all the key values along with its source name
 // the returned map will be like:
-// map[string]interface{}{
-// 		key string: map[string]interface{"value": value, "source": sourceName}
-// }
+//
+//	map[string]interface{}{
+//			key string: map[string]interface{"value": value, "source": sourceName}
+//	}
 func (m *Manager) ConfigsWithSourceNames() map[string]interface{} {
 	config := make(map[string]interface{}, 0)
 

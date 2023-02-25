@@ -4,9 +4,9 @@ and you can use under core to replace dot in env to replace file config
 for example, to change config user
 ```yaml
 cred:
-  db:
-    user: admin
-    pwd:
+db:
+user: admin
+pwd:
 
 ```
 

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-//errors
+// errors
 var (
 	ErrInvalidEP      = errors.New("invalid endpoint")
 	ErrLabelsNil      = errors.New("labels can not be nil")
@@ -14,7 +14,7 @@ var (
 	ErrServiceTooLong = errors.New("exceeded max value for service name")
 )
 
-//const
+// const
 const (
 	LabelService     = "service"
 	LabelVersion     = "version"
@@ -24,13 +24,13 @@ const (
 	DefaultInterval = time.Second * 30
 )
 
-//Mode
+// Mode
 const (
 	ModeWatch = iota
 	ModeInterval
 )
 
-//Options is client option
+// Options is client option
 type Options struct {
 	ServerURI     string
 	Endpoint      string

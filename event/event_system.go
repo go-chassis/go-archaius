@@ -18,7 +18,7 @@
  * Created by on 2017/6/22.
  */
 
-//Package event provides the different Listeners
+// Package event provides the different Listeners
 package event
 
 import (
@@ -29,7 +29,7 @@ import (
 	"github.com/go-chassis/openlog"
 )
 
-//errors
+// errors
 var (
 	ErrNilListener = errors.New("nil listener")
 )
@@ -43,7 +43,7 @@ const (
 )
 
 type PrefixIndex struct {
-	Prefix string
+	Prefix    string
 	NextParts map[string]*PrefixIndex
 }
 
@@ -82,7 +82,7 @@ func (pre *PrefixIndex) RemovePrefix(prefix string) {
 	}
 	cur.Prefix = ""
 	remove := ""
-	for i:=len(path); i>0; i-- {
+	for i := len(path); i > 0; i-- {
 		cur = path[i-1]
 		if remove != "" {
 			delete(cur.NextParts, remove)
@@ -136,10 +136,10 @@ type ModuleListener interface {
 	Event(event []*Event)
 }
 
-//Dispatcher is the observer
+// Dispatcher is the observer
 type Dispatcher struct {
-	listeners       map[string][]Listener
-	moduleListeners map[string][]ModuleListener
+	listeners         map[string][]Listener
+	moduleListeners   map[string][]ModuleListener
 	modulePrefixIndex PrefixIndex
 }
 

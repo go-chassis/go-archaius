@@ -30,8 +30,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/arielsrv/go-archaius/pkg/serializers"
 	"github.com/go-chassis/foundation/httpclient"
-	"github.com/go-chassis/go-archaius/pkg/serializers"
 	"github.com/go-chassis/openlog"
 	"github.com/gorilla/websocket"
 )
@@ -74,7 +74,7 @@ var (
 	environmentConfig = ""
 )
 
-//Client is a struct
+// Client is a struct
 type Client struct {
 	opts Options
 	sync.RWMutex
@@ -83,7 +83,7 @@ type Client struct {
 	wsConnection *websocket.Conn
 }
 
-//New create cc client
+// New create cc client
 func New(opts Options) (*Client, error) {
 	var apiVersion string
 	apiVersionConfig = opts.APIVersion
@@ -120,7 +120,7 @@ func New(opts Options) (*Client, error) {
 	return c, nil
 }
 
-//Update the Base PATH and HEADERS Based on the version of ConfigCenter used.
+// Update the Base PATH and HEADERS Based on the version of ConfigCenter used.
 func updateAPIPath(apiVersion string) {
 	//Check for the env Name in Container to get Domain Name
 	//Default value is  "default"
@@ -183,7 +183,7 @@ func (c *Client) call(method string, api string, headers http.Header, body []byt
 	return nil
 }
 
-//HTTPDo Use http-client package for rest communication
+// HTTPDo Use http-client package for rest communication
 func (c *Client) HTTPDo(method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
 	if len(headers) == 0 {
 		headers = make(http.Header)
@@ -211,7 +211,7 @@ func (c *Client) Flatten(dimensionInfo string) (map[string]interface{}, error) {
 	return config, nil
 }
 
-//PullGroupByDimension pulls all the configuration from Config-Server group by dimesion Info
+// PullGroupByDimension pulls all the configuration from Config-Server group by dimesion Info
 func (c *Client) PullGroupByDimension(dimensionInfo string) (map[string]map[string]interface{}, error) {
 	configAPIRes := make(map[string]map[string]interface{})
 	parsedDimensionInfo := strings.Replace(dimensionInfo, "#", numberSign, -1)
@@ -225,7 +225,7 @@ func (c *Client) PullGroupByDimension(dimensionInfo string) (map[string]map[stri
 	return configAPIRes, nil
 }
 
-//Do is common http remote call
+// Do is common http remote call
 func (c *Client) Do(method string, data interface{}) (map[string]interface{}, error) {
 	configAPIS := make(map[string]interface{})
 	body, err := serializers.Encode(serializers.JSONEncoder, data)
@@ -240,17 +240,17 @@ func (c *Client) Do(method string, data interface{}) (map[string]interface{}, er
 	return configAPIS, nil
 }
 
-//AddConfig post new config
+// AddConfig post new config
 func (c *Client) AddConfig(data *CreateConfigAPI) (map[string]interface{}, error) {
 	return c.Do("POST", data)
 }
 
-//DeleteConfig delete configs
+// DeleteConfig delete configs
 func (c *Client) DeleteConfig(data *DeleteConfigAPI) (map[string]interface{}, error) {
 	return c.Do("DELETE", data)
 }
 
-//Watch use websocket
+// Watch use websocket
 func (c *Client) Watch(f func(map[string]interface{}), errHandler func(err error)) error {
 	parsedDimensionInfo := strings.Replace(c.opts.DefaultDimension, "#", numberSign, -1)
 	refreshConfigPath := ConfigRefreshPath + `?` + dimensionsInfo + `=` + parsedDimensionInfo
@@ -323,7 +323,7 @@ func isStatusSuccess(i int) bool {
 	return i >= http.StatusOK && i < http.StatusBadRequest
 }
 
-//Shuffle is a method to log error
+// Shuffle is a method to log error
 func (c *Client) Shuffle() error {
 	if c.opts.ConfigServerAddresses == nil || len(c.opts.ConfigServerAddresses) == 0 {
 		err := errors.New(emptyConfigServerConfig)
@@ -347,7 +347,7 @@ func (c *Client) Shuffle() error {
 	return nil
 }
 
-//GetConfigServer is a method used for getting server configuration
+// GetConfigServer is a method used for getting server configuration
 func (c *Client) GetConfigServer() ([]string, error) {
 
 	if len(c.opts.ConfigServerAddresses) == 0 {
@@ -378,7 +378,7 @@ func (c *Client) GetConfigServer() ([]string, error) {
 	return c.opts.ConfigServerAddresses, nil
 }
 
-//GetConfigs get KV from a event
+// GetConfigs get KV from a event
 func GetConfigs(actionData []byte) (map[string]interface{}, error) {
 	configCenterEvent := new(Event)
 	err := serializers.Decode(serializers.JSONEncoder, actionData, &configCenterEvent)

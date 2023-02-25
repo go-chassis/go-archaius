@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-//Package cli created on 2017/6/22.
+// Package cli created on 2017/6/22.
 package cli
 
 import (
@@ -22,16 +22,16 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-chassis/go-archaius/source"
+	"github.com/arielsrv/go-archaius/source"
 )
 
-//const
+// const
 const (
 	Name                = "CommandlineSource"
 	commandlinePriority = 2
 )
 
-//Source is source for all configuration
+// Source is source for all configuration
 type Source struct {
 	sync.RWMutex
 	Configurations map[string]interface{}
@@ -39,7 +39,7 @@ type Source struct {
 	priority int
 }
 
-//NewCommandlineConfigSource defines a function used for creating configuration source
+// NewCommandlineConfigSource defines a function used for creating configuration source
 func NewCommandlineConfigSource() source.ConfigSource {
 	cmdlineConfig := new(Source)
 	cmdlineConfig.priority = commandlinePriority
@@ -69,7 +69,7 @@ func (*Source) pullCmdLineConfig() map[string]interface{} {
 	return configMap
 }
 
-//GetConfigurations get configuration
+// GetConfigurations get configuration
 func (cli *Source) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
 
@@ -82,7 +82,7 @@ func (cli *Source) GetConfigurations() (map[string]interface{}, error) {
 	return configMap, nil
 }
 
-//GetConfigurationByKey gets required configuration for matching key
+// GetConfigurationByKey gets required configuration for matching key
 func (cli *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	cli.RLock()
 	defer cli.RUnlock()
@@ -93,43 +93,43 @@ func (cli *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	return value, nil
 }
 
-//GetPriority gets the priority of a configuration
+// GetPriority gets the priority of a configuration
 func (cli *Source) GetPriority() int {
 	return cli.priority
 }
 
-//SetPriority custom priority
+// SetPriority custom priority
 func (cli *Source) SetPriority(priority int) {
 	cli.priority = priority
 }
 
-//GetSourceName gets the source's name of a configuration
+// GetSourceName gets the source's name of a configuration
 func (*Source) GetSourceName() string {
 	return Name
 }
 
-//Cleanup cleans up a configuration
+// Cleanup cleans up a configuration
 func (cli *Source) Cleanup() error {
 	cli.Configurations = nil
 	return nil
 }
 
-//Watch dynamically handles a configuration
+// Watch dynamically handles a configuration
 func (*Source) Watch(callback source.EventHandler) error {
 	return nil
 }
 
-//AddDimensionInfo  is none function
+// AddDimensionInfo  is none function
 func (cli *Source) AddDimensionInfo(labels map[string]string) error {
 	return nil
 }
 
-//Set no use
+// Set no use
 func (cli *Source) Set(key string, value interface{}) error {
 	return nil
 }
 
-//Delete no use
+// Delete no use
 func (cli *Source) Delete(key string) error {
 	return nil
 }

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/go-chassis/go-archaius/event"
+	"github.com/arielsrv/go-archaius/event"
 
-	"github.com/go-chassis/go-archaius/source"
+	"github.com/arielsrv/go-archaius/source"
 	"github.com/go-chassis/openlog"
 )
 
@@ -34,7 +34,7 @@ const (
 
 var ErrSourceNotReady = errors.New("source is not ready")
 
-//Source is a struct
+// Source is a struct
 type Source struct {
 	Configs sync.Map
 
@@ -44,7 +44,7 @@ type Source struct {
 	priority int
 }
 
-//NewMemoryConfigurationSource initializes all necessary components for memory configuration
+// NewMemoryConfigurationSource initializes all necessary components for memory configuration
 func NewMemoryConfigurationSource() source.ConfigSource {
 	memoryConfigSource := new(Source)
 	memoryConfigSource.priority = memoryVariableSourcePriority
@@ -53,7 +53,7 @@ func NewMemoryConfigurationSource() source.ConfigSource {
 	return memoryConfigSource
 }
 
-//GetConfigurations gets all memory configurations
+// GetConfigurations gets all memory configurations
 func (ms *Source) GetConfigurations() (map[string]interface{}, error) {
 	configMap := make(map[string]interface{})
 
@@ -65,7 +65,7 @@ func (ms *Source) GetConfigurations() (map[string]interface{}, error) {
 	return configMap, nil
 }
 
-//GetConfigurationByKey gets required memory configuration for a particular key
+// GetConfigurationByKey gets required memory configuration for a particular key
 func (ms *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	value, ok := ms.Configs.Load(key)
 	if !ok {
@@ -75,22 +75,22 @@ func (ms *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	return value, nil
 }
 
-//GetPriority returns priority of the memory configuration
+// GetPriority returns priority of the memory configuration
 func (ms *Source) GetPriority() int {
 	return ms.priority
 }
 
-//SetPriority custom priority
+// SetPriority custom priority
 func (ms *Source) SetPriority(priority int) {
 	ms.priority = priority
 }
 
-//GetSourceName returns name of memory configuration
+// GetSourceName returns name of memory configuration
 func (*Source) GetSourceName() string {
 	return Name
 }
 
-//Watch dynamically handles a memory configuration
+// Watch dynamically handles a memory configuration
 func (ms *Source) Watch(callback source.EventHandler) error {
 	ms.callback = callback
 	openlog.Info("mem source callback prepared")
@@ -98,18 +98,18 @@ func (ms *Source) Watch(callback source.EventHandler) error {
 	return nil
 }
 
-//Cleanup cleans a particular memory configuration up
+// Cleanup cleans a particular memory configuration up
 func (ms *Source) Cleanup() error {
 	ms.Configs = sync.Map{}
 	return nil
 }
 
-//AddDimensionInfo  is none function
+// AddDimensionInfo  is none function
 func (ms *Source) AddDimensionInfo(labels map[string]string) error {
 	return nil
 }
 
-//Set set mem config
+// Set set mem config
 func (ms *Source) Set(key string, value interface{}) error {
 	ms.waitOnce.Do(func() {
 		<-ms.Ready
@@ -136,7 +136,7 @@ func (ms *Source) Set(key string, value interface{}) error {
 	return nil
 }
 
-//Delete remvove mem config
+// Delete remvove mem config
 func (ms *Source) Delete(key string) error {
 	ms.waitOnce.Do(func() {
 		<-ms.Ready

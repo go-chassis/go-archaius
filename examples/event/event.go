@@ -5,17 +5,17 @@ import (
 	"log"
 	"time"
 
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/event"
+	"github.com/arielsrv/go-archaius"
+	"github.com/arielsrv/go-archaius/event"
 	"github.com/go-chassis/openlog"
 )
 
-//Listener is a struct used for Event listener
+// Listener is a struct used for Event listener
 type Listener struct {
 	Key string
 }
 
-//Event is a method for QPS event listening
+// Event is a method for QPS event listening
 func (e *Listener) Event(event *event.Event) {
 	openlog.Info(event.Key)
 	openlog.Info(fmt.Sprintf("%v", event.Value))

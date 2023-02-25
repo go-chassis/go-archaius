@@ -22,7 +22,7 @@ import (
 	"net/http"
 )
 
-//Options  is remote client option
+// Options  is remote client option
 type Options struct {
 	DefaultDimension string
 	Service          string
@@ -38,7 +38,7 @@ type Options struct {
 	EnableSSL             bool
 }
 
-//GetDefaultHeaders gets default headers
+// GetDefaultHeaders gets default headers
 func GetDefaultHeaders(tenantName string) http.Header {
 	headers := http.Header{
 		HeaderContentType: []string{"application/json"},

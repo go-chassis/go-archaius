@@ -3,7 +3,7 @@ package serializers
 import (
 	"testing"
 
-	"github.com/go-chassis/go-archaius/pkg/serializers/json"
+	"github.com/arielsrv/go-archaius/pkg/serializers/json"
 )
 
 type Test struct {

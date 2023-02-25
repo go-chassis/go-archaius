@@ -17,19 +17,19 @@
 
 package configcenter
 
-//DeleteConfigAPI for deleting
+// DeleteConfigAPI for deleting
 type DeleteConfigAPI struct {
 	DimensionInfo string   `json:"dimensionsInfo"`
 	Keys          []string `json:"keys"`
 }
 
-//CreateConfigAPI for new config
+// CreateConfigAPI for new config
 type CreateConfigAPI struct {
 	DimensionInfo string                 `json:"dimensionsInfo"`
 	Items         map[string]interface{} `json:"items"`
 }
 
-//Event stores info about an config center event
+// Event stores info about an config center event
 type Event struct {
 	Action string `json:"action"`
 	Value  string `json:"value"`
