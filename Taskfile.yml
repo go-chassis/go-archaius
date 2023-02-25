@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=https://json.schemastore.org/taskfile.json
+version: '3'
+
+env:
+  SOURCE_FOLDER: ./
+  BUILD_FOLDER: ./...
+  COVERAGE_OUT_FILE: coverage.out
+  COVERAGE_HTML_FILE: coverage.html
+  SWAGGER_INPUT_FOLDER: src/main
+  SWAGGER_OUTPUT_FOLDER: src/resources/docs
+  ORM_OUTPUT_FOLDER: src/main/app/ent
+
+tasks:
+  test:
+    desc: Run test.
+    cmds:
+      #- go test -race ./...
+      - go test ./...
+  coverage:
+    desc: Makes report coverage.
+    cmds:
+      - go test ./... -covermode=count -coverprofile=$COVERAGE_OUT_FILE
+      - go tool cover -html $COVERAGE_OUT_FILE -o $COVERAGE_HTML_FILE
+      - go tool cover -func=$COVERAGE_OUT_FILE -o=$COVERAGE_OUT_FILE
+  clean:
+    desc: Clean binaries and reports.
+    cmds:
+      - rm -rf $BUILD_FOLDER
+      - rm -rf $COVERAGE_OUT_FILE $COVERAGE_HTML_FILE
+  download:
+    desc: Run go mod tidy.
+    cmds:
+      - go mod tidy
+  upgrade:
+    desc: Check for latest direct dependencies.
+    cmds:
+      - go-mod-upgrade
+  swagger:
+    desc: Generate RESTful API documentation with Swagger.
+    cmds:
+      - go install github.com/swaggo/swag/cmd/swag@latest
+      - swag init -d $SWAGGER_INPUT_FOLDER -g $ENTRY_POINT.go -o $SWAGGER_OUTPUT_FOLDER --parseGoList
+  build:
+    desc: Build the go EXECUTABLE.
+    generates:
+      - server
+    interactive: true
+    cmds:
+      - go build -v $SOURCE_FOLDER
+  all:
+    desc: Run relevant tasks.
+    cmds:
+      - task: download
+      - task: swagger
+      - task: test
+  default:
+    desc: Run [build] task.
+    cmds:
+      - task: build
