@@ -15,3 +15,10 @@
 .idea
 vendor
 *.log
+.vscode
+build/
+coverage.html
+coverage.out
+report.xml
+.DS_Store
+cmd/
