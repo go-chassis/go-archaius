@@ -12,7 +12,6 @@ func TestGenerateLabels(t *testing.T) {
 		remote.LabelApp:         "app",
 		remote.LabelEnvironment: "env",
 		remote.LabelService:     "service",
-		remote.LabelVersion:     "1.0.0",
 		"foo":                   "bar",
 	}
 	dimensionApp, err := GenerateLabels(DimensionApp, optionsLabels)
@@ -28,6 +27,5 @@ func TestGenerateLabels(t *testing.T) {
 		remote.LabelApp:         "app",
 		remote.LabelEnvironment: "env",
 		remote.LabelService:     "service",
-		remote.LabelVersion:     "1.0.0",
 	}, dimensionService)
 }
