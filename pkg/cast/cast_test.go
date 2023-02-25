@@ -222,7 +222,7 @@ func TestCast(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, float64(10), configvalue)
 	configvalue, err = NewValue(nil, nil).ToFloat64()
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	assert.Equal(t, float64(0), configvalue)
 	configvalue, err = NewValue("10", nil).ToFloat64()
 	assert.Equal(t, nil, err)
