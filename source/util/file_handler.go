@@ -2,9 +2,9 @@ package util
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"path/filepath"
 
-	"github.com/go-chassis/openlog"
 	"gopkg.in/yaml.v2"
 )
 
@@ -71,10 +71,8 @@ func retrieveItems(prefix string, subItems yaml.MapSlice) map[string]interface{}
 func checkKey(key interface{}) (string, bool) {
 	k, ok := key.(string)
 	if !ok {
-		openlog.Error("yaml tag is not string", openlog.WithTags(
-			openlog.Tags{
-				"key": key,
-			},
+		logrus.Error("yaml tag is not string", logrus.WithField(
+			"key", key,
 		))
 		return "", false
 	}

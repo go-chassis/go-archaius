@@ -24,6 +24,7 @@ package source
 import (
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"io"
 	"reflect"
@@ -31,7 +32,6 @@ import (
 	"sync"
 
 	"github.com/arielsrv/go-archaius/event"
-	"github.com/go-chassis/openlog"
 )
 
 // errors
@@ -124,7 +124,7 @@ func (m *Manager) Unmarshal(obj interface{}) error {
 	// only pointers are accepted
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
 		err := errors.New("invalid object supplied")
-		openlog.Error("invalid object supplied: " + err.Error())
+		logrus.Error("invalid object supplied: " + err.Error())
 		return err
 	}
 
@@ -134,14 +134,14 @@ func (m *Manager) Unmarshal(obj interface{}) error {
 // Marshal function is used to write all configuration by yaml
 func (m *Manager) Marshal(w io.Writer) error {
 	if w == nil {
-		openlog.Error("invalid writer")
+		logrus.Error("invalid writer")
 		return ErrWriterInvalid
 	}
 	allConfig := make(map[string]map[string]interface{})
 	for name, source := range m.Sources {
 		config, err := source.GetConfigurations()
 		if err != nil {
-			openlog.Error("get source " + name + " error " + err.Error())
+			logrus.Error("get source " + name + " error " + err.Error())
 			continue
 		}
 		if len(config) == 0 {
@@ -157,7 +157,7 @@ func (m *Manager) Marshal(w io.Writer) error {
 func (m *Manager) AddSource(source ConfigSource) error {
 	if source == nil || source.GetSourceName() == "" {
 		err := errors.New("nil or invalid source supplied")
-		openlog.Error("nil or invalid source supplied: " + err.Error())
+		logrus.Error("nil or invalid source supplied: " + err.Error())
 		return err
 	}
 	sourceName := source.GetSourceName()
@@ -165,7 +165,7 @@ func (m *Manager) AddSource(source ConfigSource) error {
 	_, ok := m.Sources[sourceName]
 	if ok {
 		err := errors.New("duplicate source supplied")
-		openlog.Error("duplicate source supplied: " + err.Error())
+		logrus.Error("duplicate source supplied: " + err.Error())
 		m.sourceMapMux.Unlock()
 		return err
 	}
@@ -176,10 +176,10 @@ func (m *Manager) AddSource(source ConfigSource) error {
 	err := m.pullSourceConfigs(sourceName)
 	if err != nil {
 		err = fmt.Errorf(fmtLoadConfigFailed, sourceName, err)
-		openlog.Error(err.Error())
+		logrus.Error(err.Error())
 		return err
 	}
-	openlog.Info("invoke dynamic handler:" + source.GetSourceName())
+	logrus.Info("invoke dynamic handler:" + source.GetSourceName())
 	go source.Watch(m)
 
 	return nil
@@ -191,18 +191,18 @@ func (m *Manager) pullSourceConfigs(source string) error {
 	m.sourceMapMux.RUnlock()
 	if !ok {
 		err := errors.New("invalid source or source not added")
-		openlog.Error("invalid source or source not added: " + err.Error())
+		logrus.Error("invalid source or source not added: " + err.Error())
 		return err
 	}
 
 	config, err := configSource.GetConfigurations()
 	if config == nil || len(config) == 0 {
 		if err != nil {
-			openlog.Error("Get configuration by items failed: " + err.Error())
+			logrus.Error("Get configuration by items failed: " + err.Error())
 			return err
 		}
 
-		openlog.Warn(fmt.Sprintf("empty config from %s", source))
+		logrus.Warn(fmt.Sprintf("empty config from %s", source))
 		return nil
 	}
 
@@ -254,7 +254,7 @@ func (m *Manager) AddDimensionInfo(labels map[string]string) (map[string]string,
 
 	err := m.addDimensionInfo(labels)
 	if err != nil {
-		openlog.Error(fmt.Sprintf("failed to do add dimension info %s", err))
+		logrus.Error(fmt.Sprintf("failed to do add dimension info %s", err))
 		return config, err
 	}
 
@@ -265,7 +265,7 @@ func (m *Manager) AddDimensionInfo(labels map[string]string) (map[string]string,
 func (m *Manager) Refresh(sourceName string) error {
 	err := m.pullSourceConfigs(sourceName)
 	if err != nil {
-		openlog.Error(fmt.Sprintf(fmtLoadConfigFailed, sourceName, err))
+		logrus.Error(fmt.Sprintf(fmtLoadConfigFailed, sourceName, err))
 		errorMsg := "fail to load configuration of" + sourceName + " source"
 		return errors.New(errorMsg)
 	}
@@ -385,7 +385,7 @@ func (m *Manager) updateModuleEvent(es []*event.Event) error {
 		err := m.updateEvent(es[i])
 		if err != nil {
 			if err != ErrKeyNotExist {
-				openlog.Error(fmt.Sprintf("%dth event %+v got error:%v", i, *es[i], err))
+				logrus.Error(fmt.Sprintf("%dth event %+v got error:%v", i, *es[i], err))
 			}
 			continue
 		}
@@ -393,7 +393,7 @@ func (m *Manager) updateModuleEvent(es []*event.Event) error {
 	}
 
 	if len(validEvents) == 0 {
-		openlog.Info("all events are invalid")
+		logrus.Info("all events are invalid")
 		return nil
 	}
 
@@ -406,10 +406,10 @@ func (m *Manager) updateEvent(e *event.Event) error {
 		return errors.New("nil or invalid event supplied")
 	}
 	if e.HasUpdated {
-		openlog.Debug(fmt.Sprintf("config update event %+v has been updated", *e))
+		logrus.Debug(fmt.Sprintf("config update event %+v has been updated", *e))
 		return nil
 	}
-	openlog.Info("config update event received")
+	logrus.Info("config update event received")
 	switch e.EventType {
 	case event.Create, event.Update:
 		sourceName, ok := m.ConfigurationMap.Load(e.Key)
@@ -422,7 +422,7 @@ func (m *Manager) updateEvent(e *event.Event) error {
 			prioritySrc := m.getHighPrioritySource(sourceName.(string), e.EventSource)
 			if prioritySrc != nil && prioritySrc.GetSourceName() == sourceName {
 				// if event generated from less priority source then ignore
-				openlog.Info(fmt.Sprintf("the event source %s's priority is less then %s's, ignore",
+				logrus.Info(fmt.Sprintf("the event source %s's priority is less then %s's, ignore",
 					e.EventSource, sourceName))
 				return ErrIgnoreChange
 			}
@@ -434,7 +434,7 @@ func (m *Manager) updateEvent(e *event.Event) error {
 		sourceName, ok := m.ConfigurationMap.Load(e.Key)
 		if !ok || sourceName != e.EventSource {
 			// if delete event generated from source not maintained ignore it
-			openlog.Info(fmt.Sprintf("the event source %s (expect %s) is not maintained, ignore",
+			logrus.Info(fmt.Sprintf("the event source %s (expect %s) is not maintained, ignore",
 				e.EventSource, sourceName))
 			return ErrIgnoreChange
 		} else if sourceName == e.EventSource {
@@ -458,7 +458,7 @@ func (m *Manager) OnEvent(event *event.Event) {
 	err := m.updateEvent(event)
 	if err != nil {
 		if err != ErrIgnoreChange {
-			openlog.Error("failed in updating event with error: " + err.Error())
+			logrus.Error("failed in updating event with error: " + err.Error())
 		}
 		return
 	}
@@ -469,7 +469,7 @@ func (m *Manager) OnEvent(event *event.Event) {
 // OnModuleEvent Triggers actions when events are generated
 func (m *Manager) OnModuleEvent(event []*event.Event) {
 	if err := m.updateModuleEvent(event); err != nil {
-		openlog.Error("failed in updating events with error: " + err.Error())
+		logrus.Error("failed in updating events with error: " + err.Error())
 	}
 }
 
@@ -523,7 +523,7 @@ func (m *Manager) RegisterListener(listenerObj event.Listener, keys ...string) e
 	for _, key := range keys {
 		_, err := regexp.Compile(key)
 		if err != nil {
-			openlog.Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
+			logrus.Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
 			return fmt.Errorf(fmtInvalidKey, key)
 		}
 	}
@@ -536,7 +536,7 @@ func (m *Manager) UnRegisterListener(listenerObj event.Listener, keys ...string)
 	for _, key := range keys {
 		_, err := regexp.Compile(key)
 		if err != nil {
-			openlog.Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
+			logrus.Error(fmt.Sprintf(fmtInvalidKeyWithErr, key, err))
 			return fmt.Errorf(fmtInvalidKey, key)
 		}
 	}
@@ -548,7 +548,7 @@ func (m *Manager) UnRegisterListener(listenerObj event.Listener, keys ...string)
 func (m *Manager) RegisterModuleListener(listenerObj event.ModuleListener, prefixes ...string) error {
 	for _, prefix := range prefixes {
 		if prefix == "" {
-			openlog.Error(fmt.Sprintf(fmtInvalidKey, prefix))
+			logrus.Error(fmt.Sprintf(fmtInvalidKey, prefix))
 			return fmt.Errorf(fmtInvalidKey, prefix)
 		}
 	}
@@ -560,7 +560,7 @@ func (m *Manager) RegisterModuleListener(listenerObj event.ModuleListener, prefi
 func (m *Manager) UnRegisterModuleListener(listenerObj event.ModuleListener, prefixes ...string) error {
 	for _, prefix := range prefixes {
 		if prefix == "" {
-			openlog.Error(fmt.Sprintf(fmtInvalidKey, prefix))
+			logrus.Error(fmt.Sprintf(fmtInvalidKey, prefix))
 			return fmt.Errorf(fmtInvalidKey, prefix)
 		}
 	}

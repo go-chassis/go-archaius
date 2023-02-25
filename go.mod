@@ -4,11 +4,12 @@ go 1.20
 
 require (
 	github.com/Shonminh/apollo-client v0.6.0
+	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-chassis/foundation v0.4.0
 	github.com/go-chassis/kie-client v0.2.0
-	github.com/go-chassis/openlog v1.1.3
 	github.com/gorilla/websocket v1.5.0
+	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cast v1.4.1
 	github.com/stretchr/testify v1.8.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -20,6 +21,7 @@ require (
 	github.com/coocood/freecache v1.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-chassis/cari v0.6.0 // indirect
+	github.com/go-chassis/openlog v1.1.3 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect

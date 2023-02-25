@@ -17,11 +17,11 @@
 package configcenter
 
 import (
+	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/arielsrv/go-archaius/pkg/configcenter"
 	"github.com/arielsrv/go-archaius/source/remote"
-	"github.com/go-chassis/openlog"
 	"github.com/gorilla/websocket"
 )
 
@@ -71,8 +71,8 @@ func NewConfigCenter(options remote.Options) (*ConfigCenter, error) {
 		c:    c,
 		opts: options,
 	}
-	openlog.Info("new config center client", openlog.WithTags(
-		openlog.Tags{
+	logrus.Info("new config center client", logrus.WithFields(
+		logrus.Fields{
 			"dimension": d,
 			"ws_port":   options.RefreshPort,
 			"ssl":       options.EnableSSL,

@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/arielsrv/go-archaius"
 	"github.com/arielsrv/go-archaius/event"
 	"github.com/arielsrv/go-archaius/source/remote"
 	_ "github.com/arielsrv/go-archaius/source/remote/kie"
-	"github.com/go-chassis/openlog"
 )
 
 type Listener struct {
@@ -16,7 +16,7 @@ type Listener struct {
 }
 
 func (li *Listener) Event(event *event.Event) {
-	openlog.Info(fmt.Sprintf("change event : %+v", *event))
+	logrus.Info(fmt.Sprintf("change event : %+v", *event))
 }
 
 func main() {

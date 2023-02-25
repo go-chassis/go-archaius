@@ -3,6 +3,7 @@ package archaius_test
 import (
 	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,14 +11,13 @@ import (
 
 	"github.com/arielsrv/go-archaius"
 	"github.com/arielsrv/go-archaius/event"
-	"github.com/go-chassis/openlog"
 	"github.com/stretchr/testify/assert"
 )
 
 type EListener struct{}
 
 func (e EListener) Event(event *event.Event) {
-	openlog.Info(fmt.Sprintf("config value after change %s |%s", event.Key, event.Value))
+	logrus.Info(fmt.Sprintf("config value after change %s |%s", event.Key, event.Value))
 }
 
 var filename2 string

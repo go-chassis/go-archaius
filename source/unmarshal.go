@@ -23,11 +23,11 @@ package source
 import (
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"reflect"
 	"strings"
 	"unicode"
 
-	"github.com/go-chassis/openlog"
 	"github.com/spf13/cast"
 )
 
@@ -51,7 +51,7 @@ func (m *Manager) unmarshal(rValue reflect.Value, tagName string) (err error) {
 		if r := recover(); r != nil {
 			msg := fmt.Sprintf("unmarshalling [%s] failed, err: %s", tagName, r.(error).Error())
 			err = errors.New(msg)
-			openlog.Error(msg)
+			logrus.Error(msg)
 		}
 	}()
 

@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -32,7 +33,6 @@ import (
 
 	"github.com/arielsrv/go-archaius/pkg/serializers"
 	"github.com/go-chassis/foundation/httpclient"
-	"github.com/go-chassis/openlog"
 	"github.com/gorilla/websocket"
 )
 
@@ -147,7 +147,7 @@ func updateAPIPath(apiVersion string) {
 func (c *Client) call(method string, api string, headers http.Header, body []byte, s interface{}) error {
 	hosts, err := c.GetConfigServer()
 	if err != nil {
-		openlog.Error("Get config server addr failed:" + err.Error())
+		logrus.Error("Get config server addr failed:" + err.Error())
 	}
 	index := rand.Int() % len(c.opts.ConfigServerAddresses)
 	host := hosts[index]
@@ -155,29 +155,29 @@ func (c *Client) call(method string, api string, headers http.Header, body []byt
 	errMsgPrefix := fmt.Sprintf("Call %s failed: ", rawURI)
 	resp, err := c.HTTPDo(method, rawURI, headers, body)
 	if err != nil {
-		openlog.Error(errMsgPrefix + err.Error())
+		logrus.Error(errMsgPrefix + err.Error())
 		return err
 
 	}
 	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		openlog.Error(errMsgPrefix + err.Error())
+		logrus.Error(errMsgPrefix + err.Error())
 		return err
 	}
 	if !isStatusSuccess(resp.StatusCode) {
 		err = fmt.Errorf("statusCode: %d, resp body: %s", resp.StatusCode, body)
-		openlog.Error(errMsgPrefix + err.Error())
+		logrus.Error(errMsgPrefix + err.Error())
 		return err
 	}
 	contentType := resp.Header.Get("Content-Type")
 	if len(contentType) > 0 && (len(defaultContentType) > 0 && !strings.Contains(contentType, defaultContentType)) {
 		err = fmt.Errorf("content type not %s", defaultContentType)
-		openlog.Error(errMsgPrefix + err.Error())
+		logrus.Error(errMsgPrefix + err.Error())
 		return err
 	}
 	err = serializers.Decode(defaultContentType, body, s)
 	if err != nil {
-		openlog.Error("Decode failed:" + err.Error())
+		logrus.Error("Decode failed:" + err.Error())
 		return err
 	}
 	return nil
@@ -199,7 +199,7 @@ func (c *Client) Flatten(dimensionInfo string) (map[string]interface{}, error) {
 	config := make(map[string]interface{})
 	configAPIResp, err := c.PullGroupByDimension(dimensionInfo)
 	if err != nil {
-		openlog.Error("Flatten config failed:" + err.Error())
+		logrus.Error("Flatten config failed:" + err.Error())
 		return nil, err
 	}
 	for _, v := range configAPIResp {
@@ -218,7 +218,7 @@ func (c *Client) PullGroupByDimension(dimensionInfo string) (map[string]map[stri
 	restAPI := ConfigPath + "?" + dimensionsInfo + "=" + parsedDimensionInfo
 	err := c.call(http.MethodGet, restAPI, nil, nil, &configAPIRes)
 	if err != nil {
-		openlog.Error("Flatten config failed:" + err.Error())
+		logrus.Error("Flatten config failed:" + err.Error())
 		return nil, err
 	}
 
@@ -230,7 +230,7 @@ func (c *Client) Do(method string, data interface{}) (map[string]interface{}, er
 	configAPIS := make(map[string]interface{})
 	body, err := serializers.Encode(serializers.JSONEncoder, data)
 	if err != nil {
-		openlog.Error("serializer data failed , err :" + err.Error())
+		logrus.Error("serializer data failed , err :" + err.Error())
 		return nil, err
 	}
 	err = c.call(method, ConfigPath, nil, body, &configAPIS)
@@ -289,7 +289,7 @@ func (c *Client) Watch(f func(map[string]interface{}), errHandler func(err error
 			}
 			err = c.wsConnection.Close()
 			if err != nil {
-				openlog.Error(err.Error())
+				logrus.Error(err.Error())
 				return fmt.Errorf("CC watch Conn close failed error:%s", err.Error())
 			}
 			return nil
@@ -327,7 +327,7 @@ func isStatusSuccess(i int) bool {
 func (c *Client) Shuffle() error {
 	if c.opts.ConfigServerAddresses == nil || len(c.opts.ConfigServerAddresses) == 0 {
 		err := errors.New(emptyConfigServerConfig)
-		openlog.Error(emptyConfigServerConfig)
+		logrus.Error(emptyConfigServerConfig)
 		return err
 	}
 
@@ -335,15 +335,15 @@ func (c *Client) Shuffle() error {
 
 	c.Lock()
 	defer c.Unlock()
-	openlog.Debug(fmt.Sprintf("before shuffled member %s ", c.opts.ConfigServerAddresses))
+	logrus.Debug(fmt.Sprintf("before shuffled member %s ", c.opts.ConfigServerAddresses))
 	for i, v := range perm {
-		openlog.Debug(fmt.Sprintf("shuffler %d %d", i, v))
+		logrus.Debug(fmt.Sprintf("shuffler %d %d", i, v))
 		tmp := c.opts.ConfigServerAddresses[v]
 		c.opts.ConfigServerAddresses[v] = c.opts.ConfigServerAddresses[i]
 		c.opts.ConfigServerAddresses[i] = tmp
 	}
 
-	openlog.Debug(fmt.Sprintf("shuffled member %s", c.opts.ConfigServerAddresses))
+	logrus.Debug(fmt.Sprintf("shuffled member %s", c.opts.ConfigServerAddresses))
 	return nil
 }
 
@@ -352,7 +352,7 @@ func (c *Client) GetConfigServer() ([]string, error) {
 
 	if len(c.opts.ConfigServerAddresses) == 0 {
 		err := errors.New(emptyConfigServerMembers)
-		openlog.Error(emptyConfigServerMembers)
+		logrus.Error(emptyConfigServerMembers)
 		return nil, err
 	}
 
@@ -368,13 +368,13 @@ func (c *Client) GetConfigServer() ([]string, error) {
 
 	err := c.Shuffle()
 	if err != nil {
-		openlog.Error("member shuffle is failed: " + err.Error())
+		logrus.Error("member shuffle is failed: " + err.Error())
 		return nil, err
 	}
 
 	c.RLock()
 	defer c.RUnlock()
-	openlog.Debug(fmt.Sprintf("member server return %s", c.opts.ConfigServerAddresses[0]))
+	logrus.Debug(fmt.Sprintf("member server return %s", c.opts.ConfigServerAddresses[0]))
 	return c.opts.ConfigServerAddresses, nil
 }
 
@@ -383,13 +383,13 @@ func GetConfigs(actionData []byte) (map[string]interface{}, error) {
 	configCenterEvent := new(Event)
 	err := serializers.Decode(serializers.JSONEncoder, actionData, &configCenterEvent)
 	if err != nil {
-		openlog.Error(fmt.Sprintf("error in unmarshalling data on event receive with error %s", err.Error()))
+		logrus.Error(fmt.Sprintf("error in unmarshalling data on event receive with error %s", err.Error()))
 		return nil, err
 	}
 	sourceConfig := make(map[string]interface{})
 	err = serializers.Decode(serializers.JSONEncoder, []byte(configCenterEvent.Value), &sourceConfig)
 	if err != nil {
-		openlog.Error(fmt.Sprintf("error in unmarshalling config values %s", err.Error()))
+		logrus.Error(fmt.Sprintf("error in unmarshalling config values %s", err.Error()))
 		return nil, err
 	}
 	return sourceConfig, nil
@@ -402,7 +402,7 @@ func (c *Client) getWebSocketURL() (*url.URL, error) {
 
 	configCenterEntryPointList, err := c.GetConfigServer()
 	if err != nil {
-		openlog.Error("error in member discovery:" + err.Error())
+		logrus.Error("error in member discovery:" + err.Error())
 		return nil, err
 	}
 	for _, server := range configCenterEntryPointList {
@@ -423,7 +423,7 @@ func (c *Client) getWebSocketURL() (*url.URL, error) {
 	}
 	if host == "" {
 		err := errors.New("host must be a URL or a host:port pair")
-		openlog.Error("empty host for watch action:" + err.Error())
+		logrus.Error("empty host for watch action:" + err.Error())
 		return nil, err
 	}
 	hostURL, err := url.Parse(host)

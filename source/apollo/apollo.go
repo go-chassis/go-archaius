@@ -3,13 +3,13 @@ package apollo
 import (
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 
 	apollo "github.com/Shonminh/apollo-client"
 	"github.com/arielsrv/go-archaius"
 	"github.com/arielsrv/go-archaius/event"
 	"github.com/arielsrv/go-archaius/source"
-	"github.com/go-chassis/openlog"
 )
 
 // Source apollo source
@@ -44,13 +44,13 @@ func init() {
 	archaius.InstallRemoteSource(archaius.ApolloSource, NewApolloSource)
 }
 func Debugf(format string, v ...interface{}) {
-	openlog.Debug(fmt.Sprintf(format, v...))
+	logrus.Debug(fmt.Sprintf(format, v...))
 }
 func Errorf(format string, v ...interface{}) {
-	openlog.Error(fmt.Sprintf(format, v...))
+	logrus.Error(fmt.Sprintf(format, v...))
 }
 func Infof(format string, v ...interface{}) {
-	openlog.Info(fmt.Sprintf(format, v...))
+	logrus.Info(fmt.Sprintf(format, v...))
 }
 
 // NewApolloSource get a apollo source singleton, and pull configs at once after init apollo client.

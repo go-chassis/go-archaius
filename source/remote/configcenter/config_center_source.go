@@ -18,6 +18,7 @@ package configcenter
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 
@@ -25,7 +26,6 @@ import (
 	"github.com/arielsrv/go-archaius/event"
 	"github.com/arielsrv/go-archaius/source"
 	"github.com/arielsrv/go-archaius/source/remote"
-	"github.com/go-chassis/openlog"
 )
 
 // const
@@ -69,7 +69,7 @@ func NewConfigCenterSource(ci *archaius.RemoteInfo) (source.ConfigSource, error)
 	}
 	cc, err := NewConfigCenter(opts)
 	if err != nil {
-		openlog.Error(err.Error())
+		logrus.Error(err.Error())
 		return nil, err
 	}
 	s := new(Source)
@@ -107,7 +107,7 @@ func (rs *Source) refreshConfigurationsPeriodically() {
 	for range ticker {
 		err := rs.refreshConfigurations()
 		if err != nil {
-			openlog.Error("can not pull configs: " + err.Error())
+			logrus.Error("can not pull configs: " + err.Error())
 		}
 	}
 }
@@ -121,10 +121,10 @@ func (rs *Source) refreshConfigurations() error {
 
 	config, err = rs.c.PullConfigs(rs.dimensions...)
 	if err != nil {
-		openlog.Warn(fmt.Sprintf("failed to pull configurations from config center server %s", err)) //Warn
+		logrus.Warn(fmt.Sprintf("failed to pull configurations from config center server %s", err)) //Warn
 		return err
 	}
-	openlog.Debug("pull configs", openlog.WithTags(openlog.Tags{
+	logrus.Debug("pull configs", logrus.WithFields(logrus.Fields{
 		"config": config,
 	}))
 	//Populate the events based on the changed value between current config and newly received Config
@@ -132,13 +132,13 @@ func (rs *Source) refreshConfigurations() error {
 	defer rs.Unlock()
 	events, err = event.PopulateEvents(ConfigCenterSourceName, rs.currentConfig, config)
 	if err != nil {
-		openlog.Warn(fmt.Sprintf("error in generating event %s", err))
+		logrus.Warn(fmt.Sprintf("error in generating event %s", err))
 		return err
 	}
 	rs.currentConfig = config
 	//Generate OnEvent Callback based on the events created
 	if rs.eh != nil {
-		openlog.Debug(fmt.Sprintf("event on receive %v", events))
+		logrus.Debug(fmt.Sprintf("event on receive %v", events))
 		for _, e := range events {
 			rs.eh.OnEvent(e)
 		}
@@ -194,11 +194,11 @@ func (rs *Source) Watch(callback source.EventHandler) error {
 				defer rs.RUnlock()
 				events, err := event.PopulateEvents(ConfigCenterSourceName, rs.currentConfig, kv)
 				if err != nil {
-					openlog.Error("error in generating event:" + err.Error())
+					logrus.Error("error in generating event:" + err.Error())
 					return
 				}
 
-				openlog.Debug(fmt.Sprintf("event on receive %v", events))
+				logrus.Debug(fmt.Sprintf("event on receive %v", events))
 				for _, e := range events {
 					callback.OnEvent(e)
 				}
@@ -206,7 +206,7 @@ func (rs *Source) Watch(callback source.EventHandler) error {
 				return
 			},
 			func(err error) {
-				openlog.Error(err.Error())
+				logrus.Error(err.Error())
 			}, nil,
 		)
 		if err != nil {

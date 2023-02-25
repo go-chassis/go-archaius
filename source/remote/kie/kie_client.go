@@ -19,6 +19,7 @@ package kie
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 	"time"
@@ -26,7 +27,6 @@ import (
 	"github.com/arielsrv/go-archaius/source/remote"
 	"github.com/arielsrv/go-archaius/source/util/queue"
 	client "github.com/go-chassis/kie-client"
-	"github.com/go-chassis/openlog"
 )
 
 // DimensionName is the name identifying various dimension of configurations.
@@ -96,8 +96,8 @@ func NewKie(options remote.Options) (*Kie, error) {
 		currentRevision: -1,
 		dimensions:      dimensions,
 	}
-	openlog.Info("new kie client", openlog.WithTags(
-		openlog.Tags{
+	logrus.Info("new kie client", logrus.WithFields(
+		logrus.Fields{
 			"verifyPeer": options.VerifyPeer,
 			"ep":         ks,
 		}))
@@ -171,8 +171,8 @@ func (k *Kie) Watch(f func(map[string]interface{}), errHandler func(err error), 
 }
 
 func (k *Kie) watchKVDimensionally(f func(map[string]interface{}), errHandler func(err error), dimension DimensionName) {
-	openlog.Info("start watching configurations of dimension " + string(dimension))
-	defer openlog.Info("stop watching configurations of dimension " + string(dimension))
+	logrus.Info("start watching configurations of dimension " + string(dimension))
+	defer logrus.Info("stop watching configurations of dimension " + string(dimension))
 	if k.watchTimeOut == 0 {
 		k.watchTimeOut = defaultWaitTime
 	}

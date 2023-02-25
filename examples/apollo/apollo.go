@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"time"
 
 	agollo "github.com/Shonminh/apollo-client"
@@ -9,7 +10,6 @@ import (
 	"github.com/arielsrv/go-archaius/event"
 	"github.com/arielsrv/go-archaius/source/apollo"
 	_ "github.com/arielsrv/go-archaius/source/apollo"
-	"github.com/go-chassis/openlog"
 )
 
 type Listener struct {
@@ -18,9 +18,9 @@ type Listener struct {
 
 func (li *Listener) Event(event *event.Event) {
 	fmt.Printf("listen:%+v", *event)
-	openlog.Info(event.Key)
-	openlog.Info(fmt.Sprintf("%v\n", event.Value))
-	openlog.Info(event.EventType)
+	logrus.Info(event.Key)
+	logrus.Info(fmt.Sprintf("%v\n", event.Value))
+	logrus.Info(event.EventType)
 }
 
 func main() {

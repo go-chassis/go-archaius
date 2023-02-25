@@ -23,10 +23,9 @@ package event
 
 import (
 	"errors"
+	"github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
-
-	"github.com/go-chassis/openlog"
 )
 
 // errors
@@ -155,7 +154,7 @@ func NewDispatcher() *Dispatcher {
 func (dis *Dispatcher) RegisterListener(listenerObj Listener, keys ...string) error {
 	if listenerObj == nil {
 		err := ErrNilListener
-		openlog.Error("nil listener supplied:" + err.Error())
+		logrus.Error("nil listener supplied:" + err.Error())
 		return ErrNilListener
 	}
 
@@ -217,12 +216,12 @@ func (dis *Dispatcher) DispatchEvent(event *Event) error {
 	for regKey, listeners := range dis.listeners {
 		matched, err := regexp.MatchString(regKey, event.Key)
 		if err != nil {
-			openlog.Error("regular expression for key " + regKey + " failed:" + err.Error())
+			logrus.Error("regular expression for key " + regKey + " failed:" + err.Error())
 			continue
 		}
 		if matched {
 			for _, listener := range listeners {
-				openlog.Info("event generated for " + regKey)
+				logrus.Info("event generated for " + regKey)
 				go listener.Event(event)
 			}
 		}
@@ -235,7 +234,7 @@ func (dis *Dispatcher) DispatchEvent(event *Event) error {
 func (dis *Dispatcher) RegisterModuleListener(listenerObj ModuleListener, modulePrefixes ...string) error {
 	if listenerObj == nil {
 		err := ErrNilListener
-		openlog.Error("nil moduleListener supplied:" + err.Error())
+		logrus.Error("nil moduleListener supplied:" + err.Error())
 		return ErrNilListener
 	}
 
@@ -305,7 +304,7 @@ func (dis *Dispatcher) DispatchModuleEvent(events []*Event) error {
 	for key, events := range eventsList {
 		if listeners, ok := dis.moduleListeners[key]; ok {
 			for _, listener := range listeners {
-				openlog.Info("events generated for " + key)
+				logrus.Info("events generated for " + key)
 				go listener.Event(events)
 			}
 		}

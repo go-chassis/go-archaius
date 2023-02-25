@@ -18,13 +18,12 @@
 package env
 
 import (
+	"github.com/sirupsen/logrus"
 	"os"
 	"strings"
 	"sync"
 
 	"github.com/arielsrv/go-archaius/source"
-
-	"github.com/go-chassis/openlog"
 )
 
 const (
@@ -40,7 +39,7 @@ type Source struct {
 
 // NewEnvConfigurationSource configures a new environment configuration
 func NewEnvConfigurationSource() source.ConfigSource {
-	openlog.Info("enable env source")
+	logrus.Info("enable env source")
 	envConfigSource := new(Source)
 	envConfigSource.priority = envVariableSourcePriority
 	envConfigSource.pullConfigurations()

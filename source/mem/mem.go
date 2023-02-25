@@ -2,12 +2,12 @@ package mem
 
 import (
 	"errors"
+	"github.com/sirupsen/logrus"
 	"sync"
 
 	"github.com/arielsrv/go-archaius/event"
 
 	"github.com/arielsrv/go-archaius/source"
-	"github.com/go-chassis/openlog"
 )
 
 /*
@@ -93,7 +93,7 @@ func (*Source) GetSourceName() string {
 // Watch dynamically handles a memory configuration
 func (ms *Source) Watch(callback source.EventHandler) error {
 	ms.callback = callback
-	openlog.Info("mem source callback prepared")
+	logrus.Info("mem source callback prepared")
 	ms.Ready <- true
 	return nil
 }

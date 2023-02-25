@@ -11,13 +11,12 @@ import (
 	"github.com/arielsrv/go-archaius/source/cli"
 	"github.com/arielsrv/go-archaius/source/env"
 	"github.com/arielsrv/go-archaius/source/mem"
-	"github.com/go-chassis/openlog"
+	"github.com/sirupsen/logrus"
 	"io"
 
+	nested "github.com/antonfisher/nested-logrus-formatter"
 	filesource "github.com/arielsrv/go-archaius/source/file"
-
 	"os"
-	"strings"
 )
 
 var (
@@ -27,6 +26,15 @@ var (
 	configServerRunning = false
 )
 
+func init() {
+	// Log as JSON instead of the default ASCII formatter.
+	logrus.SetFormatter(&nested.Formatter{
+		FieldsOrder:     []string{"component", "category"},
+		TimestampFormat: "2006-01-02 15:04:05",
+		HideKeys:        true,
+		TrimMessages:    true,
+	})
+}
 func initFileSource(o *Options) (filesource.FileSource, error) {
 	files := make([]string, 0)
 	// created file source object
@@ -34,7 +42,7 @@ func initFileSource(o *Options) (filesource.FileSource, error) {
 	// adding all files with file source
 	for _, v := range o.RequiredFiles {
 		if err := fs.AddFile(v, filesource.DefaultFilePriority, o.FileHandler); err != nil {
-			openlog.Error(fmt.Sprintf("add file source error [%s].", err.Error()))
+			logrus.Error(fmt.Sprintf("add file source error [%s].", err.Error()))
 			return nil, err
 		}
 		files = append(files, v)
@@ -42,23 +50,26 @@ func initFileSource(o *Options) (filesource.FileSource, error) {
 	for _, v := range o.OptionalFiles {
 		_, err := os.Stat(v)
 		if os.IsNotExist(err) {
-			openlog.Info(fmt.Sprintf("[%s] not exist", v))
+			logrus.Info(fmt.Sprintf("[%s] not exist", v))
 			continue
 		}
 		if err := fs.AddFile(v, filesource.DefaultFilePriority, o.FileHandler); err != nil {
-			openlog.Info(err.Error())
+			logrus.Info(err.Error())
 			return nil, err
 		}
 		files = append(files, v)
 	}
-	openlog.Info(fmt.Sprintf("Configuration files: %s", strings.Join(files, ", ")))
+	// logrus.Info(fmt.Sprintf("Configuration files: %s", strings.Join(files, ", ")))
+	for _, file := range files {
+		logrus.Info(fmt.Sprintf("loaded configuration file: %s", file))
+	}
 	return fs, nil
 }
 
 // Init create a Archaius config singleton
 func Init(opts ...Option) error {
 	if running {
-		openlog.Warn("can not init archaius again, call Clean first")
+		logrus.Warn("can not init archaius again, call Clean first")
 		return nil
 	}
 	var err error
@@ -104,7 +115,7 @@ func Init(opts ...Option) error {
 		}
 	}
 
-	openlog.Info("archaius init success")
+	logrus.Info("archaius init success")
 	running = true
 	return nil
 }
@@ -113,7 +124,7 @@ func Init(opts ...Option) error {
 // it almost like Init(), but you can fully control config sources you inject to archaius
 func CustomInit(sources ...source.ConfigSource) error {
 	if running {
-		openlog.Warn("can not init archaius again, call Clean first")
+		logrus.Warn("can not init archaius again, call Clean first")
 		return nil
 	}
 	var err error
@@ -136,7 +147,7 @@ func EnableRemoteSource(remoteSource string, ci *RemoteInfo) error {
 		return errors.New("RemoteInfo can not be empty")
 	}
 	if configServerRunning {
-		openlog.Warn("can not init config server again, call Clean first")
+		logrus.Warn("can not init config server again, call Clean first")
 		return nil
 	}
 

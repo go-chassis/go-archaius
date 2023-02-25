@@ -23,7 +23,7 @@ import (
 	"github.com/arielsrv/go-archaius/event"
 	"github.com/arielsrv/go-archaius/source"
 	"github.com/arielsrv/go-archaius/source/remote"
-	"github.com/go-chassis/openlog"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
@@ -66,7 +66,7 @@ func NewKieSource(ci *archaius.RemoteInfo) (source.ConfigSource, error) {
 	}
 	k, err := NewKie(opts)
 	if err != nil {
-		openlog.Error(err.Error())
+		logrus.Error(err.Error())
 		return nil, err
 	}
 	ks := new(Source)
@@ -79,8 +79,8 @@ func NewKieSource(ci *archaius.RemoteInfo) (source.ConfigSource, error) {
 	} else {
 		ks.RefreshInterval = time.Second * time.Duration(ci.RefreshInterval)
 	}
-	openlog.Info("new kie source", openlog.WithTags(
-		openlog.Tags{
+	logrus.Info("new kie source", logrus.WithFields(
+		logrus.Fields{
 			"labels": ci.DefaultDimension,
 		}))
 	return ks, nil
@@ -109,23 +109,23 @@ func (ks *Source) GetConfigurations() (map[string]interface{}, error) {
 
 func (ks *Source) refreshConfigurationsPeriodically() {
 	ticker := time.Tick(ks.RefreshInterval)
-	openlog.Info("start refreshing configurations")
+	logrus.Info("start refreshing configurations")
 	for range ticker {
 		err := ks.refreshConfigurations()
 		if err != nil {
-			openlog.Error("can not pull configs: " + err.Error())
+			logrus.Error("can not pull configs: " + err.Error())
 		}
 	}
-	openlog.Info("stop refreshing configurations")
+	logrus.Info("stop refreshing configurations")
 }
 
 func (ks *Source) refreshConfigurations() error {
 	config, err := ks.k.PullConfigs(ks.dimensions...)
 	if err != nil {
-		openlog.Warn(fmt.Sprintf("failed to pull configurations from kie server %s", err)) //Warn
+		logrus.Warn(fmt.Sprintf("failed to pull configurations from kie server %s", err)) //Warn
 		return err
 	}
-	openlog.Debug("pull configs from kie", openlog.WithTags(openlog.Tags{
+	logrus.Debug("pull configs from kie", logrus.WithFields(logrus.Fields{
 		"config": config,
 	}))
 	return ks.updateConfigAndFireEvent(config)
@@ -137,13 +137,13 @@ func (ks *Source) updateConfigAndFireEvent(config map[string]interface{}) error 
 	//Populate the events based on the changed value between current config and newly received Config
 	events, err := event.PopulateEvents(Name, ks.currentConfig, config)
 	if err != nil {
-		openlog.Warn(fmt.Sprintf("generating event error %s", err))
+		logrus.Warn(fmt.Sprintf("generating event error %s", err))
 		return err
 	}
 	ks.currentConfig = config
 	//Generate OnEvent Callback based on the events created
 	if ks.eh != nil {
-		openlog.Debug(fmt.Sprintf("received event %v", events))
+		logrus.Debug(fmt.Sprintf("received event %v", events))
 		for _, e := range events {
 			ks.eh.OnEvent(e)
 		}
@@ -195,24 +195,24 @@ func (ks *Source) Watch(callback source.EventHandler) error {
 		return nil
 	}
 	//Start watch and receive change events.
-	openlog.Info("start watching configurations")
+	logrus.Info("start watching configurations")
 	err := ks.k.Watch(
 		func(kv map[string]interface{}) {
-			openlog.Debug("watch configs", openlog.WithTags(openlog.Tags{
+			logrus.Debug("watch configs", logrus.WithFields(logrus.Fields{
 				"config": kv,
 			}))
 			err := ks.updateConfigAndFireEvent(kv)
 			if err != nil {
-				openlog.Error("error in updating configurations:" + err.Error())
+				logrus.Error("error in updating configurations:" + err.Error())
 			}
 		},
 		func(err error) {
-			openlog.Error(err.Error())
+			logrus.Error(err.Error())
 		}, nil,
 	)
-	openlog.Info("stop watching configurations")
+	logrus.Info("stop watching configurations")
 	if err != nil {
-		openlog.Error("watch kie source failed: " + err.Error())
+		logrus.Error("watch kie source failed: " + err.Error())
 	}
 	return err
 }

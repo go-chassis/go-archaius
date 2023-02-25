@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
 	"time"
 
 	"github.com/arielsrv/go-archaius"
 	"github.com/arielsrv/go-archaius/event"
-	"github.com/go-chassis/openlog"
 )
 
 // Listener is a struct used for Event listener
@@ -23,7 +23,7 @@ type Listener struct {
 // Event is a method for QPS event listening
 func (e *Listener) Event(events []*event.Event) {
 	for i, ev := range events {
-		openlog.GetLogger().Info(fmt.Sprintf("%dth event:%+v", i, ev))
+		logrus.Info(fmt.Sprintf("%dth event:%+v", i, ev))
 	}
 	archaius.UnmarshalConfig(e)
 }
@@ -33,7 +33,7 @@ func main() {
 		"./module_event.yaml",
 	}))
 	if err != nil {
-		openlog.Error("Error:" + err.Error())
+		logrus.Error("Error:" + err.Error())
 		return
 	}
 	lis := &Listener{}

@@ -1,17 +1,17 @@
 package main
 
 import (
+	"github.com/sirupsen/logrus"
 	"log"
 
 	"github.com/arielsrv/go-archaius"
 	"github.com/arielsrv/go-archaius/source/util"
-	"github.com/go-chassis/openlog"
 )
 
 func main() {
 	err := archaius.Init(archaius.WithRequiredFiles([]string{"./dir", "f1.yaml"}))
 	if err != nil {
-		openlog.Error("Error:" + err.Error())
+		logrus.Error("Error:" + err.Error())
 	}
 	log.Println(archaius.Get("age"))
 	log.Println(archaius.Get("name"))
