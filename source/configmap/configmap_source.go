@@ -283,7 +283,6 @@ func (cmSource *configMapSource) GetConfigurationByKey(key string) (interface{},
 
 	for ckey, confInfo := range cmSource.Configurations {
 		if confInfo == nil {
-			confInfo.Value = nil
 			continue
 		}
 
@@ -473,7 +472,6 @@ func (cmSource *configMapSource) compareUpdate(newconf map[string]interface{}, f
 
 	for key, confInfo := range cmSource.Configurations {
 		if confInfo == nil {
-			confInfo.Value = nil
 			continue
 		}
 
