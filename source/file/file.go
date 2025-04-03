@@ -293,17 +293,12 @@ func (fSource *Source) GetConfigurationByKey(key string) (interface{}, error) {
 	fSource.RLock()
 	defer fSource.RUnlock()
 
-	for ckey, confInfo := range fSource.Configurations {
-		if confInfo == nil {
-			continue
-		}
-
-		if ckey == key {
-			return confInfo.Value, nil
-		}
+	confInfo, ok := fSource.Configurations[key]
+	if !ok || confInfo == nil {
+		return nil, source.ErrKeyNotExist
 	}
 
-	return nil, source.ErrKeyNotExist
+	return confInfo.Value, nil
 }
 
 //GetSourceName get name of source

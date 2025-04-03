@@ -125,9 +125,9 @@ func TestDynamicConfigurations(t *testing.T) {
 	check(err)
 
 	cmSource := NewConfigMapSource()
+	cmSource.AddFile(filename3, 2, nil)
 	cmSource.AddFile(filename1, 0, nil)
 	cmSource.AddFile(filename2, 1, nil)
-	cmSource.AddFile(filename3, 2, nil)
 
 	dynHandler := new(TestDynamicConfigHandler)
 	cmSource.Watch(dynHandler)
