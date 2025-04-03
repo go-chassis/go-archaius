@@ -3,8 +3,9 @@ package kie
 import (
 	"testing"
 
-	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/go-chassis/go-archaius/source/remote"
 )
 
 func TestGenerateLabels(t *testing.T) {
@@ -28,6 +29,5 @@ func TestGenerateLabels(t *testing.T) {
 		remote.LabelApp:         "app",
 		remote.LabelEnvironment: "env",
 		remote.LabelService:     "service",
-		remote.LabelVersion:     "1.0.0",
 	}, dimensionService)
 }
