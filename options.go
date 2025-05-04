@@ -37,14 +37,15 @@ type RemoteInfo struct {
 
 //Options hold options
 type Options struct {
-	RequiredFiles []string
-	OptionalFiles []string
-	FileHandler   util.FileHandler
-	RemoteInfo    *RemoteInfo
-	RemoteSource  string
-	UseCLISource  bool
-	UseENVSource  bool
-	UseMemSource  bool
+	RequiredFiles    []string
+	OptionalFiles    []string
+	FileHandler      util.FileHandler
+	RemoteInfo       *RemoteInfo
+	RemoteSource     string
+	UseCLISource     bool
+	UseENVSource     bool
+	UseMemSource     bool
+	EnvKeyLowerCases bool
 }
 
 //Option is a func
@@ -93,6 +94,13 @@ func WithCommandLineSource() Option {
 func WithENVSource() Option {
 	return func(options *Options) {
 		options.UseENVSource = true
+	}
+}
+
+// WithENVkeyLowerCase enable env key ignore case
+func WithENVKeyLowerCase() Option {
+	return func(options *Options) {
+		options.EnvKeyLowerCases = true
 	}
 }
 

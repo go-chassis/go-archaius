@@ -113,6 +113,10 @@ func TestConfig_RegisterListener(t *testing.T) {
 	assert.NoError(t, err)
 	defer archaius.UnRegisterListener(eventHandler, "a*")
 
+	type Info struct {
+		Addr   string `yaml:"address"`
+		Number int    `yaml:"number"`
+	}
 }
 
 func TestUnmarshalConfig(t *testing.T) {
@@ -156,10 +160,15 @@ infos_ptr:
 	filename1 := filepath.Join(d, "f3.yaml")
 	f1, err := os.Create(filename1)
 	assert.NoError(t, err)
-	err = archaius.Init(archaius.WithMemorySource())
+	archaius.Clean()
+
+	os.Setenv("TESTINFO_ADDRESS", "a")
+	os.Setenv("TESTINFO_NUMBER", "8")
+	err = archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource(), archaius.WithENVKeyLowerCase())
 	assert.NoError(t, err)
 	defer f1.Close()
 	defer os.Remove(filename1)
+
 	_, err = io.WriteString(f1, string(b))
 	assert.NoError(t, err)
 	type User struct {
@@ -226,6 +235,22 @@ infos_ptr:
 		assert.NoError(t, err)
 		assert.Equal(t, "peter", p.Name)
 		assert.Equal(t, "123", p.MD["name"])
+	})
+	t.Run("env test", func(t *testing.T) {
+		type Info struct {
+			Addr   string `yaml:"address"`
+			Number int    `yaml:"number"`
+		}
+		type InfoWrapper struct {
+			I *Info `yaml:"testinfo"`
+		}
+		a := archaius.GetString("testinfo.address", "")
+		assert.Equal(t, "a", a)
+		info := &InfoWrapper{}
+		err = archaius.UnmarshalConfig(info)
+		assert.NoError(t, err)
+		assert.Equal(t, "a", info.I.Addr)
+		assert.Equal(t, 8, info.I.Number)
 	})
 }
 

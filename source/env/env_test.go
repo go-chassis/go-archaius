@@ -48,16 +48,28 @@ func populatEnvConfiguration() {
 func TestEnvConfigurationSource(t *testing.T) {
 
 	populatEnvConfiguration()
-	envsource := env.NewEnvConfigurationSource()
+	envsource := env.NewEnvConfigurationSource(false)
 	t.Run("set env with underscore, use dot to get ", func(t *testing.T) {
 		os.Setenv("a_b_c_d", "asd")
-		envsource := env.NewEnvConfigurationSource()
+		envsource := env.NewEnvConfigurationSource(false)
 		v, err := envsource.GetConfigurationByKey("a.b.c.d")
 		assert.Equal(t, nil, err)
 		assert.Equal(t, "asd", v)
 		v, err = envsource.GetConfigurationByKey("a_b_c_d")
 		assert.Equal(t, nil, err)
 		assert.Equal(t, "asd", v)
+	})
+
+	t.Run("set env with underscore, and open lower case, use dot to get", func(t *testing.T) {
+		os.Setenv("A_B_C_D", "ABCD")
+		envsource := env.NewEnvConfigurationSource(true)
+		v, err := envsource.GetConfigurationByKey("a.b.c.d")
+		assert.Equal(t, nil, err)
+		assert.Equal(t, "ABCD", v)
+		v, err = envsource.GetConfigurationByKey("a_b_c_d")
+		assert.Equal(t, nil, err)
+		assert.Equal(t, "ABCD", v)
+
 	})
 	t.Log("Test envconfigurationsource.go")
 

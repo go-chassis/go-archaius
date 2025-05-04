@@ -1,0 +1,24 @@
+
+info:
+  address: a
+metadata_str:
+  key01: "value01"
+metadata_int:
+  key01: 1
+metadata_struct:
+  key01: {address: "addr03",number: 1230}
+metadata_ptr:
+  key01: {address: "addr05",number: 1232}
+str_arr:
+  - "list01"
+int_arr:
+  - 1
+infos:
+  - address: "addr01"
+    users:
+      - name: "yourname"
+infos_ptr:
+  - number: 123
+    users:
+      - name: "yourname1"
+        age: 22

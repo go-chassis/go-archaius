@@ -1,0 +1,35 @@
+
+key: peter
+info:
+  address: a
+  number: 8
+metadata_str:
+  key01: "value01"
+  key02: "value02"
+metadata_int:
+  key01: 1
+  key02: 2
+metadata_struct:
+  key01: {address: "addr03",number: 1230}
+  key02: {address: "addr04",number: 1231}
+metadata_ptr:
+  key01: {address: "addr05",number: 1232}
+  key02: {address: "addr06",number: 1233}
+str_arr:
+  - "list01"
+  - "list02"
+int_arr:
+  - 1
+  - 2
+infos:
+  - address: "addr01"
+    number: 100
+    users:
+      - name: "yourname"
+        age: 21
+infos_ptr:
+  - address: "addr02"
+    number: 123
+    users:
+      - name: "yourname1"
+        age: 22
